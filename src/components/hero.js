@@ -16,8 +16,8 @@ export const html = `
     <p>to outcomes</p>
   </div>
 </section>
-<p class="hero-mobile-sub">We <span class="accent">tethr</span> ambitions into outcomes — one invoice, one partner, your team fully managed</p>
-<div class="hero-headline">
+<p class="hero-mobile-sub padded">We <span class="accent">tethr</span> ambitions into outcomes — one invoice, one partner, your team fully managed</p>
+<div class="hero-headline padded">
   <p>One invoice. One partner.</p>
   <p>Your team in Pakistan, fully managed.</p>
 </div>

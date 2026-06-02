@@ -1,5 +1,5 @@
 export const html = `
-<div class="section-label section-label--spaced">
+<div class="section-label section-label--spaced padded">
   <span class="section-label__num">02</span>
   <span class="section-label__line"></span>
   <span class="section-label__title">HIRING</span>
@@ -10,6 +10,8 @@ export const html = `
     <button class="hiring-toggle__btn hiring-toggle__btn--left active" data-side="left">talent</button>
     <button class="hiring-toggle__btn hiring-toggle__btn--right" data-side="right">your company</button>
   </div>
+</div>
+<div class="hiring-content">
 </div>
 `
 
