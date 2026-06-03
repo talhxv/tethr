@@ -25,6 +25,9 @@ export const html = `
 export function init() {
   const nav = document.querySelector('.navbar')
 
+  nav.style.backdropFilter = 'blur(20px) saturate(180%)'
+  nav.style.webkitBackdropFilter = 'blur(20px) saturate(180%)'
+
   const SPEED_NORMAL = 40  // px/s
   const SPEED_HOVER  = 160 // px/s
 
