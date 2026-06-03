@@ -1,6 +1,7 @@
 import swirl from '../assets/swirlcomponent.svg'
 import sphere from '../assets/Sphere.svg'
 import arrowRight from '../assets/arrowright.svg'
+import ctaBlur from '../assets/ctablur.svg'
 
 export const html = `
 <div class="section-label section-label--spaced padded">
@@ -9,6 +10,7 @@ export const html = `
   <span class="section-label__title">GET STARTED</span>
 </div>
 <section class="cta">
+  <img src="${ctaBlur}" class="cta__blob" alt="" />
   <img src="${swirl}" class="cta__swirl" alt="" />
   <img src="${sphere}" class="cta__sphere" alt="" />
   <div class="cta__content">
