@@ -54,7 +54,12 @@
   }
 }
 
-html, body {
+html {
+  margin: 0;
+  overflow-x: clip;
+}
+
+body {
   margin: 0;
 }
 
@@ -287,7 +292,6 @@ code {
   box-sizing: border-box;
   text-align: center;
   min-height: 100svh;
-  overflow-x: clip;
 }
 
 /* inner content padding — applied to non-full-bleed elements */
