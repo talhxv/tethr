@@ -132,6 +132,8 @@ code {
   top: 20px;
   z-index: 1000;
   padding: 0 24px;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 .navbar {
