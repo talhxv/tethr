@@ -743,6 +743,293 @@ code {
 }
 
 
+/* ── SERVICES ── */
+.services {
+  padding: 32px 48px 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.services__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  position: relative;
+}
+
+.services__connector {
+  position: absolute;
+  width: 120px;
+  height: 50px;
+  z-index: 1;
+  pointer-events: none;
+  transform: translateX(-50%);
+  overflow: visible;
+}
+
+
+/* Between card 1 and 2, near the top */
+.services__connector--top {
+  left: calc(33%);
+  top: 60px;
+  transform: translateX(-50%);
+}
+
+/* Between card 2 and 3, near the bottom */
+.services__connector--bottom {
+  left: calc(67%);
+  bottom: 60px;
+  transform: translateX(-50%);
+}
+
+.services__card {
+  position: relative;
+  z-index: 2;
+  background: #001B4D;
+  border-radius: 48px;
+  border: none;
+  outline: none;
+  overflow: hidden;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 28px;
+  box-sizing: border-box;
+}
+
+.services__title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* Concentric ring background */
+.services__card::before {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  pointer-events: none;
+}
+
+/* Software card */
+.services__card--software .services__swirl {
+  position: absolute;
+  top: -110px;
+  left: -35px;
+  width: 90%;
+  opacity: 0.8;
+  z-index: 100;
+}
+
+.services__card--software .services__earth {
+  position: absolute;
+  bottom: -80px;
+  right: -30px;
+  width: 65%;
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.services__card--software .services__sphere {
+  position: absolute;
+  bottom: 36px;
+  left: 120px;
+  width: 110px;
+  z-index: 1;
+}
+
+.services__card--software .services__title {
+  position: absolute;
+  top: 68px;
+  left: 38px;
+}
+
+/* ── Connector hover ── */
+.services__connector {
+  transition: opacity 0.35s ease;
+}
+
+.services__connector path {
+  transition: fill 0.35s ease;
+}
+
+.services__grid:has(.services__card--software:hover) .services__connector--top path,
+.services__grid:has(.services__card--automations:hover) .services__connector--top path,
+.services__grid:has(.services__card--automations:hover) .services__connector--bottom path,
+.services__grid:has(.services__card--consulting:hover) .services__connector--bottom path {
+  fill: #2B44FF;
+}
+
+/* ── Card hover state ── */
+.services__card {
+  transition: background 0.35s ease;
+  cursor: pointer;
+}
+
+.services__card:hover {
+  background: #2B44FF;
+}
+
+.services__card:hover .services__asset {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.services__asset {
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+/* keep earth faint on hover too so it shows through subtly */
+.services__card:hover .services__earth {
+  opacity: 0.15;
+}
+
+.services__pills {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s ease 0.05s, transform 0.3s ease 0.05s;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.services__card:hover .services__pills {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.services__pill {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.services__pill--filled,
+.services__pill--outline {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  transition: background 0.2s ease, color 0.2s ease;
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.services__pill:hover {
+  background: #fff;
+  color: #2B44FF;
+  border-color: #fff;
+}
+
+.services__card:hover .services__title {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.services__title {
+  transition: opacity 0.2s ease;
+}
+
+/* Automations card */
+.services__card--automations .services__title {
+  position: absolute;
+  bottom: 90px;
+  left: 38px;
+}
+
+.services__card--automations .services__swirl--auto {
+  position: absolute;
+  bottom: -5px;
+  left: -10px;
+  width: 90%;
+  opacity: 0.8;
+  z-index: 0;
+}
+
+.services__card--automations .services__cog {
+  position: absolute;
+  top: -50px;
+  right: -20px;
+  width: 60%;
+  opacity: 0.45;
+  z-index: 0;
+}
+
+.services__card--automations .services__sphere--top {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-80%);
+  width: 100px;
+  z-index: 1;
+}
+
+/* Consulting card */
+.services__card--consulting .services__swirl--consult {
+  position: absolute;
+  top: 100px;
+  left: 210px;
+  width: 80%;
+  opacity: 0.8;
+  z-index: 0;
+}
+
+.services__card--consulting .services__title {
+  position: absolute;
+  bottom: 28px;
+  right: 28px;
+  text-align: right;
+}
+
+.services__card--consulting .services__stack {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  transform: none;
+  width: 55%;
+  opacity: 0.5;
+  z-index: 0;
+}
+
+.services__card--consulting .services__sphere--top {
+  position: absolute;
+  top: 20px;
+  right: 100px;
+  width: 100px;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .services {
+    padding: 24px 20px 48px;
+  }
+  .services__grid {
+    grid-template-columns: 1fr;
+  }
+  .services__card {
+    min-height: 220px;
+  }
+}
+
 /* ── CTA ── */
 .cta {
   position: relative;

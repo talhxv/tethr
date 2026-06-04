@@ -5,7 +5,7 @@ import ctaBlur from '../assets/ctablur.svg'
 
 export const html = `
 <div class="section-label section-label--spaced padded">
-  <span class="section-label__num">03</span>
+  <span class="section-label__num">04</span>
   <span class="section-label__line"></span>
   <span class="section-label__title">GET STARTED</span>
 </div>
