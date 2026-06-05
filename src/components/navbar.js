@@ -28,7 +28,7 @@ export function init() {
   nav.style.backdropFilter = 'blur(20px) saturate(180%)'
   nav.style.webkitBackdropFilter = 'blur(20px) saturate(180%)'
 
-  const SPEED_NORMAL = 40  // px/s
+  const SPEED_NORMAL = 22  // px/s
   const SPEED_HOVER  = 160 // px/s
 
   let speed = SPEED_NORMAL
@@ -38,8 +38,15 @@ export function init() {
   let pathRef = null
   let totalLength = 0
 
-  nav.addEventListener('mouseenter', () => { speed = SPEED_HOVER })
-  nav.addEventListener('mouseleave', () => { speed = SPEED_NORMAL })
+  const applyBtn = nav.querySelector('.navbar-apply')
+  applyBtn.addEventListener('mouseenter', () => {
+    speed = SPEED_HOVER
+    nav.style.boxShadow = '0 0 12px 2px rgba(43,68,255,0.15)'
+  })
+  applyBtn.addEventListener('mouseleave', () => {
+    speed = SPEED_NORMAL
+    nav.style.boxShadow = ''
+  })
 
   function tick(now) {
     if (lastTime !== null) {

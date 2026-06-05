@@ -58,37 +58,36 @@ export function initManifesto() {
       trigger: track,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 1,
+      scrub: 0.9,
     }
   })
 
   // ── S1 fades out ──
-  tl.to(s1, { opacity: 0, duration: 0.08 }, 0)
-  tl.to(s2, { opacity: 1, duration: 0.04 }, 0.09)
+  tl.to(s1, { opacity: 0, duration: 0.06 }, 0)
+  tl.to(s2, { opacity: 1, duration: 0.03 }, 0.07)
 
-  // ── Links scatter in ──
-  tl.to(links, { opacity: 1, duration: 0.14, stagger: 0.006, ease: 'power2.out' }, 0.10)
+  // ── Links snap in fast — all visible before text ──
+  tl.to(links, { opacity: 1, duration: 0.10, stagger: 0.003, ease: 'power3.out' }, 0.08)
 
   // ── Problem text ──
-  tl.to(problemText,  { opacity: 1, x: 0, duration: 0.08 }, 0.18)
-  tl.to(problemItems, { opacity: 1, y: 0, duration: 0.07, stagger: 0.025 }, 0.22)
+  tl.to(problemText,  { opacity: 1, x: 0, duration: 0.06 }, 0.14)
+  tl.to(problemItems, { opacity: 1, y: 0, duration: 0.05, stagger: 0.018 }, 0.17)
 
-  // ── Hold: user reads problem (0.28–0.50) ──
+  // ── Hold: user reads problem (0.22–0.44) ──
 
   // ── Problem text exits ──
-  tl.to(problemText, { opacity: 0, x: -20, duration: 0.07 }, 0.50)
+  tl.to(problemText, { opacity: 0, x: -20, duration: 0.05 }, 0.44)
 
   // ── All links move to solution positions ──
   links.forEach((el, i) => {
     const s = SOLUTION_POS[i]
-    tl.to(el, { x: s.x, y: s.y, rotation: s.r, duration: 0.18, ease: 'power2.inOut' }, 0.52 + i * 0.003)
+    tl.to(el, { x: s.x, y: s.y, rotation: s.r, duration: 0.14, ease: 'power2.inOut' }, 0.46 + i * 0.002)
   })
 
   // ── Paired singles fade out, doubly-linked SVGs draw themselves in ──
   const pairEls = [...PAIR_A, ...PAIR_B].map(i => links[i])
-  tl.to(pairEls, { opacity: 0, duration: 0.10, ease: 'power2.in' }, 0.62)
+  tl.to(pairEls, { opacity: 0, duration: 0.08, ease: 'power2.in' }, 0.56)
 
-  // Prime each path for stroke-draw: measure total length, set dasharray/offset
   ;[doubleA, doubleB].forEach((el, ei) => {
     gsap.set(el, { opacity: 1, scale: 1 })
     el.querySelectorAll('path').forEach(path => {
@@ -96,37 +95,40 @@ export function initManifesto() {
       gsap.set(path, { strokeDasharray: len, strokeDashoffset: len })
       tl.to(path, {
         strokeDashoffset: 0,
-        duration: 0.18,
+        duration: 0.12,
         ease: 'power2.inOut',
-      }, 0.66 + ei * 0.06)
+      }, 0.58 + ei * 0.04)
     })
   })
 
-  // ── Solution text slides in ──
-  tl.to(solutionText,  { opacity: 1, x: 0, duration: 0.08 }, 0.72)
-  tl.to(solutionItems, { opacity: 1, y: 0, duration: 0.07, stagger: 0.025 }, 0.76)
+  // ── Solution text slides in simultaneously with double-link draw ──
+  tl.to(solutionText,  { opacity: 1, x: 0, duration: 0.06 }, 0.60)
+  tl.to(solutionItems, { opacity: 1, y: 0, duration: 0.05, stagger: 0.018 }, 0.63)
 
-  // ── Hold: user reads solution (0.80–0.84) ──
+  // ── Hold: user reads solution (0.68–0.80) ──
 
-  // ── Solution exits ──
-  tl.to([s2], { opacity: 0, duration: 0.06 }, 0.84)
+  // ── Cross-fade to scene 4 — s4 starts fading IN before s2 is gone ──
+  // This ensures there is never a blank screen
+  tl.to(s4, { opacity: 1, duration: 0.06 }, 0.80)
 
-  // ── Scene 4: full chain draws itself in ──
-  tl.to(s4, { opacity: 1, duration: 0.04 }, 0.87)
-
-  // Draw each path sequentially — 7 paths trace the full chain link by link
+  // ── Chain starts drawing while s2 is still partially visible ──
   if (fullChainEl) {
     const paths = [...fullChainEl.querySelectorAll('path')]
     paths.forEach((path, i) => {
       tl.to(path, {
         strokeDashoffset: 0,
-        duration: 0.06,
-        ease: 'power1.inOut',
-      }, 0.88 + i * 0.018)
+        duration: 0.04,
+        ease: 'power2.inOut',
+      }, 0.82 + i * 0.012)
     })
   }
 
-  // ── Tethr text slides in as chain finishes drawing ──
-  tl.to(tethrText,  { opacity: 1, x: 0, duration: 0.06 }, 0.94)
-  tl.to(tethrItems, { opacity: 1, y: 0, duration: 0.05, stagger: 0.02 }, 0.97)
+  // ── s2 exits as s4 is already in view ──
+  tl.to(s2, { opacity: 0, duration: 0.05 }, 0.84)
+
+  // ── Tethr text slides in early — content-first, don't make the user wait for drawing ──
+  tl.to(tethrText,  { opacity: 1, x: 0, duration: 0.05 }, 0.86)
+  tl.to(tethrItems, { opacity: 1, y: 0, duration: 0.04, stagger: 0.015 }, 0.89)
+
+  // ── Hold: user reads tethr section (0.93–1.0) ──
 }
