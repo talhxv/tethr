@@ -126,6 +126,131 @@ code {
   }
 }
 
+/* ── Mobile Menu Overlay ── */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #E7EFFF;
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px 48px;
+  box-sizing: border-box;
+  clip-path: circle(0% at calc(100% - 40px) 50px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: clip-path 0.52s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s linear 0.52s;
+}
+
+.mobile-menu.open {
+  clip-path: circle(150% at calc(100% - 40px) 50px);
+  visibility: visible;
+  pointer-events: all;
+  transition: clip-path 0.52s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s linear 0s;
+}
+
+.mobile-menu__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
+.mobile-menu__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.mobile-menu__icon     { height: 22px; width: auto; }
+.mobile-menu__wordmark { height: 16px; width: auto; }
+
+.mobile-menu__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu__links {
+  display: flex;
+  flex-direction: column;
+  margin-top: 40px;
+}
+
+.mobile-menu__link {
+  font-family: 'Manrope', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: #0a0a0a;
+  text-decoration: none;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(43,68,255,0.15);
+}
+
+.mobile-menu__link:first-child { border-top: 1px solid rgba(43,68,255,0.15); }
+
+.mobile-menu__footer {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding-top: 36px;
+  flex-shrink: 0;
+}
+
+.mobile-menu__socials {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.mobile-menu__socials a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #2B44FF;
+}
+
+.mobile-menu__socials img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+.mobile-menu__footer-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(43,68,255,0.2);
+  margin: 0 20px;
+  flex-shrink: 0;
+}
+
+.mobile-menu__apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 28px;
+  background: #2B44FF;
+  color: #fff;
+  border-radius: 999px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.mobile-menu__apply img { width: 9px; height: 9px; }
+
 /* ── Navbar ── */
 .navbar-wrap {
   position: sticky;
@@ -174,12 +299,26 @@ code {
   align-items: center;
   flex-shrink: 0;
   z-index: 1;
+  text-decoration: none;
+  gap: 8px;
 }
 
-.navbar-logo {
+.navbar-logo--img {
   height: 40px;
   width: auto;
   margin-left: 40px;
+}
+
+.navbar-logo--icon {
+  display: none;
+  height: 22px;
+  width: auto;
+}
+
+.navbar-logo--wordmark {
+  display: none;
+  height: 18px;
+  width: auto;
 }
 
 .navbar-links {
@@ -232,20 +371,33 @@ code {
   }
 }
 
+.navbar-burger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
 @media (max-width: 768px) {
   .navbar {
     width: calc(100% - 24px);
     height: 60px;
-    padding: 0 8px 0 14px;
-    top: 12px;
+    padding: 0 4px 0 14px;
+    background: #E7EFFF;
+    border-color: rgba(43,68,255,0.12);
   }
 
-  .navbar-links { display: none; }
-
-  .navbar-apply {
-    padding: 10px 20px;
-    font-size: 14px;
-  }
+  .navbar-logo--img      { display: none; }
+  .navbar-logo--icon     { display: block; }
+  .navbar-logo--wordmark { display: block; }
+  .navbar-links  { display: none; }
+  .navbar-apply  { display: none; }
+  .navbar-sticker { display: none; }
+  .navbar-burger  { display: flex; align-items: center; margin-left: auto; }
 }
 
 .hero {
@@ -887,10 +1039,16 @@ code {
 
 /* ── end manifesto scroll ── */
 
+/* ── HIRING ── */
+
+.hiring-section {
+  padding: 80px 0 140px;
+}
+
 .hiring-toggle-wrap {
   display: flex;
   justify-content: center;
-  margin-top: 28px;
+  margin: 36px 0 56px;
 }
 
 .hiring-toggle {
@@ -899,18 +1057,18 @@ code {
   grid-template-columns: 1fr 1fr;
   background: #0d1f4a;
   border-radius: 999px;
-  padding: 6px;
+  padding: 5px;
 }
 
 .hiring-toggle__pill {
   position: absolute;
-  top: 6px;
-  left: 6px;
-  width: calc(50% - 6px);
-  height: calc(100% - 12px);
-  background: #2563eb;
+  top: 5px;
+  left: 5px;
+  width: calc(50% - 5px);
+  height: calc(100% - 10px);
+  background: #2B44FF;
   border-radius: 999px;
-  transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 360ms cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 
@@ -922,23 +1080,165 @@ code {
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
   font-weight: 500;
-  font-size: 15px;
-  padding: 10px 32px;
+  font-size: 14px;
+  padding: 9px 24px;
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255,255,255,0.4);
   transition: color 300ms ease;
   white-space: nowrap;
 }
 
-.hiring-toggle__btn.active {
-  color: #fff;
-  font-weight: 600;
+.hiring-toggle__btn.active { color: #fff; font-weight: 600; }
+
+/* ── Rows: each step is a full-width row with text left, visual right ── */
+.hiring-rows {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 80px;
+  display: flex;
+  flex-direction: column;
 }
 
-.hiring-content {
-  min-height: 120px;
-  padding: 48px 0;
+.hiring-row {
+  display: grid;
+  grid-template-columns: 2px 1fr 1fr;
+  gap: 0 56px;
+  align-items: center;
+  padding: 56px 0;
 }
+
+/* ── Continuous line column ── */
+.hiring-row__bar {
+  align-self: stretch;
+  width: 2px;
+  background: rgba(0,0,0,0.14);
+  transition: background 0.4s ease;
+}
+
+/* ── Text side ── */
+.hiring-row__text {
+  display: flex;
+  align-items: center;
+}
+
+.hiring-row__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  text-align: right;
+  align-items: flex-end;
+}
+
+.hiring-row__label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.3);
+  transition: color 0.4s ease;
+}
+
+.hiring-row__headline {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(22px, 2.2vw, 33px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: #0a0a0a;
+  margin: 0;
+  transition: opacity 0.4s ease;
+}
+
+.hiring-row__headline strong { font-weight: 600; }
+
+.hiring-row__desc {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  color: rgba(0,0,0,0.45);
+  line-height: 1.65;
+  margin: 0;
+  max-width: 310px;
+  transition: opacity 0.4s ease;
+}
+
+/* ── Visual side — always visible, grayed when inactive ── */
+.hiring-row__visual {
+  transition: opacity 0.45s ease;
+  opacity: 0.28;
+}
+
+.hiring-visual-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #001B4D;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 32px rgba(0,27,77,0.3);
+}
+
+.hiring-card__grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 88px 88px, 88px 88px, 22px 22px, 22px 22px;
+}
+
+.hiring-vis__ill {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.hiring-vis__ill > svg {
+  width: 62%;
+  height: 62%;
+}
+
+.hiring-ill__base,
+.hiring-ill__top,
+.hiring-vis__img {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  opacity: 0.92;
+}
+
+.hiring-vis__num {
+  position: absolute;
+  right: -10px;
+  bottom: 6px;
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(68px, 7.5vw, 104px);
+  font-weight: 800;
+  color: rgba(255,255,255,0.08);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  z-index: 2;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Active state: text lights up, visual comes alive ── */
+.hiring-row.active .hiring-row__bar   { background: #2B44FF; }
+.hiring-row.active .hiring-row__label { color: #2B44FF; }
+.hiring-row.active .hiring-row__visual { opacity: 1; }
+
+/* Inactive text dims slightly */
+.hiring-row:not(.active) .hiring-row__headline { opacity: 0.35; }
+.hiring-row:not(.active) .hiring-row__desc     { opacity: 0.35; }
 
 
 /* ── SERVICES ── */
