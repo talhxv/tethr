@@ -388,7 +388,7 @@ code {
     height: 60px;
     padding: 0 4px 0 14px;
     background: #E7EFFF;
-    border-color: rgba(43,68,255,0.12);
+    border: 1.5px solid rgba(43,68,255,0.2);
   }
 
   .navbar-logo--img      { display: none; }

@@ -139,6 +139,9 @@ export function init() {
     if (existing) existing.remove()
 
     const mobile = window.innerWidth <= 768
+
+    /* On real mobile Safari, overflow:visible on SVG bleeds badly — skip chain */
+    if (mobile) return
     const R = mobile ? 22 : 36
     const LINK_SPACING = mobile ? 9 : 13
 
