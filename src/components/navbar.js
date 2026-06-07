@@ -29,7 +29,7 @@ export const html = `
 
   <nav class="mobile-menu__links">
     <a href="#services" class="mobile-menu__link">Services</a>
-    <a href="#" class="mobile-menu__link">Open Positions</a>
+    <a href="/positions.html" class="mobile-menu__link">Open Positions</a>
     <a href="#manifesto-track" class="mobile-menu__link">About Us</a>
   </nav>
 
@@ -53,7 +53,7 @@ export const html = `
   </a>
   <div class="navbar-links">
     <a href="#services" class="navbar-link">Services</a>
-    <a href="#" class="navbar-link">Open positions</a>
+    <a href="/positions.html" class="navbar-link">Open positions</a>
     <a href="#manifesto-track" class="navbar-link">About us</a>
   </div>
   <a href="#" class="navbar-apply">Apply <img src="${arrowSlantUp}" class="navbar-apply-arrow" aria-hidden="true" /></a>
