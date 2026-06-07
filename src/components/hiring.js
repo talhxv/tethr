@@ -1,9 +1,6 @@
 import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import _base from '../assets/talentcardone.svg?raw'
 import _mid  from '../assets/midlayer.svg?raw'
-
-gsap.registerPlugin(ScrollTrigger)
 
 function toBlue(svgRaw) {
   return svgRaw
@@ -217,13 +214,15 @@ export function init() {
   const s03    = document.querySelector('.hiring-step--03')
   const allSteps = [s01, s02, s03]
 
-  /* Make steps clickable */
+  /* Make steps clickable — resets auto timer on manual click */
   allSteps.forEach((el, i) => {
     if (!el) return
     el.style.cursor = 'pointer'
     el.addEventListener('click', () => {
-      currentStep = -1 // force re-run even if same step
+      stopAuto()
+      currentStep = -1
       showStep(i)
+      startAuto()
     })
   })
 
@@ -266,17 +265,27 @@ export function init() {
 
   const section = document.getElementById('hiring')
 
-  /* GSAP pin — locks the sticky pane for 3 steps worth of scroll */
-  ScrollTrigger.create({
-    trigger: section,
-    pin: sticky,
-    start: 'top top',
-    end: '+=250%',
-    anticipatePin: 1,
-    onUpdate(self) {
-      const p    = self.progress
-      const step = p < 0.38 ? 0 : p < 0.72 ? 1 : 2
-      showStep(step)
-    },
-  })
+  /* Auto-advance steps while section is in view — no scroll-jacking */
+  const STEP_DURATION = 1800
+  let autoTimer = null
+
+  function startAuto() {
+    if (autoTimer) return
+    autoTimer = setInterval(() => {
+      const next = (currentStep + 1) % 3
+      currentStep = -1
+      showStep(next)
+    }, STEP_DURATION)
+  }
+
+  function stopAuto() {
+    clearInterval(autoTimer)
+    autoTimer = null
+  }
+
+  const observer = new IntersectionObserver(
+    ([entry]) => { entry.isIntersecting ? startAuto() : stopAuto() },
+    { threshold: 0.4 }
+  )
+  observer.observe(section)
 }

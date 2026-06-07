@@ -648,45 +648,41 @@ code {
     overflow: visible;
     display: flex;
     flex-direction: column;
-  }
-
-  /* Title at the top */
-  .hero-text--top {
+    padding-bottom: 32px;
     position: relative;
-    top: auto;
-    left: auto;
-    order: 1;
-    font-size: 26px;
-    font-weight:700;
-    letter-spacing: -1px;
-    padding: 32px 20px 18px;
   }
 
-  .hero-text--top .connects {
-    font-size: 30px;
-  }
-
-  /* Contained chain block in the middle */
+  /* Chain block — full width, tall enough for title to overlay */
   .chain-wrap {
     position: relative;
     inset: auto;
-    order: 2;
+    order: 1;
     width: 100%;
-    height: 150px;
+    height: 300px;
     overflow: hidden;
     flex-shrink: 0;
   }
 
-  /* Grid only, no radial glow on mobile */
+  /* Radial grid — smaller boxes, thinner strokes, centered */
   .grid-overlay {
-    background-size: 44px 44px;
-    -webkit-mask-image: none;
-    mask-image: none;
-    opacity: 0.12;
+    background-image:
+      linear-gradient(to right, #0755E9 0.5px, transparent 0.5px),
+      linear-gradient(to bottom, #0755E9 0.5px, transparent 0.5px);
+    background-size: 28px 28px;
+    -webkit-mask-image: radial-gradient(ellipse 50% 55% at 50% 50%, black 0%, black 15%, transparent 70%);
+    mask-image: radial-gradient(ellipse 50% 55% at 50% 50%, black 0%, black 15%, transparent 70%);
+    opacity: 0.9;
   }
 
+  /* Radial glow — smaller and more subtle on mobile */
   .radial-glow {
-    display: none;
+    display: block;
+    background: radial-gradient(
+      ellipse 35% 38% at 50% 50%,
+      rgba(7,85,233,0.35) 0%,
+      rgba(7,85,233,0.15) 50%,
+      transparent 70%
+    );
   }
 
   .hero-chain {
@@ -694,8 +690,26 @@ code {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 260px;
+    width: 320px;
     max-width: none;
+  }
+
+  /* Title overlaid on top-left of chain (over the left link) */
+  .hero-text--top {
+    position: absolute;
+    top: 36px;
+    left: 20px;
+    order: 1;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.15;
+    padding: 0;
+    z-index: 2;
+  }
+
+  .hero-text--top .connects {
+    font-size: 28px;
   }
 
   /* Desktop bottom text hidden */
@@ -703,23 +717,25 @@ code {
     display: none;
   }
 
-  /* Mobile sub text below chain */
+  /* Mobile subheading — prominent, below the chain */
   .hero-mobile-sub {
     display: block;
     order: 3;
     font-family: 'Manrope', sans-serif;
-    font-size: 16px;
-    font-weight: 400;
+    font-size: 19px;
+    font-weight: 600;
+    text-space: -1.5px;
+    letter-spacing: -0.8px;
     color: #08060d;
-    line-height: 1.6;
-    padding: 24px 20px 0;
+    line-height: 1.55;
+    padding: 16px 24px 0;
     margin: 0;
     text-align: left;
   }
 
   .hero-mobile-sub .accent {
     color: #0755E9;
-    font-weight: 700;
+    font-weight: 800;
   }
 
   /* Hide desktop headline below hero */
@@ -1144,7 +1160,8 @@ code {
 }
 
 .hiring-sticky {
-  height: 100vh;
+  height: 100svh;
+  min-height: 560px;
 }
 
 /* SVG connecting lines */
