@@ -185,7 +185,7 @@ export function init() {
       lineEls[0].setAttribute('stroke', 'rgba(7,85,233,0.6)')
       lineEls[0].setAttribute('stroke-width', '1.5')
     }
-  }, 120)
+  }, 300)
   window.addEventListener('resize', drawLines)
 
   /* Toggle */

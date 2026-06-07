@@ -1175,7 +1175,7 @@ code {
 /* Step text blocks */
 .hiring-step {
   position: absolute;
-  max-width: 240px;
+  max-width: 280px;
   z-index: 1;
   transition: opacity 0.35s ease;
   cursor: pointer;
@@ -1205,29 +1205,29 @@ code {
 .hiring-step__label {
   display: block;
   font-family: 'Manrope', sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #2B44FF;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .hiring-step__headline {
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(16px, 1.6vw, 24px);
+  font-size: clamp(20px, 2vw, 30px);
   font-weight: 400;
-  line-height: 1.25;
+  line-height: 1.22;
   color: #001131;
-  margin: 0 0 10px;
-  letter-spacing: -0.3px;
+  margin: 0 0 12px;
+  letter-spacing: -0.5px;
 }
 
 .hiring-step__headline strong { font-weight: 700; }
 
 .hiring-step__desc {
   font-family: 'Manrope', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   color: rgba(0, 17, 49, 0.45);
   line-height: 1.7;
   margin: 0;
