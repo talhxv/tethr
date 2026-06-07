@@ -28,7 +28,7 @@ export const html = `
   </div>
 
   <nav class="mobile-menu__links">
-    <a href="#" class="mobile-menu__link">Services</a>
+    <a href="#services" class="mobile-menu__link">Services</a>
     <a href="#" class="mobile-menu__link">Open Positions</a>
     <a href="#manifesto-track" class="mobile-menu__link">About Us</a>
   </nav>
@@ -52,7 +52,7 @@ export const html = `
     <img src="${tethrFontLogo}" class="navbar-logo--wordmark" alt="Tethr" />
   </a>
   <div class="navbar-links">
-    <a href="#" class="navbar-link">Services</a>
+    <a href="#services" class="navbar-link">Services</a>
     <a href="#" class="navbar-link">Open positions</a>
     <a href="#manifesto-track" class="navbar-link">About us</a>
   </div>
@@ -168,10 +168,12 @@ export function init() {
     motionPath.style.visibility = 'hidden'
     svg.appendChild(motionPath)
 
-    const bgPath = document.createElementNS(NS, 'path')
-    bgPath.setAttribute('d', motionPath.getAttribute('d'))
-    bgPath.setAttribute('fill', mobile ? '#E7EFFF' : '#ffffff')
-    svg.appendChild(bgPath)
+    if (!mobile) {
+      const bgPath = document.createElementNS(NS, 'path')
+      bgPath.setAttribute('d', motionPath.getAttribute('d'))
+      bgPath.setAttribute('fill', '#ffffff')
+      svg.appendChild(bgPath)
+    }
 
     nav.style.position = 'relative'
     nav.appendChild(svg)

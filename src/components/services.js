@@ -5,7 +5,7 @@ import settingsCog from '../assets/settingscog.svg'
 import executionStack from '../assets/executionstack.svg'
 
 export const html = `
-<div class="section-label section-label--spaced padded">
+<div class="section-label section-label--spaced padded" id="services">
   <span class="section-label__num">03</span>
   <span class="section-label__line"></span>
   <span class="section-label__title">SERVICES</span>
