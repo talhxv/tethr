@@ -226,6 +226,19 @@ export function init() {
     })
   })
 
+  /* Mobile: tap stack to advance to next step */
+  const stack = document.getElementById('hiringStack')
+  if (stack) {
+    stack.style.cursor = 'pointer'
+    stack.addEventListener('click', () => {
+      stopAuto()
+      const next = (currentStep + 1) % 3
+      currentStep = -1
+      showStep(next)
+      startAuto()
+    })
+  }
+
   /* Initial state — base visible, mid layers above waiting to drop down */
   gsap.set(l1, { opacity: 1 })
   gsap.set(l2, { y: -80, opacity: 0 })

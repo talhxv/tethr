@@ -1334,6 +1334,8 @@ code {
   .hiring-layer--mid1 { bottom: 28px; }
   .hiring-layer--mid2 { bottom: 56px; }
 
+  #hiringStack { touch-action: manipulation; }
+
   .hiring-mobile-text {
     display: block;
     text-align: center;
