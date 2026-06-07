@@ -136,7 +136,8 @@ function drawLines() {
     const el = document.querySelector(sel)
     if (!el) return
     const r  = el.getBoundingClientRect()
-    const tx = edge === 'right' ? r.right - sR.left : r.left - sR.left
+    const GAP = 18
+    const tx = edge === 'right' ? r.right - sR.left + GAP : r.left - sR.left - GAP
     const ty = r.top - sR.top + r.height / 2
 
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line')

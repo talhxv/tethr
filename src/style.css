@@ -1176,7 +1176,7 @@ code {
 /* Step text blocks */
 .hiring-step {
   position: absolute;
-  max-width: 280px;
+  max-width: 320px;
   z-index: 1;
   transition: opacity 0.35s ease;
   cursor: pointer;
@@ -1206,21 +1206,21 @@ code {
 .hiring-step__label {
   display: block;
   font-family: 'Manrope', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #2B44FF;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .hiring-step__headline {
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(20px, 2vw, 30px);
+  font-size: clamp(22px, 2.2vw, 34px);
   font-weight: 400;
   line-height: 1.22;
   color: #001131;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   letter-spacing: -0.5px;
 }
 
@@ -1228,7 +1228,7 @@ code {
 
 .hiring-step__desc {
   font-family: 'Manrope', sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   color: rgba(0, 17, 49, 0.45);
   line-height: 1.7;
   margin: 0;
@@ -1263,8 +1263,8 @@ code {
 /* Stack container */
 .hiring-stack {
   position: relative;
-  width: 340px;
-  height: 380px;
+  width: 420px;
+  height: 460px;
 }
 
 /* Isometric card layers — physically stacked, mid layers slide up via GSAP */
@@ -1284,20 +1284,20 @@ code {
 .hiring-stack-tag {
   text-align: center;
   font-family: 'Manrope', sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #2B44FF;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 /* Base sits at bottom of stack space */
 .hiring-layer--base { bottom: 0; }
 
 /* Mid layers sit progressively higher (snug isometric offset) */
-.hiring-layer--mid1 { bottom: 44px; }
-.hiring-layer--mid2 { bottom: 88px; }
+.hiring-layer--mid1 { bottom: 52px; }
+.hiring-layer--mid2 { bottom: 104px; }
 
 
 /* ── OPEN POSITIONS ── */
