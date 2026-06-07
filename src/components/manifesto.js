@@ -1,4 +1,5 @@
-import chainOutline  from '../assets/fullylinkedchainvectorbue.svg'
+import chainOutline      from '../assets/fullylinkedbluevectorchain.svg'
+import chainOutlinePhone from '../assets/fullylinkedvectorchainbluephone.svg'
 import chainLink     from '../assets/singlechainlinkvectorblue.svg?raw'
 import doubleLink    from '../assets/doublylinkedchainvectorblue.svg?raw'
 import fullChain     from '../assets/fullylinkedbluevectorchain.svg?raw'
@@ -67,7 +68,10 @@ export const html = `
       <!-- Scene 1 -->
       <div class="manifesto-layer" id="manifesto-s1">
         <div class="manifesto-banner__chain-wrap">
-          <img src="${chainOutline}" class="manifesto-banner__chain" alt="" />
+          <picture>
+            <source media="(max-width: 768px)" srcset="${chainOutlinePhone}" />
+            <img src="${chainOutline}" class="manifesto-banner__chain" alt="" id="manifesto-chain-img" />
+          </picture>
         </div>
         <p class="manifesto-banner__text">For Talent. By Talent.</p>
       </div>

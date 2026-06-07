@@ -22,6 +22,7 @@ export function initManifesto() {
 
   if (!track || !links.length) return
 
+
   // Pair indices that swap to double-link SVGs
   const PAIR_A = [1, 5]
   const PAIR_B = [9, 13]

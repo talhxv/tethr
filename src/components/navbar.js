@@ -70,8 +70,6 @@ export const html = `
 export function init() {
   const nav = document.querySelector('.navbar')
 
-  nav.style.backdropFilter = 'blur(20px) saturate(180%)'
-  nav.style.webkitBackdropFilter = 'blur(20px) saturate(180%)'
 
   const SPEED_NORMAL = 22  // px/s
   const SPEED_HOVER  = 160 // px/s
@@ -152,6 +150,7 @@ export function init() {
     svg.setAttribute('height', height)
     svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;overflow:visible'
 
+
     const motionPath = document.createElementNS(NS, 'path')
     motionPath.setAttribute('d', [
       `M ${R} 0`,
@@ -168,6 +167,11 @@ export function init() {
     motionPath.setAttribute('stroke', 'none')
     motionPath.style.visibility = 'hidden'
     svg.appendChild(motionPath)
+
+    const bgPath = document.createElementNS(NS, 'path')
+    bgPath.setAttribute('d', motionPath.getAttribute('d'))
+    bgPath.setAttribute('fill', mobile ? '#E7EFFF' : '#ffffff')
+    svg.appendChild(bgPath)
 
     nav.style.position = 'relative'
     nav.appendChild(svg)

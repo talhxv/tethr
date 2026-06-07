@@ -269,9 +269,9 @@ code {
   display: flex;
   align-items: center;
   padding: 0 12px 0 20px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  background: none;
+  border: none;
+  box-shadow: none;
   border-radius: 44px;
 }
 
@@ -757,6 +757,12 @@ code {
     min-height: 460px;
     border-radius: 20px;
     margin-top: 16px;
+    background-color: #ffffff;
+    background-image: radial-gradient(ellipse 140% 50% at 50% 100%, rgba(7, 85, 233, 0.55) 0%, rgba(7, 85, 233, 0.22) 50%, transparent 72%);
+  }
+
+  .cta::before {
+    display: none;
   }
 
   .cta__sphere {
@@ -791,6 +797,7 @@ code {
     width: min(260px, 80%);
     justify-content: center;
   }
+
 }
 
 .manifesto-banner {
@@ -861,6 +868,7 @@ code {
   width: 100%;
   height: auto;
   opacity: 0.8;
+  transform: translateY(19px);
 }
 
 .manifesto-banner__text {
@@ -1032,8 +1040,44 @@ code {
 }
 
 @media (max-width: 768px) {
+  .manifesto-banner__chain-wrap {
+    width: 100%;
+    left: 0;
+  }
+  .manifesto-banner__chain {
+    width: 300%;
+    transform: translate(-33%, -5%);
+  }
   .manifesto-scroll-track { height: 350vh; }
-  .manifesto-layer--split { grid-template-columns: 1fr; }
+  .manifesto-layer--split {
+    grid-template-columns: 1fr;
+    grid-template-rows: 160px 1fr;
+  }
+  .problem-chains {
+    height: 160px;
+    overflow: visible;
+    z-index: 0;
+  }
+  #manifesto-s2 .narrative-text-wrap {
+    position: relative;
+    z-index: 1;
+  }
+  #manifesto-s2 .problem-chains {
+    opacity: 0.25;
+  }
+  #manifesto-s4 .problem-chains {
+    overflow: visible;
+    opacity: 0.25;
+  }
+  #manifesto-s4 .full-chain {
+    width: 220%;
+    left: -40%;
+    top: -30%;
+  }
+  #manifesto-s4 .narrative-text-wrap {
+    position: relative;
+    z-index: 1;
+  }
   .problem-text { padding: 24px; }
 }
 
@@ -1382,15 +1426,39 @@ code {
   transition: opacity 0.25s ease;
 }
 
+.services__card:hover .services__swirl,
+.services__card:hover .services__swirl--auto,
+.services__card:hover .services__swirl--consult {
+  opacity: 0.3;
+  filter: blur(8px);
+}
+
+.services__card:hover .services__earth {
+  opacity: 0.15;
+  filter: blur(3px);
+}
+
+.services__card:hover .services__sphere,
+.services__card:hover .services__sphere--top {
+  opacity: 0.35;
+  filter: blur(22px);
+}
+
+.services__card:hover .services__cog {
+  opacity: 0.25;
+  filter: blur(6px);
+}
+
+.services__card:hover .services__stack {
+  opacity: 0.25;
+  filter: blur(5px);
+}
+
 .services__asset {
   transition: opacity 0.25s ease;
   pointer-events: none;
 }
 
-/* keep earth faint on hover too so it shows through subtly */
-.services__card:hover .services__earth {
-  opacity: 0.15;
-}
 
 .services__pills {
   position: absolute;
@@ -1528,13 +1596,56 @@ code {
   }
 }
 
+@media (max-width: 768px) {
+  .services__card {
+    background: #1A6FFF;
+  }
+  .services__card .services__earth {
+    opacity: 0.15;
+    filter: blur(3px);
+  }
+  .services__card .services__sphere,
+  .services__card .services__sphere--top {
+    opacity: 0.35;
+    filter: blur(22px);
+  }
+  .services__card .services__swirl,
+  .services__card .services__swirl--auto,
+  .services__card .services__swirl--consult {
+    opacity: 0.3;
+    filter: blur(8px);
+  }
+  .services__card .services__cog {
+    opacity: 0.25;
+    filter: blur(6px);
+  }
+  .services__card .services__stack {
+    opacity: 0.25;
+    filter: blur(5px);
+  }
+  .services__card .services__title {
+    opacity: 0;
+  }
+  .services__pills {
+    opacity: 1;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 28px;
+    right: 28px;
+  }
+  .services__pill {
+    font-size: 13px;
+    padding: 6px 14px;
+  }
+}
+
 /* ── CTA ── */
 .cta {
   position: relative;
   width: calc(100% - 32px);
   margin: 20px 16px 0;
   min-height: 640px;
-  background: #ffffff;
+  background-color: #ffffff;
   border-radius: 28px;
   overflow: hidden;
   display: flex;
@@ -1639,7 +1750,7 @@ code {
 }
 
 .cta__btn--primary {
-  background: #ffffff;
+  background-color: #ffffff;
   color: #0755E9;
 
   &:hover {
@@ -1671,6 +1782,27 @@ code {
   height: 16px;
   filter: invert(27%) sepia(94%) saturate(1600%) hue-rotate(210deg) brightness(95%);
   transition: filter 0.22s ease;
+}
+
+@media (max-width: 640px) {
+  .cta__swirl {
+    left: 39%;
+    top: 218px;
+  }
+
+  .cta__btn--primary {
+    background-color: #0755E9;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 14px 28px;
+    border: none;
+  }
+
+  .cta__btn--primary .cta__arrow {
+    filter: brightness(0) invert(1);
+    width: 13px;
+    height: 13px;
+  }
 }
 
 #next-steps {
