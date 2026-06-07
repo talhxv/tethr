@@ -1086,13 +1086,17 @@ code {
 /* ── HIRING ── */
 
 .hiring-section {
-  padding: 80px 0 140px;
+  padding: 80px 0 0;
 }
 
 .hiring-toggle-wrap {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
-  margin: 36px 0 56px;
+  z-index: 2;
 }
 
 .hiring-toggle {
@@ -1134,156 +1138,203 @@ code {
 
 .hiring-toggle__btn.active { color: #fff; font-weight: 600; }
 
-/* ── Rows: each step is a full-width row with text left, visual right ── */
-.hiring-rows {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 80px;
-  display: flex;
-  flex-direction: column;
+/* ── Scroll track ── */
+.hiring-track {
+  position: relative;
 }
 
-.hiring-row {
-  display: grid;
-  grid-template-columns: 2px 1fr 1fr;
-  gap: 0 56px;
-  align-items: center;
-  padding: 56px 0;
+.hiring-sticky {
+  height: 100vh;
 }
 
-/* ── Continuous line column ── */
-.hiring-row__bar {
-  align-self: stretch;
-  width: 2px;
-  background: rgba(0,0,0,0.14);
-  transition: background 0.4s ease;
+/* SVG connecting lines */
+.hiring-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 
-/* ── Text side ── */
-.hiring-row__text {
-  display: flex;
-  align-items: center;
+/* Step text blocks */
+.hiring-step {
+  position: absolute;
+  max-width: 240px;
+  z-index: 1;
+  transition: opacity 0.35s ease;
+  cursor: pointer;
 }
 
-.hiring-row__body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
+.hiring-step:hover { opacity: 1 !important; }
+
+.hiring-step--01 {
+  left: clamp(40px, 6vw, 100px);
+  top: 14%;
   text-align: right;
-  align-items: flex-end;
 }
 
-.hiring-row__label {
+.hiring-step--03 {
+  left: clamp(40px, 6vw, 100px);
+  top: 62%;
+  text-align: right;
+}
+
+.hiring-step--02 {
+  right: clamp(40px, 6vw, 100px);
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: left;
+}
+
+.hiring-step__label {
+  display: block;
   font-family: 'Manrope', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(0,0,0,0.3);
-  transition: color 0.4s ease;
+  color: #2B44FF;
+  margin-bottom: 14px;
 }
 
-.hiring-row__headline {
+.hiring-step__headline {
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(22px, 2.2vw, 33px);
+  font-size: clamp(16px, 1.6vw, 24px);
   font-weight: 400;
-  line-height: 1.2;
-  color: #0a0a0a;
-  margin: 0;
-  transition: opacity 0.4s ease;
+  line-height: 1.25;
+  color: #001131;
+  margin: 0 0 10px;
+  letter-spacing: -0.3px;
 }
 
-.hiring-row__headline strong { font-weight: 600; }
+.hiring-step__headline strong { font-weight: 700; }
 
-.hiring-row__desc {
+.hiring-step__desc {
   font-family: 'Manrope', sans-serif;
   font-size: 13px;
-  color: rgba(0,0,0,0.45);
-  line-height: 1.65;
+  color: rgba(0, 17, 49, 0.45);
+  line-height: 1.7;
   margin: 0;
-  max-width: 310px;
-  transition: opacity 0.4s ease;
 }
 
-/* ── Visual side — always visible, grayed when inactive ── */
-.hiring-row__visual {
-  transition: opacity 0.45s ease;
-  opacity: 0.28;
-}
-
-.hiring-visual-card {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  background: #001B4D;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 2px 32px rgba(0,27,77,0.3);
-}
-
-.hiring-card__grid-bg {
+/* Center visual */
+.hiring-center {
   position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px),
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 88px 88px, 88px 88px, 22px 22px, 22px 22px;
-}
-
-.hiring-vis__ill {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   z-index: 1;
 }
 
-.hiring-vis__ill > svg {
-  width: 62%;
-  height: 62%;
-}
-
-.hiring-ill__base,
-.hiring-ill__top,
-.hiring-vis__img {
+/* Large background step number */
+.hiring-stack-num {
   position: absolute;
-  width: 62%;
-  height: 62%;
+  right: calc(100% - 10px);
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  object-fit: contain;
-  opacity: 0.92;
-}
-
-.hiring-vis__num {
-  position: absolute;
-  right: -10px;
-  bottom: 6px;
+  transform: translateY(-50%);
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(68px, 7.5vw, 104px);
-  font-weight: 800;
-  color: rgba(255,255,255,0.08);
+  font-size: 80px;
+  font-weight: 900;
+  color: rgba(0, 17, 49, 0.055);
+  letter-spacing: -4px;
   line-height: 1;
-  letter-spacing: -0.04em;
-  z-index: 2;
   pointer-events: none;
   user-select: none;
+  white-space: nowrap;
 }
 
-/* ── Active state: text lights up, visual comes alive ── */
-.hiring-row.active .hiring-row__bar   { background: #2B44FF; }
-.hiring-row.active .hiring-row__label { color: #2B44FF; }
-.hiring-row.active .hiring-row__visual { opacity: 1; }
+/* Stack container */
+.hiring-stack {
+  position: relative;
+  width: 260px;
+  height: 300px;
+}
 
-/* Inactive text dims slightly */
-.hiring-row:not(.active) .hiring-row__headline { opacity: 0.35; }
-.hiring-row:not(.active) .hiring-row__desc     { opacity: 0.35; }
+/* Isometric card layers — physically stacked, mid layers slide up via GSAP */
+.hiring-layer {
+  position: absolute;
+  left: 0;
+  width: 100%;
+}
 
+.hiring-layer > svg,
+.hiring-layer > img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hiring-stack-tag {
+  text-align: center;
+  font-family: 'Manrope', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #2B44FF;
+  margin-top: 16px;
+}
+
+/* Base sits at bottom of stack space */
+.hiring-layer--base { bottom: 0; }
+
+/* Mid layers sit progressively higher (snug isometric offset) */
+.hiring-layer--mid1 { bottom: 36px; }
+.hiring-layer--mid2 { bottom: 72px; }
+
+
+/* ── HIRING MOBILE ── */
+.hiring-mobile-text {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hiring-step { display: none; }
+  .hiring-lines { display: none; }
+  .hiring-stack-num { display: none; }
+
+  .hiring-sticky {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .hiring-center {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+  }
+
+  .hiring-stack {
+    width: 88vw;
+    max-width: 340px;
+    height: 240px;
+  }
+
+  .hiring-layer--mid1 { bottom: 28px; }
+  .hiring-layer--mid2 { bottom: 56px; }
+
+  .hiring-mobile-text {
+    display: block;
+    text-align: center;
+    padding: 24px 32px 0;
+    max-width: 320px;
+  }
+
+  .hiring-mobile-text .hiring-step__label {
+    margin-bottom: 10px;
+  }
+
+  .hiring-mobile-text .hiring-step__headline {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .hiring-top-bar .section-label,
+  .hiring-top-bar { padding: 20px 24px; }
+}
 
 /* ── SERVICES ── */
 .services {
