@@ -1,7 +1,25 @@
 import swirl from '../assets/swirlcomponent.svg'
+import swirlBlue from '../assets/swirlcomponent-blue.svg'
 import sphere from '../assets/Sphere.svg'
 import arrowRight from '../assets/arrowright.svg'
 import ctaBlur from '../assets/ctablur.svg'
+
+export function init() {
+  const section = document.querySelector('.cta')
+  if (!section) return
+
+  section.querySelectorAll('.cta__btn').forEach(btn => {
+    btn.addEventListener('mouseenter', () => {
+      // restart animation each hover by removing and re-adding the class
+      section.classList.remove('cta--lit')
+      void section.offsetWidth // force reflow
+      section.classList.add('cta--lit')
+    })
+    btn.addEventListener('mouseleave', () => {
+      section.classList.remove('cta--lit')
+    })
+  })
+}
 
 export const html = `
 <div class="section-label section-label--spaced padded">
@@ -12,6 +30,7 @@ export const html = `
 <section class="cta">
   <img src="${ctaBlur}" class="cta__blob" alt="" />
   <img src="${swirl}" class="cta__swirl" alt="" />
+  <img src="${swirlBlue}" class="cta__swirl cta__swirl--blue" alt="" />
   <img src="${sphere}" class="cta__sphere" alt="" />
   <div class="cta__content">
     <h2 class="cta__heading">

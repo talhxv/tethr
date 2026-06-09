@@ -15,9 +15,6 @@ export const html = `
         <img src="${tethrLogo}" class="footer-logo__icon" alt="" />
         <img src="${tethrLogoText}" class="footer-logo__wordmark" alt="tethr" />
       </a>
-    </div>
-
-    <div class="footer-bottom">
       <div class="footer-info">
         <img src="${tethrEarth}" class="footer-globe" alt="" />
         <div class="footer-clock">
@@ -31,6 +28,8 @@ export const html = `
         </div>
       </div>
     </div>
+
+    <div class="footer-bottom"></div>
 
     <nav class="footer-nav" aria-label="Footer navigation">
       <div class="footer-nav__col">
@@ -72,7 +71,7 @@ export function init() {
     const m = String(now.getUTCMinutes()).padStart(2, '0')
     const ampm = h >= 12 ? 'PM' : 'AM'
     const h12 = String(h % 12 || 12).padStart(2, '0')
-    el.textContent = `${h12}${colon ? ':' : ' '}${m} ${ampm}`
+    el.textContent = h12 + (colon ? ':' : ' ') + m + ' ' + ampm
     colon = !colon
   }
 

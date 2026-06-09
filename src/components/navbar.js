@@ -174,7 +174,7 @@ export function init() {
     if (!mobile) {
       const bgPath = document.createElementNS(NS, 'path')
       bgPath.setAttribute('d', motionPath.getAttribute('d'))
-      bgPath.setAttribute('fill', '#ffffff')
+      bgPath.setAttribute('fill', 'rgba(255,255,255,0)')
       svg.appendChild(bgPath)
     }
 
