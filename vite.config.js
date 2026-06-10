@@ -7,6 +7,12 @@ export default defineConfig(({ mode }) => {
     build: {
       cssTarget: 'chrome100',
       target: 'es2020',
+      rollupOptions: {
+        input: {
+          main:      'index.html',
+          positions: 'positions.html',
+        },
+      },
     },
     server: {
       proxy: {
