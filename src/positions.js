@@ -10,5 +10,5 @@ ${footerHtml}
 `
 
 initNavbar()
-initPositions()
+initPositions() // async — Notion data loads in the background
 initFooter()
