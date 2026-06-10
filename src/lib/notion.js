@@ -1,30 +1,19 @@
-const DB_ID = import.meta.env.VITE_NOTION_DB_ID
-
-// In dev, requests go through the Vite proxy (which injects auth + handles CORS).
-// In production, requests go directly to Notion with the token in the header.
+// Dev: Vite proxy at /notion-api handles auth + CORS
+// Prod: Vercel serverless function at /api/notion handles auth + CORS
 const isDev = import.meta.env.DEV
-const BASE   = isDev ? '/notion-api' : 'https://api.notion.com'
-const TOKEN  = import.meta.env.VITE_NOTION_TOKEN
-
-function headers() {
-  const h = { 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28' }
-  if (!isDev) h['Authorization'] = `Bearer ${TOKEN}`
-  return h
-}
 
 function text(prop) {
   if (!prop) return ''
-  if (prop.type === 'title')       return prop.title.map(t => t.plain_text).join('')
-  if (prop.type === 'rich_text')   return prop.rich_text.map(t => t.plain_text).join('')
-  if (prop.type === 'select')      return prop.select?.name ?? ''
+  if (prop.type === 'title')        return prop.title.map(t => t.plain_text).join('')
+  if (prop.type === 'rich_text')    return prop.rich_text.map(t => t.plain_text).join('')
+  if (prop.type === 'select')       return prop.select?.name ?? ''
   if (prop.type === 'multi_select') return prop.multi_select.map(s => s.name)
-  if (prop.type === 'url')         return prop.url ?? ''
+  if (prop.type === 'url')          return prop.url ?? ''
   return ''
 }
 
 function mapPage(page) {
   const p = page.properties
-
   return {
     id:         page.id,
     title:      text(p['Position']),
@@ -40,9 +29,13 @@ function mapPage(page) {
 }
 
 export async function fetchJobs() {
-  const res = await fetch(`${BASE}/v1/databases/${DB_ID}/query`, {
+  const url = isDev
+    ? `/notion-api/v1/databases/${import.meta.env.VITE_NOTION_DB_ID}/query`
+    : '/api/notion'
+
+  const res = await fetch(url, {
     method: 'POST',
-    headers: headers(),
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ page_size: 50 }),
   })
 
@@ -52,8 +45,8 @@ export async function fetchJobs() {
   }
 
   const data = await res.json()
-return data.results
+  return data.results
     .filter(p => !p.archived)
     .map(mapPage)
-    .filter(j => j.title) // skip empty rows
+    .filter(j => j.title)
 }
