@@ -5,7 +5,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     build: {
-      cssTarget: 'chrome100',
+      /* safari15 must be included: with a chrome-only target, esbuild's minifier
+         treats backdrop-filter and -webkit-backdrop-filter as duplicates and
+         drops the standard one, killing the glassmorphism in production. */
+      cssTarget: ['chrome100', 'safari15'],
       target: 'es2020',
       rollupOptions: {
         input: {

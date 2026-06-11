@@ -20,7 +20,6 @@ function mapPage(page) {
     department: text(p['Client']),
     type:       text(p['Employment Type']),
     location:   text(p['Location']),
-    salary:     text(p['Priority']),
     blurb:      text(p['Description']),
     tags:       [],
     applyUrl:   '',

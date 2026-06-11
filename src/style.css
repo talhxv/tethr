@@ -280,8 +280,9 @@ code {
   inset: 0;
   border-radius: 44px;
   background: rgba(255, 255, 255, 0.72);
+  /* No manual -webkit- prefix: esbuild generates it from cssTarget, and a
+     trailing manual one makes the minifier drop the standard property. */
   backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   z-index: -1;
   pointer-events: none;
 }
@@ -1530,17 +1531,11 @@ code {
 }
 
 .op-row__location,
-.op-row__type,
-.op-row__salary {
+.op-row__type {
   font-family: 'Manrope', sans-serif;
   font-size: 13px;
   color: rgba(0,17,49,0.4);
   white-space: nowrap;
-}
-
-.op-row__salary {
-  color: #001131;
-  font-weight: 600;
 }
 
 .op-row__arrow {
@@ -1824,7 +1819,7 @@ code {
 .services__card {
   position: relative;
   z-index: 2;
-  background: #001B4D;
+  background: #F1F5FD;
   border-radius: 48px;
   border: none;
   outline: none;
@@ -1841,7 +1836,7 @@ code {
   font-family: 'Manrope', sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: #fff;
+  color: #001B4D;
   line-height: 1.2;
   margin: 0;
   position: relative;
@@ -1863,7 +1858,7 @@ code {
   top: -110px;
   left: -35px;
   width: 90%;
-  opacity: 0.8;
+  opacity: 1;
   z-index: 100;
 }
 
@@ -1872,7 +1867,7 @@ code {
   bottom: -80px;
   right: -30px;
   width: 65%;
-  opacity: 0.35;
+  opacity: 1;
   z-index: 0;
 }
 
@@ -1880,8 +1875,83 @@ code {
   position: absolute;
   bottom: 36px;
   left: 120px;
-  width: 110px;
+  width: 96px;
+  height: 96px;
   z-index: 1;
+}
+
+/* Glass sphere — liquid glass: lens layer refracts the backdrop, body adds frost + tint */
+.services__glass-sphere {
+  border-radius: 50%;
+  overflow: visible;
+}
+
+/* Refraction layer: bends whatever is painted behind the sphere (Chromium only) */
+.glass-sphere__lens {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  backdrop-filter: url(#liquid-lens);
+  pointer-events: none;
+}
+
+.glass-sphere__body {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 32%,
+    rgba(255,255,255,0.22) 0%,
+    rgba(180,200,255,0.08) 45%,
+    rgba(43,68,255,0.10) 100%
+  );
+  /* Light frost only — heavy blur would smear the lens refraction underneath */
+  backdrop-filter: blur(1.5px) saturate(1.5) brightness(1.06);
+  border: 1px solid rgba(255,255,255,0.30);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.55),
+    inset 0 -2px 6px rgba(43,68,255,0.20),
+    inset 0 0 14px rgba(255,255,255,0.10),
+    0 12px 40px rgba(43,68,255,0.18),
+    0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* Top-left glint: hollow ring with chromatic fringe (warm inner, cool outer) */
+.glass-sphere__glint {
+  position: absolute;
+  top: 12%;
+  left: 14%;
+  width: 38%;
+  height: 26%;
+  border-radius: 50%;
+  transform: rotate(-18deg);
+  background: radial-gradient(closest-side,
+    rgba(255,255,255,0) 56%,
+    rgba(255,170,120,0.40) 68%,
+    rgba(255,255,255,0.92) 79%,
+    rgba(140,200,255,0.45) 90%,
+    rgba(255,255,255,0) 100%);
+  filter: blur(0.5px);
+  pointer-events: none;
+}
+
+/* Bottom crescent ring with inverted fringe */
+.glass-sphere__rim {
+  position: absolute;
+  bottom: 7%;
+  left: 16%;
+  width: 56%;
+  height: 30%;
+  border-radius: 50%;
+  transform: rotate(8deg);
+  background: radial-gradient(closest-side,
+    rgba(255,255,255,0) 54%,
+    rgba(120,235,255,0.35) 67%,
+    rgba(255,255,255,0.85) 78%,
+    rgba(255,150,190,0.38) 89%,
+    rgba(255,255,255,0) 100%);
+  filter: blur(0.6px);
+  pointer-events: none;
 }
 
 .services__card--software .services__title {
@@ -1921,32 +1991,49 @@ code {
   transition: opacity 0.25s ease;
 }
 
+/* The sphere container must stay at opacity 1 — anything below 1 turns it into
+   a backdrop root, cutting the lens off from the card art until the fade ends.
+   Fade its inner layers instead so refraction crossfades smoothly. */
+.services__card:hover .services__glass-sphere {
+  opacity: 1;
+}
+
+.services__glass-sphere > * {
+  transition: opacity 0.25s ease;
+}
+
+.services__card:hover .services__glass-sphere > * {
+  opacity: 0;
+}
+
+/* White SVG line art → navy, to sit on the light card bg */
+.services__swirl,
+.services__earth,
+.services__cog,
+.services__stack {
+  filter: url(#ink-navy);
+}
+
 .services__card:hover .services__swirl,
 .services__card:hover .services__swirl--auto,
 .services__card:hover .services__swirl--consult {
   opacity: 0.3;
-  filter: blur(8px);
+  filter: url(#ink-navy) blur(8px);
 }
 
 .services__card:hover .services__earth {
   opacity: 0.15;
-  filter: blur(3px);
-}
-
-.services__card:hover .services__sphere,
-.services__card:hover .services__sphere--top {
-  opacity: 0.35;
-  filter: blur(22px);
+  filter: url(#ink-navy) blur(3px);
 }
 
 .services__card:hover .services__cog {
   opacity: 0.25;
-  filter: blur(6px);
+  filter: url(#ink-navy) blur(6px);
 }
 
 .services__card:hover .services__stack {
   opacity: 0.25;
-  filter: blur(5px);
+  filter: url(#ink-navy) blur(5px);
 }
 
 .services__asset {
@@ -2022,7 +2109,7 @@ code {
   bottom: -5px;
   left: -10px;
   width: 90%;
-  opacity: 0.8;
+  opacity: 1;
   z-index: 0;
 }
 
@@ -2031,7 +2118,7 @@ code {
   top: -50px;
   right: -20px;
   width: 60%;
-  opacity: 0.45;
+  opacity: 1;
   z-index: 0;
 }
 
@@ -2040,7 +2127,8 @@ code {
   top: 24px;
   left: 50%;
   transform: translateX(-80%);
-  width: 100px;
+  width: 88px;
+  height: 88px;
   z-index: 1;
 }
 
@@ -2050,7 +2138,7 @@ code {
   top: 100px;
   left: 210px;
   width: 80%;
-  opacity: 0.8;
+  opacity: 1;
   z-index: 0;
 }
 
@@ -2067,7 +2155,7 @@ code {
   left: 24px;
   transform: none;
   width: 55%;
-  opacity: 0.5;
+  opacity: 1;
   z-index: 0;
 }
 
@@ -2075,7 +2163,8 @@ code {
   position: absolute;
   top: 20px;
   right: 100px;
-  width: 100px;
+  width: 88px;
+  height: 88px;
   z-index: 1;
 }
 
@@ -2098,11 +2187,6 @@ code {
   .services__card .services__earth {
     opacity: 0.15;
     filter: blur(3px);
-  }
-  .services__card .services__sphere,
-  .services__card .services__sphere--top {
-    opacity: 0.35;
-    filter: blur(22px);
   }
   .services__card .services__swirl,
   .services__card .services__swirl--auto,

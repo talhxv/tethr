@@ -27,7 +27,6 @@ function jobRow(job, index) {
       <div class="op-row__meta">
         ${job.location ? `<span class="op-row__location">${job.location}</span>` : ''}
         ${job.type     ? `<span class="op-row__type">${job.type}</span>` : ''}
-        ${job.salary   ? `<span class="op-row__salary">${job.salary}</span>` : ''}
         <div class="op-row__arrow" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M3.75 14.25L14.25 3.75M14.25 3.75H6.75M14.25 3.75V11.25" stroke="#2B44FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
