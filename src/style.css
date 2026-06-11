@@ -1858,7 +1858,7 @@ code {
   top: -110px;
   left: -35px;
   width: 90%;
-  opacity: 1;
+  opacity: 0.8;
   z-index: 100;
 }
 
@@ -1867,7 +1867,7 @@ code {
   bottom: -80px;
   right: -30px;
   width: 65%;
-  opacity: 1;
+  opacity: 0.35;
   z-index: 0;
 }
 
@@ -2109,7 +2109,7 @@ code {
   bottom: -5px;
   left: -10px;
   width: 90%;
-  opacity: 1;
+  opacity: 0.8;
   z-index: 0;
 }
 
@@ -2118,7 +2118,7 @@ code {
   top: -50px;
   right: -20px;
   width: 60%;
-  opacity: 1;
+  opacity: 0.45;
   z-index: 0;
 }
 
@@ -2138,7 +2138,7 @@ code {
   top: 100px;
   left: 210px;
   width: 80%;
-  opacity: 1;
+  opacity: 0.8;
   z-index: 0;
 }
 
@@ -2155,7 +2155,7 @@ code {
   left: 24px;
   transform: none;
   width: 55%;
-  opacity: 1;
+  opacity: 0.5;
   z-index: 0;
 }
 
