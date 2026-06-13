@@ -686,7 +686,7 @@ code {
 
 @media (max-width: 640px) {
   .hero-zone {
-    padding-bottom: 40px;
+    padding-bottom: 8px;
   }
 
   /* Hero becomes a normal vertical flow */
@@ -1115,7 +1115,7 @@ code {
     width: 300%;
     transform: translate(-33%, -5%);
   }
-  .manifesto-scroll-track { height: 350vh; margin-top: 0; }
+  .manifesto-scroll-track { height: 350vh; margin-top: -100px; }
   .manifesto-layer--split {
     grid-template-columns: 1fr;
     grid-template-rows: 160px 1fr;
