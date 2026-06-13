@@ -882,7 +882,7 @@ code {
   height: 600vh;
   /* Overlap the hero-zone's extended pattern (its sticky padding (100px) +
      label margin (48px) of dead space now sit on the patterned area) */
-  margin-top: -240px;
+  margin-top: -180px;
 }
 
 /* Sticky container — full viewport, flex column */
