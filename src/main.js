@@ -8,7 +8,6 @@ import { html as hiringHtml, init as initHiring } from './components/hiring.js'
 import { html as servicesHtml } from './components/services.js'
 import { html as ctaHtml, init as initCta } from './components/cta.js'
 import { html as footerHtml, init as initFooter } from './components/footer.js'
-import { init as initHeroParticles } from './components/hero-particles.js'
 
 document.querySelector('#app').innerHTML = `
 <div class="navbar-wrap">${navbarHtml}</div>
@@ -26,5 +25,4 @@ initNavbar()
 initHero()
 initHiring()
 initFooter()
-initHeroParticles()
 initCta()

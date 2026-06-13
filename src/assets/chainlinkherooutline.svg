@@ -1,0 +1,27 @@
+<svg width="1042" height="411" viewBox="-4 -4 1050 419" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outline version of chainlinkheroblue: each 65px band is drawn as its
+       outer + inner edge so the silhouette matches the solid original.
+       viewBox is padded 4px so edge strokes don't clip. -->
+  <defs>
+    <!-- Erases the ring lines beneath the connector so it reads as the
+         strand passing over the crossing -->
+    <mask id="connector-gap">
+      <rect x="-14" y="-14" width="1070" height="439" fill="white"/>
+      <rect x="421.604" y="244.192" width="211.73" height="61" rx="30.5"
+            transform="rotate(-35 421.604 244.192)"
+            fill="black" stroke="black" stroke-width="16"/>
+    </mask>
+  </defs>
+  <g mask="url(#connector-gap)">
+    <!-- Right link -->
+    <rect x="487" y="0" width="555" height="265" rx="132.5" fill="none" stroke="#0755E9" stroke-width="4"/>
+    <rect x="552" y="65" width="425" height="135" rx="67.5" fill="none" stroke="#0755E9" stroke-width="4"/>
+    <!-- Left link -->
+    <rect x="0" y="146" width="555" height="265" rx="132.5" fill="none" stroke="#0755E9" stroke-width="4"/>
+    <rect x="68" y="214" width="419" height="129" rx="64.5" fill="none" stroke="#0755E9" stroke-width="4"/>
+  </g>
+  <!-- Connector pill, outline style -->
+  <rect x="421.604" y="244.192" width="211.73" height="61" rx="30.5"
+        transform="rotate(-35 421.604 244.192)"
+        fill="none" stroke="#0755E9" stroke-width="4"/>
+</svg>

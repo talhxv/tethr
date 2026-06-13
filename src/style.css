@@ -23,7 +23,11 @@
   letter-spacing: 0.18px;
   color-scheme: light;
   color: var(--text);
-  background: #fff;
+  /* Soft blue flair echoing the CTA's radial glow; the chain-link
+     pattern lives on #hero-bg only */
+  background:
+    radial-gradient(900px 560px at 50% 180px, rgba(7, 85, 233, 0.06), transparent 70%) no-repeat,
+    #fff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -474,10 +478,36 @@ code {
   display: none;
 }
 
+/* Whole hero area — chain-link tile pattern spans the hero AND the tagline
+   below it, ending at the zone's own padding. Outer + inner outline per
+   link so it reads as a link with band thickness, not a bean. */
+.hero-zone {
+  position: relative;
+  /* Slide up under the navbar's 72px flow box so the pattern hits the very
+     top of the browser (navbar floats above at z-index 1000) */
+  margin-top: -72px;
+  padding-top: 72px;
+  /* Extend down to the MANIFESTO heading: 72px breathing room + the 148px
+     the manifesto track is pulled back up below */
+  padding-bottom: 220px;
+}
+
+/* Pattern lives on a pseudo so it can fade out toward the bottom */
+.hero-zone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cg transform='rotate(45 20 20)' fill='none' stroke='%230755E9' stroke-opacity='0.09'%3E%3Crect x='11' y='14.5' width='18' height='11' rx='5.5'/%3E%3Crect x='14.5' y='18' width='11' height='4' rx='2'/%3E%3C/g%3E%3C/svg%3E") repeat;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 68%, transparent 100%);
+  pointer-events: none;
+}
+
 #hero-bg {
   position: relative;
   height: 600px;
-  background: #ffffff;
+  background: transparent;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -515,31 +545,6 @@ code {
     rgba(7, 85, 233, 0.08) 80%,
     transparent 95%
   );
-}
-
-/* particle panels — left: scattered, right: connected */
-.hero-particles {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-.hero-particles--left {
-  left: 0;
-  width: 38%;
-  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.55) 55%, transparent 100%);
-  mask-image: linear-gradient(to right, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.55) 55%, transparent 100%);
-}
-.hero-particles--right {
-  right: 0;
-  width: 38%;
-  -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.55) 55%, transparent 100%);
-  mask-image: linear-gradient(to left, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.55) 55%, transparent 100%);
-}
-
-@media (max-width: 640px) {
-  .hero-particles { display: none; }
 }
 
 .hero-text {
@@ -680,6 +685,15 @@ code {
 }
 
 @media (max-width: 640px) {
+  .hero-zone {
+    padding-bottom: 40px;
+  }
+
+  /* Remove the desktop overlap pull — hero has much less padding on mobile */
+  .manifesto-scroll-track {
+    margin-top: 0;
+  }
+
   /* Hero becomes a normal vertical flow */
   #hero-bg {
     height: auto;
@@ -728,7 +742,7 @@ code {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 320px;
+    width: 360px;
     max-width: none;
   }
 
@@ -870,6 +884,9 @@ code {
 .manifesto-scroll-track {
   position: relative;
   height: 600vh;
+  /* Overlap the hero-zone's extended pattern (its sticky padding (100px) +
+     label margin (48px) of dead space now sit on the patterned area) */
+  margin-top: -240px;
 }
 
 /* Sticky container — full viewport, flex column */
@@ -1341,6 +1358,47 @@ code {
 
 .op-section {
   padding: 80px 0 120px;
+  /* relative + z-index 0 forms a stacking context so the negative-z chains
+     stay inside the section instead of dropping behind the page background */
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Decorative chain art bleeding off the corners */
+.op-chain {
+  position: absolute;
+  width: 980px;
+  height: auto;
+  opacity: 0.22;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+  /* Own compositor layer: rasterize the big SVG once instead of repainting
+     it every frame while the accordion resizes the section's clip box */
+  will-change: transform;
+}
+
+.op-chain--tr {
+  top: -90px;
+  right: -110px;
+  transform: rotate(14deg);
+}
+
+/* Anchored to the TOP on purpose: bottom-anchored art would slide down when
+   a row expands the section. Top-anchored, it stays put like a backdrop. */
+.op-chain--bl {
+  top: 480px;
+  left: -100px;
+  transform: rotate(-10deg);
+}
+
+@media (max-width: 768px) {
+  .op-chain {
+    width: 380px;
+  }
+  .op-chain--tr { top: -60px; right: -80px; }
+  .op-chain--bl { top: 380px; left: -70px; }
 }
 
 .op-header {
@@ -1461,6 +1519,8 @@ code {
   cursor: pointer;
   animation: op-row-in 0.4s ease both;
   overflow: hidden;
+  /* Limit repaints during the expand animation to the row's own box */
+  contain: paint;
 }
 
 /* Skeleton loading state */
@@ -1565,15 +1625,28 @@ code {
   transform: rotate(90deg);
 }
 
-/* Expand panel */
+/* Expand panel — grid 0fr→1fr animates to the exact content height,
+   unlike max-height which eases over phantom pixels and feels clampy */
 .op-row__expand {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.op-row__expand-inner {
   overflow: hidden;
-  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .op-row.open .op-row__expand {
-  max-height: 200px;
+  grid-template-rows: 1fr;
+}
+
+.op-row.open .op-row__expand-inner {
+  opacity: 1;
+  transition: opacity 0.3s ease 0.1s;
 }
 
 .op-row__blurb {
@@ -1715,7 +1788,6 @@ code {
   .op-row__main { flex-direction: column; align-items: flex-start; gap: 12px; }
   .op-row__arrow { align-self: flex-end; }
   .op-row__footer { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .op-row.open .op-row__expand { max-height: 320px; }
 }
 
 /* ── HIRING MOBILE ── */
@@ -1901,12 +1973,13 @@ code {
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 32%,
-    rgba(255,255,255,0.22) 0%,
-    rgba(180,200,255,0.08) 45%,
-    rgba(43,68,255,0.10) 100%
+    rgba(255,255,255,0.10) 0%,
+    rgba(180,200,255,0.04) 45%,
+    rgba(43,68,255,0.07) 100%
   );
-  /* Light frost only — heavy blur would smear the lens refraction underneath */
-  backdrop-filter: blur(1.5px) saturate(1.5) brightness(1.06);
+  /* Nearly clear — contrast instead of brightness so the faint line art
+     stays visible through the glass rather than washing out */
+  backdrop-filter: blur(0.8px) saturate(1.25) contrast(1.08);
   border: 1px solid rgba(255,255,255,0.30);
   box-shadow:
     inset 0 1px 1px rgba(255,255,255,0.55),
@@ -1927,11 +2000,11 @@ code {
   transform: rotate(-18deg);
   background: radial-gradient(closest-side,
     rgba(255,255,255,0) 56%,
-    rgba(255,170,120,0.40) 68%,
-    rgba(255,255,255,0.92) 79%,
-    rgba(140,200,255,0.45) 90%,
+    rgba(255,170,120,0.22) 68%,
+    rgba(255,255,255,0.65) 79%,
+    rgba(140,200,255,0.25) 90%,
     rgba(255,255,255,0) 100%);
-  filter: blur(0.5px);
+  filter: blur(0.7px);
   pointer-events: none;
 }
 
@@ -1946,11 +2019,11 @@ code {
   transform: rotate(8deg);
   background: radial-gradient(closest-side,
     rgba(255,255,255,0) 54%,
-    rgba(120,235,255,0.35) 67%,
-    rgba(255,255,255,0.85) 78%,
-    rgba(255,150,190,0.38) 89%,
+    rgba(120,235,255,0.20) 67%,
+    rgba(255,255,255,0.55) 78%,
+    rgba(255,150,190,0.22) 89%,
     rgba(255,255,255,0) 100%);
-  filter: blur(0.6px);
+  filter: blur(0.8px);
   pointer-events: none;
 }
 
@@ -1969,41 +2042,48 @@ code {
   transition: fill 0.35s ease;
 }
 
-.services__grid:has(.services__card--software:hover) .services__connector--top path,
-.services__grid:has(.services__card--automations:hover) .services__connector--top path,
-.services__grid:has(.services__card--automations:hover) .services__connector--bottom path,
-.services__grid:has(.services__card--consulting:hover) .services__connector--bottom path {
-  fill: #2B44FF;
-}
-
-/* ── Card hover state ── */
+/* ── Card hover state — hover-capable devices only, so taps on touch
+      devices don't stick the cards in their hover look ── */
 .services__card {
   transition: background 0.35s ease;
   cursor: pointer;
 }
 
-.services__card:hover {
-  background: #2B44FF;
-}
-
-.services__card:hover .services__asset {
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-/* The sphere container must stay at opacity 1 — anything below 1 turns it into
-   a backdrop root, cutting the lens off from the card art until the fade ends.
-   Fade its inner layers instead so refraction crossfades smoothly. */
-.services__card:hover .services__glass-sphere {
-  opacity: 1;
-}
-
+/* No transition at rest: leaving hover snaps the sphere back instantly.
+   The melt animation lives on the :hover rule so it only plays going in. */
 .services__glass-sphere > * {
-  transition: opacity 0.25s ease;
+  transition: none;
 }
 
-.services__card:hover .services__glass-sphere > * {
-  opacity: 0;
+@media (hover: hover) {
+  .services__grid:has(.services__card--software:hover) .services__connector--top path,
+  .services__grid:has(.services__card--automations:hover) .services__connector--top path,
+  .services__grid:has(.services__card--automations:hover) .services__connector--bottom path,
+  .services__grid:has(.services__card--consulting:hover) .services__connector--bottom path {
+    fill: #2B44FF;
+  }
+
+  .services__card:hover {
+    background: #2B44FF;
+  }
+
+  .services__card:hover .services__asset {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  /* The sphere container must stay at opacity 1 — anything below 1 turns it into
+     a backdrop root, cutting the lens off from the card art until the fade ends.
+     Blur + fade its inner layers instead so the glass melts away smoothly. */
+  .services__card:hover .services__glass-sphere {
+    opacity: 1;
+  }
+
+  .services__card:hover .services__glass-sphere > * {
+    opacity: 0;
+    filter: blur(28px);
+    transition: opacity 0.3s ease, filter 0.3s ease;
+  }
 }
 
 /* White SVG line art → navy, to sit on the light card bg */
@@ -2014,26 +2094,30 @@ code {
   filter: url(#ink-navy);
 }
 
-.services__card:hover .services__swirl,
-.services__card:hover .services__swirl--auto,
-.services__card:hover .services__swirl--consult {
-  opacity: 0.3;
-  filter: url(#ink-navy) blur(8px);
-}
+@media (hover: hover) {
+  /* On hover the art goes back to its native white and washes out into a
+     soft glow on the blue card — no ink-navy recolor here on purpose */
+  .services__card:hover .services__swirl,
+  .services__card:hover .services__swirl--auto,
+  .services__card:hover .services__swirl--consult {
+    opacity: 0.4;
+    filter: blur(14px);
+  }
 
-.services__card:hover .services__earth {
-  opacity: 0.15;
-  filter: url(#ink-navy) blur(3px);
-}
+  .services__card:hover .services__earth {
+    opacity: 0.55;
+    filter: blur(9px);
+  }
 
-.services__card:hover .services__cog {
-  opacity: 0.25;
-  filter: url(#ink-navy) blur(6px);
-}
+  .services__card:hover .services__cog {
+    opacity: 0.45;
+    filter: blur(10px);
+  }
 
-.services__card:hover .services__stack {
-  opacity: 0.25;
-  filter: url(#ink-navy) blur(5px);
+  .services__card:hover .services__stack {
+    opacity: 0.45;
+    filter: blur(10px);
+  }
 }
 
 .services__asset {
@@ -2056,9 +2140,11 @@ code {
   z-index: 3;
 }
 
-.services__card:hover .services__pills {
-  opacity: 1;
-  transform: translateY(0);
+@media (hover: hover) {
+  .services__card:hover .services__pills {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .services__pill {
@@ -2082,15 +2168,17 @@ code {
   cursor: pointer;
 }
 
-.services__pill:hover {
-  background: #fff;
-  color: #2B44FF;
-  border-color: #fff;
-}
+@media (hover: hover) {
+  .services__pill:hover {
+    background: #fff;
+    color: #2B44FF;
+    border-color: #fff;
+  }
 
-.services__card:hover .services__title {
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  .services__card:hover .services__title {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
 }
 
 .services__title {
@@ -2181,40 +2269,53 @@ code {
 }
 
 @media (max-width: 768px) {
+  /* No hover on touch — show the full resting design with heading AND tags */
+  .services__connector {
+    display: none;
+  }
+  /* Soft blur so the art doesn't compete with the title on small cards */
+  .services__swirl,
+  .services__earth,
+  .services__cog,
+  .services__stack {
+    filter: url(#ink-navy) blur(3px);
+  }
   .services__card {
-    background: #1A6FFF;
+    min-height: 260px;
   }
-  .services__card .services__earth {
-    opacity: 0.15;
-    filter: blur(3px);
-  }
-  .services__card .services__swirl,
-  .services__card .services__swirl--auto,
-  .services__card .services__swirl--consult {
-    opacity: 0.3;
-    filter: blur(8px);
-  }
-  .services__card .services__cog {
-    opacity: 0.25;
-    filter: blur(6px);
-  }
-  .services__card .services__stack {
-    opacity: 0.25;
-    filter: blur(5px);
-  }
+  /* Pin every title to the top so it never collides with the tag row,
+     and lift it above the decorative art (swirl sits at z-index 100) */
   .services__card .services__title {
-    opacity: 0;
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    right: 24px;
+    bottom: auto;
+    text-align: left;
+    font-size: 24px;
+    z-index: 110;
   }
   .services__pills {
     opacity: 1;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 28px;
-    right: 28px;
+    transform: none;
+    top: auto;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    z-index: 110;
   }
   .services__pill {
     font-size: 13px;
     padding: 6px 14px;
+  }
+  /* Navy pills for legibility on the light card */
+  .services__pill--filled,
+  .services__pill--outline {
+    color: #001B4D;
+    border-color: rgba(0, 27, 77, 0.45);
   }
 }
 
@@ -2524,6 +2625,9 @@ code {
   color: #ffffff;
   font-family: 'Manrope', sans-serif;
   padding-bottom: 190px;
+  /* Cached compositor layer: the footer shifts every frame while the open
+     positions accordion animates — without this it repaints each frame */
+  will-change: transform;
 }
 
 .footer-inner {

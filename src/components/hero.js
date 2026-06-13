@@ -1,6 +1,7 @@
-import chainLink from '../assets/chainlinkheroblue.svg'
+import chainLink from '../assets/chainlinkherooutline.svg'
 
 export const html = `
+<div class="hero-zone">
 <section id="hero-bg">
   <div class="chain-wrap">
     <div class="grid-overlay"></div>
@@ -20,6 +21,7 @@ export const html = `
 <div class="hero-headline padded">
   <p>One invoice. One partner.</p>
   <p>Your team in Pakistan, fully managed.</p>
+</div>
 </div>
 `
 

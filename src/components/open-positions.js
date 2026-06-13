@@ -1,4 +1,10 @@
 import { fetchJobs } from '../lib/notion.js'
+import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
+
+// Notion application form ("Apply to Tethr" view on Tethr — Applications DB).
+// IMPORTANT: replace with the public "Share form" link from Notion so people
+// without workspace access can submit (Form view → Share → Copy form link).
+const APPLY_FORM_URL = 'https://app.notion.com/p/dc58643f0f824e5f9a48f41509d2e1ca?v=37d363751b2981209962000c8ec3a85e'
 
 const DEPT_COLORS = {
   Engineering: { bg: 'rgba(7,85,233,0.08)',   text: '#0755E9' },
@@ -15,7 +21,7 @@ function deptColor(dept) {
 function jobRow(job, index) {
   const d    = deptColor(job.department)
   const tags = Array.isArray(job.tags) ? job.tags : []
-  const applyHref = job.applyUrl || '#'
+  const applyHref = job.applyUrl || APPLY_FORM_URL
 
   return `
   <article class="op-row" data-id="${job.id}" data-dept="${job.department}" style="animation-delay:${index * 80}ms">
@@ -35,6 +41,7 @@ function jobRow(job, index) {
       </div>
     </div>
     <div class="op-row__expand">
+      <div class="op-row__expand-inner">
       ${job.blurb ? `<p class="op-row__blurb">${job.blurb}</p>` : ''}
       <div class="op-row__footer">
         <div class="op-row__tags">
@@ -45,6 +52,7 @@ function jobRow(job, index) {
             <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
+      </div>
       </div>
     </div>
   </article>`
@@ -69,6 +77,10 @@ function skeletonRows(n = 3) {
 
 export const html = `
 <section class="op-section" id="open-positions">
+
+  <!-- Decorative chains clipped on the section corners -->
+  <img src="${chainBg}" class="op-chain op-chain--tr" alt="" aria-hidden="true" />
+  <img src="${chainBg}" class="op-chain op-chain--bl" alt="" aria-hidden="true" />
 
   <!-- Header -->
   <div class="op-header padded">
@@ -105,7 +117,7 @@ export const html = `
 
   <!-- Bottom note -->
   <div class="op-footer-note padded">
-    <p>Don't see a fit? <a href="#" class="op-footer-note__link">Send an open application →</a></p>
+    <p>Don't see a fit? <a href="${APPLY_FORM_URL}" target="_blank" rel="noopener" class="op-footer-note__link">Send an open application →</a></p>
   </div>
 
 </section>

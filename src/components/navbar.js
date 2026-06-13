@@ -80,6 +80,9 @@ export function init() {
   let links = []
   let pathRef = null
   let totalLength = 0
+  // Path geometry sampled at 1px steps — getPointAtLength is far too slow
+  // to call per link per frame (~400 calls/frame tanked the whole page)
+  let pointCache = []
 
   const applyBtn   = nav.querySelector('.navbar-apply')
   const burgerBtn  = nav.querySelector('.navbar-burger')
@@ -120,14 +123,26 @@ export function init() {
       const dt = (now - lastTime) / 1000
       for (const link of links) {
         link.pos = (link.pos + speed * dt) % totalLength
-        const p1 = pathRef.getPointAtLength(link.pos)
-        const p2 = pathRef.getPointAtLength((link.pos + 1) % totalLength)
-        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI
-        link.g.setAttribute('transform', `translate(${p1.x},${p1.y}) rotate(${angle})`)
+        const p = pointCache[Math.floor(link.pos) % pointCache.length]
+        link.g.setAttribute('transform', `translate(${p.x},${p.y}) rotate(${p.a})`)
       }
     }
     lastTime = now
     rafId = requestAnimationFrame(tick)
+  }
+
+  function buildPointCache() {
+    pointCache = []
+    const steps = Math.ceil(totalLength)
+    for (let i = 0; i < steps; i++) {
+      const p = pathRef.getPointAtLength(i)
+      pointCache.push({ x: p.x, y: p.y, a: 0 })
+    }
+    for (let i = 0; i < steps; i++) {
+      const p1 = pointCache[i]
+      const p2 = pointCache[(i + 1) % steps]
+      p1.a = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI
+    }
   }
 
   function buildChainBorder() {
@@ -183,6 +198,7 @@ export function init() {
 
     pathRef = motionPath
     totalLength = motionPath.getTotalLength()
+    buildPointCache()
     const N = Math.floor(totalLength / LINK_SPACING)
 
     for (let i = 0; i < N; i++) {
