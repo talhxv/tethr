@@ -38,12 +38,14 @@ export const html = `
         <a href="#" class="footer-nav__link">About Us</a>
         <a href="#" class="footer-nav__link">Open Positions</a>
         <a href="#" class="footer-nav__link">Services</a>
-        <span class="footer-nav__label" style="margin-top: 28px;">Connect</span>
-        <div class="footer-social-icons">
-          <a href="#" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
-          <a href="#" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
-          <a href="#" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
-          <a href="#" aria-label="Twitter / X"><img src="${twitter}" alt="Twitter" /></a>
+        <div class="footer-connect">
+          <span class="footer-nav__label">Connect</span>
+          <div class="footer-social-icons">
+            <a href="#" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
+            <a href="#" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
+            <a href="#" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
+            <a href="#" aria-label="Twitter / X"><img src="${twitter}" alt="Twitter" /></a>
+          </div>
         </div>
       </div>
       <div class="footer-nav__col">
