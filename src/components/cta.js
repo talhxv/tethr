@@ -1,6 +1,5 @@
 import swirl from '../assets/swirlcomponent.svg'
 import swirlBlue from '../assets/swirlcomponent-blue.svg'
-import sphere from '../assets/Sphere.svg'
 import arrowRight from '../assets/arrowright.svg'
 import ctaBlur from '../assets/ctablur.svg'
 
@@ -31,7 +30,12 @@ export const html = `
   <img src="${ctaBlur}" class="cta__blob" alt="" />
   <img src="${swirl}" class="cta__swirl" alt="" />
   <img src="${swirlBlue}" class="cta__swirl cta__swirl--blue" alt="" />
-  <img src="${sphere}" class="cta__sphere" alt="" />
+  <div class="cta__sphere services__glass-sphere" role="presentation" aria-hidden="true">
+    <div class="glass-sphere__lens"></div>
+    <div class="glass-sphere__body"></div>
+    <div class="glass-sphere__glint"></div>
+    <div class="glass-sphere__rim"></div>
+  </div>
   <div class="cta__content">
     <h2 class="cta__heading">
       Let's <em class="cta__tethr">tethr</em><br>Something Real.

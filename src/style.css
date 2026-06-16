@@ -2387,8 +2387,7 @@ code {
   left: calc(50% + 180px);
   top: calc(41% + 0px);
   width: 110px;
-  opacity: 0.18;
-  filter: invert(1) sepia(1) saturate(3) hue-rotate(190deg);
+  height: 110px;
   pointer-events: none;
   z-index: 2;
 }
@@ -2638,9 +2637,8 @@ code {
   position: relative;
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 48px;
+  gap: 48px 64px;
   padding-bottom: 80px;
 }
 
