@@ -2637,9 +2637,19 @@ code {
 .footer-top {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 48px;
   padding-bottom: 80px;
+}
+
+/* logo + info grouped on the left; the nav sits opposite via space-between
+   and wraps onto its own line (instead of overlapping) when space runs out */
+.footer-lead {
+  display: flex;
+  align-items: center;
+  gap: 48px;
 }
 
 .footer-logo {
@@ -2665,11 +2675,6 @@ code {
 .footer-nav {
   display: flex;
   gap: 80px;
-  flex-shrink: 0;
-  position: absolute;
-  top: 64px;
-  left: 50%;
-  transform: translateX(-50%);
 }
 
 .footer-nav__col {
@@ -2800,24 +2805,13 @@ code {
   }
 }
 
-/* Connect block — sits under Quick Links on phone (unchanged: the 28px gap
-   here replaces the old inline margin on the label). On desktop it's lifted
-   out into a third column to the right of Company (see min-width rule below). */
+/* Connect is a real third column of .footer-nav (Quick Links · Company ·
+   Connect). The nav flows in the footer-top row and wraps below the lead block
+   on narrower screens; on phone it becomes a 2-col grid (see mobile rules). */
 .footer-connect {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-top: 28px;
-}
-
-@media (min-width: 769px) {
-  .footer-connect {
-    position: absolute;
-    top: 0;
-    left: 100%;
-    margin-top: 0;
-    margin-left: 80px;
-  }
 }
 
 .footer-social {
@@ -2885,8 +2879,14 @@ code {
   .footer-top {
     flex-direction: column;
     align-items: flex-start;
-    gap: 20px;
+    gap: 36px;
     padding-bottom: 36px;
+  }
+
+  .footer-lead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
   }
 
   .footer-logo__icon { height: 56px; }
@@ -2936,18 +2936,19 @@ code {
   .footer-globe { width: 64px; height: 64px; }
   .footer-clock { width: 80px; height: 80px; }
 
-  .footer-bottom {
-    flex-direction: column;
-    gap: 0;
-  }
-
-  /* nav flows naturally after footer-bottom, reset desktop absolute */
+  /* Phone: nav becomes a 2-col grid — Quick Links + Company on top, Connect
+     stacked under Quick Links, exactly as before. */
   .footer-nav {
-    position: static;
-    transform: none;
-    gap: 40px;
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: start;
+    column-gap: 40px;
+    row-gap: 28px;
     margin-top: 40px;
   }
+  .footer-nav > :nth-child(1) { grid-column: 1; grid-row: 1; } /* Quick Links */
+  .footer-nav > :nth-child(2) { grid-column: 2; grid-row: 1; } /* Company */
+  .footer-nav > :nth-child(3) { grid-column: 1; grid-row: 2; } /* Connect */
 
   .footer-social-icons { margin-top: 20px; }
 

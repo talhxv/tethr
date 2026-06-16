@@ -11,49 +11,49 @@ export const html = `
 <footer id="footer">
   <div class="footer-inner">
     <div class="footer-top">
-      <a href="/" class="footer-logo" aria-label="Tethr home">
-        <img src="${tethrLogo}" class="footer-logo__icon" alt="" />
-        <img src="${tethrLogoText}" class="footer-logo__wordmark" alt="tethr" />
-      </a>
-      <div class="footer-info">
-        <img src="${tethrEarth}" class="footer-globe" alt="" />
-        <div class="footer-clock">
-          <span class="footer-clock__label">UTC</span>
-          <time class="footer-clock__time" id="footer-clock">—</time>
-        </div>
-        <div class="footer-meta">
-          <p class="footer-meta__tagline">remote first</p>
-          <div class="footer-meta__rule"></div>
-          <p class="footer-meta__copy">All rights reserved. Copyright &copy; 2026 Tethr, pvt ltd</p>
+      <div class="footer-lead">
+        <a href="/" class="footer-logo" aria-label="Tethr home">
+          <img src="${tethrLogo}" class="footer-logo__icon" alt="" />
+          <img src="${tethrLogoText}" class="footer-logo__wordmark" alt="tethr" />
+        </a>
+        <div class="footer-info">
+          <img src="${tethrEarth}" class="footer-globe" alt="" />
+          <div class="footer-clock">
+            <span class="footer-clock__label">UTC</span>
+            <time class="footer-clock__time" id="footer-clock">—</time>
+          </div>
+          <div class="footer-meta">
+            <p class="footer-meta__tagline">remote first</p>
+            <div class="footer-meta__rule"></div>
+            <p class="footer-meta__copy">All rights reserved. Copyright &copy; 2026 Tethr, pvt ltd</p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="footer-bottom"></div>
-
-    <nav class="footer-nav" aria-label="Footer navigation">
+      <nav class="footer-nav" aria-label="Footer navigation">
       <div class="footer-nav__col">
         <span class="footer-nav__label">Quick Links</span>
         <a href="#" class="footer-nav__link">Apply</a>
         <a href="#" class="footer-nav__link">About Us</a>
         <a href="#" class="footer-nav__link">Open Positions</a>
         <a href="#" class="footer-nav__link">Services</a>
-        <div class="footer-connect">
-          <span class="footer-nav__label">Connect</span>
-          <div class="footer-social-icons">
-            <a href="#" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
-            <a href="#" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
-            <a href="#" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
-            <a href="#" aria-label="Twitter / X"><img src="${twitter}" alt="Twitter" /></a>
-          </div>
-        </div>
       </div>
       <div class="footer-nav__col">
         <span class="footer-nav__label">Company</span>
         <a href="#" class="footer-nav__link">About Us</a>
         <a href="#" class="footer-nav__link">Open Positions</a>
       </div>
-    </nav>
+      <div class="footer-connect">
+        <span class="footer-nav__label">Connect</span>
+        <div class="footer-social-icons">
+          <a href="#" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
+          <a href="#" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
+          <a href="#" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
+          <a href="#" aria-label="Twitter / X"><img src="${twitter}" alt="Twitter" /></a>
+        </div>
+      </div>
+      </nav>
+    </div>
   </div>
 
   <div class="footer-end" aria-hidden="true">
