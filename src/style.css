@@ -214,21 +214,19 @@ code {
 .mobile-menu__socials {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex: 1;
 }
 
+/* Bare blue icons (no chip) on the pale-blue menu — padding keeps a tap target */
 .mobile-menu__socials a {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #2B44FF;
+  padding: 6px;
 }
 
-.mobile-menu__socials img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+.mobile-menu__socials img { width: 28px; height: 28px; }
 
 .mobile-menu__footer-divider {
   width: 1px;
