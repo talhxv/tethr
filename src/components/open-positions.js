@@ -1,10 +1,18 @@
 import { fetchJobs } from '../lib/notion.js'
 import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
 
-// Notion application form ("Apply to Tethr" view on Tethr — Applications DB).
-// IMPORTANT: replace with the public "Share form" link from Notion so people
-// without workspace access can submit (Form view → Share → Copy form link).
-const APPLY_FORM_URL = 'https://app.notion.com/p/dc58643f0f824e5f9a48f41509d2e1ca?v=37d363751b2981209962000c8ec3a85e'
+// Tally application form. Create it at tally.so, connect it to your Notion
+// Applications DB, and add a hidden field whose query-parameter key is
+// "position" so each role pre-fills. Then paste the form id below — it's the
+// part after /r/ in the form URL (e.g. tally.so/r/wAbCdE → 'wAbCdE').
+const TALLY_FORM_ID  = 'yP7a2d'
+const TALLY_FORM_URL = `https://tally.so/r/${TALLY_FORM_ID}`
+
+const escapeAttr = (s) =>
+  String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+// Apply links navigate to the full-page Tally form (role pre-filled via the
+// ?position= query param, which maps to the form's hidden "position" field).
 
 const DEPT_COLORS = {
   Engineering: { bg: 'rgba(7,85,233,0.08)',   text: '#0755E9' },
@@ -21,7 +29,6 @@ function deptColor(dept) {
 function jobRow(job, index) {
   const d    = deptColor(job.department)
   const tags = Array.isArray(job.tags) ? job.tags : []
-  const applyHref = job.applyUrl || APPLY_FORM_URL
 
   return `
   <article class="op-row" data-id="${job.id}" data-dept="${job.department}" style="animation-delay:${index * 80}ms">
@@ -47,7 +54,7 @@ function jobRow(job, index) {
         <div class="op-row__tags">
           ${tags.map(t => `<span class="op-row__tag">${t}</span>`).join('')}
         </div>
-        <a href="${applyHref}" class="op-row__apply" ${applyHref !== '#' ? 'target="_blank" rel="noopener"' : ''}>Apply for this role
+        <a href="${TALLY_FORM_URL}?position=${encodeURIComponent(job.title)}" class="op-row__apply" data-apply data-position="${escapeAttr(job.title)}" target="_blank" rel="noopener">Apply for this role
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
             <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -117,7 +124,7 @@ export const html = `
 
   <!-- Bottom note -->
   <div class="op-footer-note padded">
-    <p>Don't see a fit? <a href="${APPLY_FORM_URL}" target="_blank" rel="noopener" class="op-footer-note__link">Send an open application →</a></p>
+    <p>Don't see a fit? <a href="${TALLY_FORM_URL}?position=${encodeURIComponent('Open application')}" data-apply target="_blank" rel="noopener" class="op-footer-note__link">Send an open application →</a></p>
   </div>
 
 </section>
@@ -171,7 +178,8 @@ export async function init() {
 
     // Expand rows on click
     list.querySelectorAll('.op-row').forEach(row => {
-      row.addEventListener('click', () => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('[data-apply]')) return // let the apply link navigate
         const isOpen = row.classList.contains('open')
         list.querySelectorAll('.op-row').forEach(r => r.classList.remove('open'))
         if (!isOpen) row.classList.add('open')
