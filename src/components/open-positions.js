@@ -124,7 +124,12 @@ export const html = `
 
   <!-- Bottom note -->
   <div class="op-footer-note padded">
-    <p>Don't see a fit? <a href="${TALLY_FORM_URL}?position=${encodeURIComponent('Open application')}" data-apply target="_blank" rel="noopener" class="op-footer-note__link">Send an open application →</a></p>
+    <p class="op-footer-note__prompt">Don't see a fit?</p>
+    <a href="${TALLY_FORM_URL}?position=${encodeURIComponent('Open application')}" data-apply target="_blank" rel="noopener" class="op-footer-note__link">Send an open application
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+        <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
   </div>
 
 </section>

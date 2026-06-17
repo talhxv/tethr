@@ -1677,23 +1677,29 @@ code {
   letter-spacing: 0.5px;
 }
 
+/* Quiet text link, not a filled pill — the arrow nudges right on hover */
 .op-row__apply {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 12px 24px;
-  background: #2B44FF;
-  color: #fff;
-  border-radius: 999px;
+  padding: 0;
+  background: none;
+  color: #2B44FF;
   font-family: 'Manrope', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s ease;
+  cursor: pointer;
+  transition: gap 0.2s ease, color 0.2s ease;
   flex-shrink: 0;
 }
 
-.op-row__apply:hover { background: #0755E9; }
+.op-row__apply svg { transition: transform 0.2s ease; }
+
+.op-row__apply:hover {
+  color: #0755E9;
+  gap: 11px;
+}
 
 /* Empty state */
 .op-empty {
@@ -1757,30 +1763,65 @@ code {
 }
 
 .op-footer-note {
-  margin-top: 56px;
+  margin-top: 64px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(0, 17, 49, 0.08);
+}
+
+.op-footer-note__prompt {
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(0, 17, 49, 0.5);
+  margin: 0 0 16px;
+}
+
+/* Outline pill that fills on hover — matches the navbar/CTA button language */
+.op-footer-note__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border: 1.5px solid rgba(43, 68, 255, 0.3);
+  border-radius: 999px;
   font-family: 'Manrope', sans-serif;
   font-size: 14px;
-  color: rgba(0,17,49,0.4);
-}
-
-.op-footer-note__link {
+  font-weight: 700;
   color: #2B44FF;
   text-decoration: none;
-  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
-.op-footer-note__link:hover { text-decoration: underline; }
+.op-footer-note__link svg { width: 11px; height: 11px; }
+
+.op-footer-note__link:hover {
+  background: #2B44FF;
+  color: #fff;
+  border-color: #2B44FF;
+  transform: translateY(-1px);
+}
 
 /* Mobile */
 @media (max-width: 640px) {
   .op-hero { flex-direction: column; align-items: flex-start; gap: 24px; }
   .op-hero__count { flex-direction: row; align-items: baseline; }
   .op-count__num { font-size: 56px; letter-spacing: -3px; }
-  .op-row__meta { gap: 12px; }
   .op-row__location,
   .op-row__type { display: none; }
-  .op-row__main { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .op-row__arrow { align-self: flex-end; }
+  /* Pill on top, title below, arrow beside the title */
+  .op-row__main {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 16px;
+  }
+  .op-row__left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+  }
+  .op-row__title { text-align: left; }
+  .op-row__meta { gap: 0; }
   .op-row__footer { flex-direction: column; align-items: flex-start; gap: 16px; }
 }
 
