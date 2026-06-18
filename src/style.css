@@ -1116,10 +1116,10 @@ code {
   .manifesto-scroll-track { height: 350vh; margin-top: -100px; }
   .manifesto-layer--split {
     grid-template-columns: 1fr;
-    grid-template-rows: 160px 1fr;
+    grid-template-rows: 110px 1fr;
   }
   .problem-chains {
-    height: 160px;
+    height: 110px;
     overflow: visible;
     z-index: 0;
   }
@@ -1143,7 +1143,16 @@ code {
     position: relative;
     z-index: 1;
   }
-  .problem-text { padding: 24px; }
+  /* Tighten the pinned narrative so it fits the 100vh frame without clipping */
+  .manifesto-sticky { padding: 64px var(--pad) 20px; }
+  .problem-text {
+    padding: 16px 20px;
+    gap: 12px;
+    justify-content: flex-start;
+  }
+  .problem-headline { font-size: 22px; line-height: 1.18; }
+  .problem-item { padding: 12px 0; }
+  .problem-item__body { font-size: 14px; line-height: 1.5; }
 }
 
 /* ── end manifesto scroll ── */
