@@ -1114,41 +1114,45 @@ code {
     transform: translate(-33%, -5%);
   }
   .manifesto-scroll-track { height: 350vh; margin-top: -100px; }
-  /* Overlay chains + text in ONE grid cell so the narrative gets the full
-     frame height (no row reserved for chains) — fixes bottom clipping while
-     keeping font sizes consistent with the rest of the site. Chains sit behind
-     the text as a faint backdrop. */
   .manifesto-layer--split {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
+    grid-template-rows: 110px 1fr;
   }
-  .manifesto-layer--split > .problem-chains {
-    grid-area: 1 / 1;
-    height: 100%;
+  .problem-chains {
+    height: 110px;
     overflow: visible;
-    opacity: 0.15;
     z-index: 0;
   }
-  .manifesto-layer--split > .narrative-text-wrap {
-    grid-area: 1 / 1;
+  #manifesto-s2 .narrative-text-wrap {
     position: relative;
     z-index: 1;
+  }
+  #manifesto-s2 .problem-chains {
+    opacity: 0.25;
+  }
+  #manifesto-s4 .problem-chains {
+    overflow: visible;
+    opacity: 0.25;
   }
   #manifesto-s4 .full-chain {
     width: 220%;
     left: -40%;
     top: -30%;
   }
-  /* Use the small viewport height so the pinned frame fits under the mobile
-     browser toolbar (100vh ignores it and clips). Tighten spacing only — fonts
-     stay at the site's scale so they're consistent with everything else. */
-  .manifesto-sticky { height: 100svh; padding: 64px var(--pad) 20px; }
+  #manifesto-s4 .narrative-text-wrap {
+    position: relative;
+    z-index: 1;
+  }
+  /* Tighten the pinned narrative so it fits the 100vh frame without clipping */
+  .manifesto-sticky { padding: 64px var(--pad) 20px; }
   .problem-text {
     padding: 16px 20px;
     gap: 12px;
     justify-content: flex-start;
   }
+  .problem-headline { font-size: 22px; line-height: 1.18; }
   .problem-item { padding: 12px 0; }
+  .problem-item__body { font-size: 14px; line-height: 1.5; }
 }
 
 /* ── end manifesto scroll ── */
