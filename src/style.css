@@ -1143,16 +1143,16 @@ code {
     position: relative;
     z-index: 1;
   }
-  /* Tighten the pinned narrative so it fits the 100vh frame without clipping */
-  .manifesto-sticky { padding: 64px var(--pad) 20px; }
+  /* Use the small viewport height so the pinned frame fits under the mobile
+     browser toolbar (100vh ignores it and clips). Tighten spacing only — fonts
+     stay at the site's scale so they're consistent with everything else. */
+  .manifesto-sticky { height: 100svh; padding: 64px var(--pad) 20px; }
   .problem-text {
     padding: 16px 20px;
     gap: 12px;
     justify-content: flex-start;
   }
-  .problem-headline { font-size: 22px; line-height: 1.18; }
   .problem-item { padding: 12px 0; }
-  .problem-item__body { font-size: 14px; line-height: 1.5; }
 }
 
 /* ── end manifesto scroll ── */
