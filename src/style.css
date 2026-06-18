@@ -1114,34 +1114,30 @@ code {
     transform: translate(-33%, -5%);
   }
   .manifesto-scroll-track { height: 350vh; margin-top: -100px; }
+  /* Overlay chains + text in ONE grid cell so the narrative gets the full
+     frame height (no row reserved for chains) — fixes bottom clipping while
+     keeping font sizes consistent with the rest of the site. Chains sit behind
+     the text as a faint backdrop. */
   .manifesto-layer--split {
     grid-template-columns: 1fr;
-    grid-template-rows: 110px 1fr;
+    grid-template-rows: 1fr;
   }
-  .problem-chains {
-    height: 110px;
+  .manifesto-layer--split > .problem-chains {
+    grid-area: 1 / 1;
+    height: 100%;
     overflow: visible;
+    opacity: 0.15;
     z-index: 0;
   }
-  #manifesto-s2 .narrative-text-wrap {
+  .manifesto-layer--split > .narrative-text-wrap {
+    grid-area: 1 / 1;
     position: relative;
     z-index: 1;
-  }
-  #manifesto-s2 .problem-chains {
-    opacity: 0.25;
-  }
-  #manifesto-s4 .problem-chains {
-    overflow: visible;
-    opacity: 0.25;
   }
   #manifesto-s4 .full-chain {
     width: 220%;
     left: -40%;
     top: -30%;
-  }
-  #manifesto-s4 .narrative-text-wrap {
-    position: relative;
-    z-index: 1;
   }
   /* Use the small viewport height so the pinned frame fits under the mobile
      browser toolbar (100vh ignores it and clips). Tighten spacing only — fonts
