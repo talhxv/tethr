@@ -1155,6 +1155,14 @@ code {
   .problem-item__body { font-size: 14px; line-height: 1.5; }
 }
 
+/* Phone: hero collapses to vertical flow (8px bottom padding) with no extended
+   chain pattern below it, so the desktop overlap just crowds the MANIFESTO label
+   against the tagline. Drop the overlap so the sticky's own 64px+32px top space
+   gives the section room to breathe. */
+@media (max-width: 640px) {
+  .manifesto-scroll-track { margin-top: 0; }
+}
+
 /* ── end manifesto scroll ── */
 
 /* ── HIRING ── */

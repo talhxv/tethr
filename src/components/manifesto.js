@@ -57,7 +57,7 @@ export const html = `
 <div class="manifesto-scroll-track" id="manifesto-track">
   <div class="manifesto-sticky" id="manifesto-sticky">
 
-    <div class="section-label padded">
+    <div class="section-label">
       <span class="section-label__num">01</span>
       <span class="section-label__line"></span>
       <span class="section-label__title">MANIFESTO</span>
