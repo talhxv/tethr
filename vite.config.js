@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
         input: {
           main:      'index.html',
           positions: 'positions.html',
+          notFound:  '404.html',
         },
       },
     },
