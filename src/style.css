@@ -1901,83 +1901,176 @@ code {
 
 /* ── SERVICES ── */
 .services {
-  padding: 32px 48px 64px;
+  padding: 32px 48px 96px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
 
-.services__grid {
+/* Index layout — asset preview left, large type list right */
+.services__layout {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  gap: clamp(40px, 6vw, 88px);
+  align-items: start;
+  text-align: left;
+}
+
+/* Preview stage — one rounded canvas; the scene art crossfades inside it
+   as the index is browsed. */
+.services__stage {
   position: relative;
-}
-
-.services__connector {
-  position: absolute;
-  width: 120px;
-  height: 50px;
-  z-index: 1;
-  pointer-events: none;
-  transform: translateX(-50%);
-  overflow: visible;
-}
-
-
-/* Between card 1 and 2, near the top */
-.services__connector--top {
-  left: calc(33%);
-  top: 60px;
-  transform: translateX(-50%);
-}
-
-/* Between card 2 and 3, near the bottom */
-.services__connector--bottom {
-  left: calc(67%);
-  bottom: 60px;
-  transform: translateX(-50%);
-}
-
-.services__card {
-  position: relative;
-  z-index: 2;
+  height: 380px;
+  border-radius: 32px;
   background: #F1F5FD;
-  border-radius: 48px;
-  border: none;
-  outline: none;
   overflow: hidden;
-  min-height: 320px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 28px;
-  box-sizing: border-box;
 }
 
-.services__title {
-  font-family: 'Manrope', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: #001B4D;
-  line-height: 1.2;
-  margin: 0;
-  position: relative;
-  z-index: 2;
-}
-
-/* Concentric ring background */
-.services__card::before {
-  content: '';
+/* Idle scenes sit at 0.001 (not 0) so the browser keeps painting them and the
+   sphere's backdrop-filter lens stays compiled — otherwise it pops in a beat
+   late on every switch. No will-change here: a permanent backdrop root would
+   cut the lens off from the stage background and darken the refraction. */
+.services__scene {
   position: absolute;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.12);
+  inset: 0;
+  opacity: 0.001;
+  transition: opacity 0.35s ease;
   pointer-events: none;
 }
 
-/* Software card */
-.services__card--software .services__swirl {
+.services__scene.is-active {
+  opacity: 1;
+}
+
+/* Lens warm-up — a nearly invisible 2px dot pinned inside the viewport that
+   runs the same #liquid-lens backdrop-filter from the very first frame. It
+   forces the filter graph + its feImage displacement map to decode/compile at
+   page load, so the spheres further down arrive pre-rendered instead of
+   snapping in when their section first paints. */
+.lens-warmup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 2px;
+  opacity: 0.01;
+  pointer-events: none;
+  z-index: -1;
+  backdrop-filter: url(#liquid-lens);
+}
+
+/* Caption + link under the stage; captions stack in one grid cell and
+   crossfade with the scenes. */
+.services__captions {
+  display: grid;
+  margin-top: 20px;
+}
+
+.services__caption {
+  grid-area: 1 / 1;
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #6b6375;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.services__caption.is-active {
+  opacity: 1;
+}
+
+/* ── The index — muted rows, the active one snaps to ink with an arrow ── */
+.services__index {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.services__row {
+  border-bottom: 1px solid var(--border);
+}
+
+.services__row-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 20px 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.services__row-btn:focus-visible {
+  outline: 2px solid #0755E9;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.services__row-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(36px, 4.4vw, 56px);
+  font-weight: 600;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  color: #cfccd4;
+  transition: color 0.25s ease;
+}
+
+.services__row-arrow {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: #08060d;
+  transition: color 0.25s ease;
+}
+
+.services__row.is-active .services__row-title {
+  color: #08060d;
+}
+
+.services__row.is-active .services__row-arrow {
+  color: #0755E9;
+}
+
+/* Sub-services reveal under the active row (0fr→1fr height trick) */
+.services__row-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+.services__row.is-active .services__row-reveal {
+  grid-template-rows: 1fr;
+}
+
+.services__row-sub {
+  overflow: hidden;
+  min-height: 0;
+  margin: 0;
+  padding-bottom: 0;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b6375;
+  opacity: 0;
+  transition: opacity 0.3s ease, padding-bottom 0.3s ease;
+}
+
+.services__row.is-active .services__row-sub {
+  opacity: 1;
+  padding-bottom: 22px;
+}
+
+/* ── Scene artwork — the old card compositions, re-homed in the stage ── */
+.services__scene--software .services__swirl {
   position: absolute;
   top: -110px;
   left: -35px;
@@ -1986,7 +2079,7 @@ code {
   z-index: 100;
 }
 
-.services__card--software .services__earth {
+.services__scene--software .services__earth {
   position: absolute;
   bottom: -80px;
   right: -30px;
@@ -1995,7 +2088,7 @@ code {
   z-index: 0;
 }
 
-.services__card--software .services__sphere {
+.services__scene--software .services__sphere {
   position: absolute;
   bottom: 36px;
   left: 120px;
@@ -2079,66 +2172,7 @@ code {
   pointer-events: none;
 }
 
-.services__card--software .services__title {
-  position: absolute;
-  top: 68px;
-  left: 38px;
-}
-
-/* ── Connector hover ── */
-.services__connector {
-  transition: opacity 0.35s ease;
-}
-
-.services__connector path {
-  transition: fill 0.35s ease;
-}
-
-/* ── Card hover state — hover-capable devices only, so taps on touch
-      devices don't stick the cards in their hover look ── */
-.services__card {
-  transition: background 0.35s ease;
-  cursor: pointer;
-}
-
-/* No transition at rest: leaving hover snaps the sphere back instantly.
-   The melt animation lives on the :hover rule so it only plays going in. */
-.services__glass-sphere > * {
-  transition: none;
-}
-
-@media (hover: hover) {
-  .services__grid:has(.services__card--software:hover) .services__connector--top path,
-  .services__grid:has(.services__card--automations:hover) .services__connector--top path,
-  .services__grid:has(.services__card--automations:hover) .services__connector--bottom path,
-  .services__grid:has(.services__card--consulting:hover) .services__connector--bottom path {
-    fill: #2B44FF;
-  }
-
-  .services__card:hover {
-    background: #2B44FF;
-  }
-
-  .services__card:hover .services__asset {
-    opacity: 0;
-    transition: opacity 0.25s ease;
-  }
-
-  /* The sphere container must stay at opacity 1 — anything below 1 turns it into
-     a backdrop root, cutting the lens off from the card art until the fade ends.
-     Blur + fade its inner layers instead so the glass melts away smoothly. */
-  .services__card:hover .services__glass-sphere {
-    opacity: 1;
-  }
-
-  .services__card:hover .services__glass-sphere > * {
-    opacity: 0;
-    filter: blur(28px);
-    transition: opacity 0.3s ease, filter 0.3s ease;
-  }
-}
-
-/* White SVG line art → navy, to sit on the light card bg */
+/* White SVG line art → navy, to sit on the light stage bg */
 .services__swirl,
 .services__earth,
 .services__cog,
@@ -2146,105 +2180,8 @@ code {
   filter: url(#ink-navy);
 }
 
-@media (hover: hover) {
-  /* On hover the art goes back to its native white and washes out into a
-     soft glow on the blue card — no ink-navy recolor here on purpose */
-  .services__card:hover .services__swirl,
-  .services__card:hover .services__swirl--auto,
-  .services__card:hover .services__swirl--consult {
-    opacity: 0.4;
-    filter: blur(14px);
-  }
-
-  .services__card:hover .services__earth {
-    opacity: 0.55;
-    filter: blur(9px);
-  }
-
-  .services__card:hover .services__cog {
-    opacity: 0.45;
-    filter: blur(10px);
-  }
-
-  .services__card:hover .services__stack {
-    opacity: 0.45;
-    filter: blur(10px);
-  }
-}
-
-.services__asset {
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-
-
-.services__pills {
-  position: absolute;
-  top: 28px;
-  left: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.3s ease 0.05s, transform 0.3s ease 0.05s;
-  pointer-events: none;
-  z-index: 3;
-}
-
-@media (hover: hover) {
-  .services__card:hover .services__pills {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.services__pill {
-  display: inline-block;
-  align-self: flex-start;
-  padding: 8px 18px;
-  border-radius: 999px;
-  font-family: 'Manrope', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.services__pill--filled,
-.services__pill--outline {
-  background: transparent;
-  color: #fff;
-  border: 1.5px solid rgba(255, 255, 255, 0.6);
-  transition: background 0.2s ease, color 0.2s ease;
-  pointer-events: all;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  .services__pill:hover {
-    background: #fff;
-    color: #2B44FF;
-    border-color: #fff;
-  }
-
-  .services__card:hover .services__title {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-}
-
-.services__title {
-  transition: opacity 0.2s ease;
-}
-
-/* Automations card */
-.services__card--automations .services__title {
-  position: absolute;
-  bottom: 90px;
-  left: 38px;
-}
-
-.services__card--automations .services__swirl--auto {
+/* Automations scene */
+.services__scene--automations .services__swirl--auto {
   position: absolute;
   bottom: -5px;
   left: -10px;
@@ -2253,7 +2190,7 @@ code {
   z-index: 0;
 }
 
-.services__card--automations .services__cog {
+.services__scene--automations .services__cog {
   position: absolute;
   top: -50px;
   right: -20px;
@@ -2262,7 +2199,7 @@ code {
   z-index: 0;
 }
 
-.services__card--automations .services__sphere--top {
+.services__scene--automations .services__sphere {
   position: absolute;
   top: 24px;
   left: 50%;
@@ -2272,8 +2209,8 @@ code {
   z-index: 1;
 }
 
-/* Consulting card */
-.services__card--consulting .services__swirl--consult {
+/* Consulting scene */
+.services__scene--consulting .services__swirl--consult {
   position: absolute;
   top: 100px;
   left: 210px;
@@ -2282,14 +2219,7 @@ code {
   z-index: 0;
 }
 
-.services__card--consulting .services__title {
-  position: absolute;
-  bottom: 28px;
-  right: 28px;
-  text-align: right;
-}
-
-.services__card--consulting .services__stack {
+.services__scene--consulting .services__stack {
   position: absolute;
   top: 24px;
   left: 24px;
@@ -2299,7 +2229,7 @@ code {
   z-index: 0;
 }
 
-.services__card--consulting .services__sphere--top {
+.services__scene--consulting .services__sphere {
   position: absolute;
   top: 20px;
   right: 100px;
@@ -2308,66 +2238,32 @@ code {
   z-index: 1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .services {
-    padding: 24px 20px 48px;
+    padding: 24px 20px 64px;
   }
-  .services__grid {
+  /* Stack: stage on top, index below */
+  .services__layout {
     grid-template-columns: 1fr;
+    gap: 28px;
   }
-  .services__card {
-    min-height: 220px;
+  .services__stage {
+    height: 260px;
+    border-radius: 24px;
   }
-}
-
-@media (max-width: 768px) {
-  /* No hover on touch — show the full resting design with heading AND tags */
-  .services__connector {
-    display: none;
+  .services__row-title {
+    font-size: clamp(30px, 8vw, 44px);
+    letter-spacing: -1.2px;
   }
-  /* Soft blur so the art doesn't compete with the title on small cards */
-  .services__swirl,
-  .services__earth,
-  .services__cog,
-  .services__stack {
-    filter: url(#ink-navy) blur(3px);
+  .services__row-btn {
+    padding: 14px 0;
   }
-  .services__card {
-    min-height: 260px;
+  .services__row-arrow {
+    width: 22px;
+    height: 22px;
   }
-  /* Pin every title to the top so it never collides with the tag row,
-     and lift it above the decorative art (swirl sits at z-index 100) */
-  .services__card .services__title {
-    position: absolute;
-    top: 24px;
-    left: 24px;
-    right: 24px;
-    bottom: auto;
-    text-align: left;
-    font-size: 24px;
-    z-index: 110;
-  }
-  .services__pills {
-    opacity: 1;
-    transform: none;
-    top: auto;
-    bottom: 20px;
-    left: 20px;
-    right: 20px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-    z-index: 110;
-  }
-  .services__pill {
-    font-size: 13px;
-    padding: 6px 14px;
-  }
-  /* Navy pills for legibility on the light card */
-  .services__pill--filled,
-  .services__pill--outline {
-    color: #001B4D;
-    border-color: rgba(0, 27, 77, 0.45);
+  .services__row.is-active .services__row-sub {
+    padding-bottom: 16px;
   }
 }
 
@@ -3188,158 +3084,68 @@ code {
 .trust {
   max-width: 1328px;
   margin: 0 auto;
-  padding: 56px 24px 24px;
+  padding: 64px 24px 40px;
 }
 
+/* One tether line — eyebrow, chain rail, logos on a shared centerline.
+   Reads as a breath between hero and manifesto, not an announced section. */
 .trust__inner {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 32px;
-  min-height: 240px;
+  align-items: center;
+  gap: 40px;
 }
 
-/* Quiet eyebrow — deliberately NOT a numbered section label, so the strip
-   reads as a breath rather than another announced section. */
-.trust__label {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  text-align: left;
-  font-family: 'Manrope', sans-serif;
-  /* Nudge the heading up without affecting the right-hand cards. */
-  margin-top: -100px;
-}
-
+/* Same mono vocabulary as .section-label / .cta__eyebrow — deliberately
+   unnumbered so the strip stays quieter than the real sections. */
 .trust__eyebrow {
-  font-size: 19px;
-  font-weight: 800;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: #08060d;
-  letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
-.trust__sub {
-  font-size: 21px;
-  font-weight: 400;
-  color: #08060d;
-  letter-spacing: -0.3px;
+/* The brand chain rail, stretched between claim and proof — the desktop echo
+   of the mobile marquee rails. Background tile painted in init(). */
+.trust__tether {
+  flex: 1;
+  height: 9px;
+  background-repeat: repeat-x;
+  background-position: left center;
+  background-size: auto 100%;
+  /* Soften where the chain meets the logos. */
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 56px), transparent);
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 56px), transparent);
 }
 
-/* Staggered overlap canvas — clutch upper-left, trustpilot lower-right. */
-.trust__cards {
-  position: relative;
-  flex-shrink: 0;
-  width: min(452px, 54vw);
-  height: 170px;
-}
-
-/* The card element is the parallax target (GSAP writes its transform). The
-   inner element carries the visual box + hover lift, so the two transforms
-   never fight over the same inline style. */
-.trust__card {
-  position: absolute;
-  will-change: transform;
-}
-
-/* Asymmetric by design — Clutch is the compact mark, Trustpilot's wordmark is
-   longer so its card is wider and given more room to breathe. */
-.trust__card--clutch {
-  top: 0;
-  left: 0;
-  width: 214px;
-  height: 92px;
-  z-index: 1;
-}
-
-.trust__card--trustpilot {
-  right: 0;
-  bottom: 0;
-  width: 320px;
-  height: 112px;
-  z-index: 2;
-}
-
-.trust__card-inner {
+.trust__logos {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  /* Flat clean fill — no frosted backdrop / glass gradient. */
-  background: #F6F6F6;
-  border: 3px solid #0755E9;
-  border-radius: 48px;
-  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
+  gap: 48px;
+  flex-shrink: 0;
 }
 
-/* Liquid-glass spheres on the outer corners — reuses .services__glass-sphere
-   (shape + lens/body/glint/rim children) and just sizes & places them. */
-.trust__sphere {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* Centred on the rounded blue corner (~14px in on a 60px sphere) so the bold
-   border arc sits behind the lens and visibly refracts — not over empty page. */
-.trust__sphere--clutch {
-  top: -18px;
-  left: -18px;
-}
-
-.trust__sphere--trustpilot {
-  width: 76px;
-  height: 76px;
-  top: -22px;
-  right: -22px;
-}
-
-/* Drive the trust beads' refraction with the single-pass lens (no chromatic
-   rainbow) instead of the services chromatic-aberration lens. */
-.trust__sphere .glass-sphere__lens {
-  backdrop-filter: url(#trust-lens);
-  -webkit-backdrop-filter: url(#trust-lens);
-}
-
-/* Fully clear body — NO background fill and NO backdrop-filter, so it doesn't
-   paint a frosted film over the lens layer and wash the refraction out. Just
-   the edge highlights that give it a glass rim. */
-.trust__sphere .glass-sphere__body {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.5),
-    inset 0 -2px 6px rgba(7, 85, 233, 0.14),
-    0 8px 20px -8px rgba(7, 85, 233, 0.22);
-}
-
+/* Flat ink lockups — the blue chain is the only accent on this line. */
 .trust__logo {
   display: block;
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
+.trust__logo svg {
+  display: block;
+  width: 100%;
   height: auto;
 }
 
 .trust__logo--clutch {
-  width: 132px;
+  width: 118px;
 }
 
 .trust__logo--trustpilot {
-  width: 248px;
-}
-
-.trust__logo--trustpilot svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-@media (hover: hover) {
-  .trust__card:hover .trust__card-inner {
-    transform: translateY(-6px);
-  }
+  width: 168px;
 }
 
 /* ── Mobile-only chain marquee (shown ≤768px in place of the cards) ── */
@@ -3355,11 +3161,6 @@ code {
   margin-bottom: 12px;
   text-align: center;
   font-family: 'Manrope', sans-serif;
-}
-
-/* Smaller heading on mobile (just "Recognised by"). */
-.trust__m-head .trust__eyebrow {
-  font-size: 13px;
 }
 
 .trust__rail {
@@ -3434,41 +3235,6 @@ code {
   }
   .trust__mobile {
     display: block;
-  }
-  .trust__cards {
-    width: 100%;
-    max-width: 380px;
-    height: 142px;
-    margin: 0;
-  }
-  .trust__card--clutch {
-    width: 176px;
-    height: 76px;
-  }
-  .trust__card--trustpilot {
-    width: 264px;
-    height: 92px;
-  }
-  .trust__card-inner {
-    border-width: 2.5px;
-  }
-  .trust__logo--clutch {
-    width: 108px;
-  }
-  .trust__logo--trustpilot {
-    width: 204px;
-  }
-  .trust__sphere {
-    width: 46px;
-    height: 46px;
-  }
-  .trust__sphere--clutch {
-    top: -11px;
-    left: -11px;
-  }
-  .trust__sphere--trustpilot {
-    top: -11px;
-    right: -11px;
   }
 }
 

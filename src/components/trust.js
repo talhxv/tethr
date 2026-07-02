@@ -1,6 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import clutchLogo from '../assets/CluchblueLogo.svg'
+import clutchRaw from '../assets/CluchblueLogo.svg?raw'
 import trustpilotRaw from '../assets/trustpilotlonglogo.svg?raw'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -11,6 +12,20 @@ gsap.registerPlugin(ScrollTrigger)
 const trustpilot = trustpilotRaw
   .replace(/\swidth="2500"/, '')
   .replace(/\sheight="-437"/, '')
+
+// Ink (desktop) variants — flatten every fill to the heading ink so both logos
+// carry identical visual weight and stay quiet next to the blue chain tether.
+// The coloured versions above are kept for the mobile marquee.
+const INK = '#08060d'
+const clutchInk = clutchRaw
+  .replace(/\swidth="232"/, '')
+  .replace(/\sheight="62"/, '')
+  .replace(/fill="#[0-9A-Fa-f]{3,6}"/g, `fill="${INK}"`)
+const trustpilotInk = trustpilotRaw
+  .replace(/\swidth="2500"/, '')
+  .replace(/\sheight="-437"/, '')
+  .replace('<svg ', `<svg fill="${INK}" `)
+  .replace(/fill="#[0-9A-Fa-f]{3,6}"/gi, `fill="${INK}"`)
 
 // ── Mobile chain rails — reuse the navbar's two chain-link paths, tiled
 // horizontally as a repeating background (applied in init()). ──
@@ -25,53 +40,16 @@ const marqueePair = `
         <span class="trust__m-item"><span class="trust__m-trustpilot" role="img" aria-label="Trustpilot">${trustpilot}</span></span>`
 const marqueeHalf = marqueePair.repeat(4)
 
-// Single-pass refraction lens — same convex displacement map as the services
-// #liquid-lens (so the sphere genuinely bends whatever is behind it), but with
-// ONE displacement pass instead of three R/G/B passes. That drops the chromatic
-// aberration that turns into an ugly rainbow fringe over the cards' hard border.
-const lensFilter = `
-<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
-  <defs>
-    <filter id="trust-lens" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
-      <feImage x="0%" y="0%" width="100%" height="100%" preserveAspectRatio="none" result="map"
-        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cdefs%3E%3ClinearGradient id='lx' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23ff0000'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3ClinearGradient id='ly' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2300ff00'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3CradialGradient id='lc' cx='0.5' cy='0.5' r='0.5'%3E%3Cstop offset='0' stop-color='%237f7f7f'/%3E%3Cstop offset='0.42' stop-color='%237f7f7f'/%3E%3Cstop offset='1' stop-color='%237f7f7f' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='120' height='120' fill='url(%23lx)'/%3E%3Crect width='120' height='120' fill='url(%23ly)' style='mix-blend-mode:screen'/%3E%3Crect width='120' height='120' fill='url(%23lc)'/%3E%3C/svg%3E"/>
-      <feDisplacementMap in="SourceGraphic" in2="map" scale="30" xChannelSelector="R" yChannelSelector="G" result="disp"/>
-      <feGaussianBlur in="disp" stdDeviation="0.45"/>
-    </filter>
-  </defs>
-</svg>`
-
-// Reuses the services sphere's body + specular glint/rim, with the lens layer
-// driven by the single-pass #trust-lens filter above.
-const sphere = (mod) => `
-  <div class="trust__sphere trust__sphere--${mod} services__glass-sphere" role="presentation" aria-hidden="true">
-    <div class="glass-sphere__lens"></div>
-    <div class="glass-sphere__body"></div>
-    <div class="glass-sphere__glint"></div>
-    <div class="glass-sphere__rim"></div>
-  </div>`
-
 export const html = `
-${lensFilter}
 <section class="trust" id="trust">
+  <!-- Desktop: one tether line — mono eyebrow, the brand chain rail drawing
+       across to the proof, logos flattened to ink. -->
   <div class="trust__inner">
-    <div class="trust__label">
-      <span class="trust__eyebrow">Recognised by</span>
-      <span class="trust__sub">Trusted Review Platforms</span>
-    </div>
-    <div class="trust__cards">
-      <div class="trust__card trust__card--clutch" data-trust-card>
-        <div class="trust__card-inner">
-          <img src="${clutchLogo}" alt="Clutch" class="trust__logo trust__logo--clutch" />
-        </div>
-        ${sphere('clutch')}
-      </div>
-      <div class="trust__card trust__card--trustpilot" data-trust-card>
-        <div class="trust__card-inner">
-          <span class="trust__logo trust__logo--trustpilot" aria-label="Trustpilot" role="img">${trustpilot}</span>
-        </div>
-        ${sphere('trustpilot')}
-      </div>
+    <span class="trust__eyebrow">Recognised by</span>
+    <span class="trust__tether" aria-hidden="true"></span>
+    <div class="trust__logos">
+      <span class="trust__logo trust__logo--clutch" role="img" aria-label="Clutch" data-trust-logo>${clutchInk}</span>
+      <span class="trust__logo trust__logo--trustpilot" role="img" aria-label="Trustpilot" data-trust-logo>${trustpilotInk}</span>
     </div>
   </div>
 
@@ -96,59 +74,44 @@ export function init() {
   const section = document.getElementById('trust')
   if (!section) return
 
-  // Paint the mobile chain rails (also needed under reduced-motion).
-  section.querySelectorAll('.trust__chain').forEach((el) => {
+  // Paint the chain rails — desktop tether + mobile marquee rails
+  // (also needed under reduced-motion).
+  section.querySelectorAll('.trust__chain, .trust__tether').forEach((el) => {
     el.style.backgroundImage = chainBg
   })
 
-  const cards = gsap.utils.toArray('[data-trust-card]', section)
-  if (!cards.length) return
+  const tether = section.querySelector('.trust__tether')
+  const logos = gsap.utils.toArray('[data-trust-logo]', section)
+  if (!logos.length) return
 
   // Honour reduced-motion: leave the strip clean and static.
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-  // Reveal on enter, mirrored exit on the way down to the manifesto.
-  // toggleActions 'reverse' replays the reveal backwards as the section leaves,
-  // so the exit is a perfect mirror of the entrance — and it re-reveals when you
-  // scroll back up.
-  //
-  // NB: animate TRANSFORM ONLY (no opacity). Dropping the card's opacity below 1
-  // turns it into a "backdrop root", which cuts the sphere's liquid-glass lens
-  // off from what's behind it — that's the glitch on the right bead during the
-  // fade. Sliding + scaling keeps every ancestor at opacity 1, so the lens holds.
-  gsap.fromTo(
-    cards,
-    { y: 44, scale: 0.9 },
+  // One orchestrated moment: the chain draws left→right, tethering the label
+  // to the proof, then the logos settle in. toggleActions 'reverse' replays it
+  // backwards as the section leaves.
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: section,
+      start: 'top 88%',
+      end: 'bottom 12%',
+      toggleActions: 'play reverse play reverse',
+    },
+  })
+
+  tl.from(tether, {
+    clipPath: 'inset(0 100% 0 0)',
+    duration: 0.9,
+    ease: 'power2.inOut',
+  }).from(
+    logos,
     {
-      y: 0,
-      scale: 1,
-      duration: 0.75,
+      autoAlpha: 0,
+      y: 14,
+      duration: 0.6,
       ease: 'power3.out',
       stagger: 0.12,
-      scrollTrigger: {
-        trigger: section,
-        start: 'top 88%',
-        end: 'bottom 12%',
-        toggleActions: 'play reverse play reverse',
-      },
-    }
+    },
+    '-=0.3'
   )
-
-  // Parallax drift — the two cards travel at slightly different rates as the
-  // section passes through the viewport, so they ease apart. This is what turns
-  // the staggered overlap into an intentional depth cue rather than a collision.
-  // Driven on yPercent so it composes with the entrance tween's `y`.
-  const drift = [-7, 8] // clutch rises, trustpilot sinks — gentle, so they stay overlapped
-  cards.forEach((card, i) => {
-    gsap.to(card, {
-      yPercent: drift[i] ?? 0,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: section,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: true,
-      },
-    })
-  })
 }

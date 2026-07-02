@@ -3,6 +3,57 @@ import tethrEarth from '../assets/tethrearth.svg'
 import settingsCog from '../assets/settingscog.svg'
 import executionStack from '../assets/executionstack.svg'
 
+const SERVICES = [
+  {
+    id: 'software',
+    title: 'Software',
+    sub: ['Design', 'Web Development', 'Mobile Apps', 'SaaS'],
+    caption: 'Design, web, mobile, and SaaS — built end to end by your managed team.',
+  },
+  {
+    id: 'automations',
+    title: 'Automations',
+    sub: ['Workflows', 'AI Integration', 'API Pipelines', 'No-Code'],
+    caption: 'Workflows, AI integrations, and API pipelines that cut the manual work.',
+  },
+  {
+    id: 'consulting',
+    title: 'Consulting & Execution',
+    sub: ['Strategy', 'Project Management', 'Go-to-Market', 'Advisory'],
+    caption: 'Strategy, project management, and go-to-market, carried through to done.',
+  },
+]
+
+const sphere = `
+  <div class="services__sphere services__glass-sphere" role="presentation" aria-hidden="true">
+    <div class="glass-sphere__lens"></div>
+    <div class="glass-sphere__body"></div>
+    <div class="glass-sphere__glint"></div>
+    <div class="glass-sphere__rim"></div>
+  </div>`
+
+// Scene art per service — the compositions from the old cards, now living in
+// one shared stage that crossfades as the index is browsed.
+const SCENES = {
+  software: `
+    <img src="${swirl}" class="services__swirl" alt="" />
+    <img src="${tethrEarth}" class="services__earth" alt="" />
+    ${sphere}`,
+  automations: `
+    <img src="${swirl}" class="services__swirl services__swirl--auto" alt="" />
+    <img src="${settingsCog}" class="services__cog" alt="" />
+    ${sphere}`,
+  consulting: `
+    <img src="${swirl}" class="services__swirl services__swirl--consult" alt="" />
+    <img src="${executionStack}" class="services__stack" alt="" />
+    ${sphere}`,
+}
+
+const arrow = `
+  <svg class="services__row-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M7 17 17 7M8.5 7H17v8.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`
+
 export const html = `
 <!-- Liquid-glass lens filter — used via backdrop-filter so content BEHIND the sphere refracts.
      The feImage map encodes displacement direction: R = horizontal, G = vertical, neutral gray
@@ -35,78 +86,86 @@ export const html = `
   <span class="section-label__title">SERVICES</span>
 </div>
 <section class="services">
-  <div class="services__grid">
-    <svg class="services__connector services__connector--top" viewBox="0 0 100 24" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <clipPath id="clip-top-left"><rect x="0" y="0" width="75" height="24"/></clipPath>
-        <clipPath id="clip-top-right"><rect x="25" y="0" width="75" height="24"/></clipPath>
-      </defs>
-      <path class="conn-left" clip-path="url(#clip-top-left)" fill="#F1F5FD"
-        d="M0 12 A12 12 0 0 1 12 0 L42 0 A9 8 0 0 0 58 0 L88 0 A12 12 0 0 1 100 12 A12 12 0 0 1 88 24 L58 24 A9 8 0 0 0 42 24 L12 24 A12 12 0 0 1 0 12 Z"/>
-      <path class="conn-right" clip-path="url(#clip-top-right)" fill="#F1F5FD"
-        d="M0 12 A12 12 0 0 1 12 0 L42 0 A9 8 0 0 0 58 0 L88 0 A12 12 0 0 1 100 12 A12 12 0 0 1 88 24 L58 24 A9 8 0 0 0 42 24 L12 24 A12 12 0 0 1 0 12 Z"/>
-    </svg>
-    <svg class="services__connector services__connector--bottom" viewBox="0 0 100 24" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <clipPath id="clip-bot-left"><rect x="0" y="0" width="75" height="24"/></clipPath>
-        <clipPath id="clip-bot-right"><rect x="25" y="0" width="75" height="24"/></clipPath>
-      </defs>
-      <path class="conn-left" clip-path="url(#clip-bot-left)" fill="#F1F5FD"
-        d="M0 12 A12 12 0 0 1 12 0 L42 0 A9 8 0 0 0 58 0 L88 0 A12 12 0 0 1 100 12 A12 12 0 0 1 88 24 L58 24 A9 8 0 0 0 42 24 L12 24 A12 12 0 0 1 0 12 Z"/>
-      <path class="conn-right" clip-path="url(#clip-bot-right)" fill="#F1F5FD"
-        d="M0 12 A12 12 0 0 1 12 0 L42 0 A9 8 0 0 0 58 0 L88 0 A12 12 0 0 1 100 12 A12 12 0 0 1 88 24 L58 24 A9 8 0 0 0 42 24 L12 24 A12 12 0 0 1 0 12 Z"/>
-    </svg>
-    <div class="services__card services__card--software">
-      <img src="${swirl}" class="services__swirl services__asset" alt="" />
-      <img src="${tethrEarth}" class="services__earth services__asset" alt="" />
-      <div class="services__sphere services__asset services__glass-sphere" role="presentation">
-        <div class="glass-sphere__lens"></div>
-        <div class="glass-sphere__body"></div>
-        <div class="glass-sphere__glint"></div>
-        <div class="glass-sphere__rim"></div>
+  <div class="services__layout">
+
+    <!-- Preview — the active service's artwork, caption, and link -->
+    <div class="services__preview">
+      <div class="services__stage">
+        ${SERVICES.map(
+          (s, i) => `
+        <div class="services__scene services__scene--${s.id}${i === 0 ? ' is-active' : ''}" data-scene="${s.id}" aria-hidden="true">${SCENES[s.id]}</div>`
+        ).join('')}
       </div>
-      <h3 class="services__title">Software</h3>
-      <div class="services__pills">
-        <span class="services__pill services__pill--filled">Design</span>
-        <span class="services__pill services__pill--outline">Web Development</span>
-        <span class="services__pill services__pill--outline">Mobile Apps</span>
-        <span class="services__pill services__pill--outline">SaaS</span>
+      <div class="services__captions">
+        ${SERVICES.map(
+          (s, i) => `
+        <p class="services__caption${i === 0 ? ' is-active' : ''}" data-caption="${s.id}">${s.caption}</p>`
+        ).join('')}
       </div>
     </div>
-    <div class="services__card services__card--automations">
-      <img src="${swirl}" class="services__swirl services__swirl--auto services__asset" alt="" />
-      <img src="${settingsCog}" class="services__cog services__asset" alt="" />
-      <div class="services__sphere services__sphere--top services__asset services__glass-sphere" role="presentation">
-        <div class="glass-sphere__lens"></div>
-        <div class="glass-sphere__body"></div>
-        <div class="glass-sphere__glint"></div>
-        <div class="glass-sphere__rim"></div>
-      </div>
-      <h3 class="services__title">Automations</h3>
-      <div class="services__pills">
-        <span class="services__pill services__pill--filled">Workflows</span>
-        <span class="services__pill services__pill--outline">AI Integration</span>
-        <span class="services__pill services__pill--outline">API Pipelines</span>
-        <span class="services__pill services__pill--outline">No-Code</span>
-      </div>
-    </div>
-    <div class="services__card services__card--consulting">
-      <img src="${swirl}" class="services__swirl services__swirl--consult services__asset" alt="" />
-      <img src="${executionStack}" class="services__stack services__asset" alt="" />
-      <div class="services__sphere services__sphere--top services__asset services__glass-sphere" role="presentation">
-        <div class="glass-sphere__lens"></div>
-        <div class="glass-sphere__body"></div>
-        <div class="glass-sphere__glint"></div>
-        <div class="glass-sphere__rim"></div>
-      </div>
-      <h3 class="services__title">Consulting &amp;<br>Execution</h3>
-      <div class="services__pills">
-        <span class="services__pill services__pill--filled">Strategy</span>
-        <span class="services__pill services__pill--outline">Project Management</span>
-        <span class="services__pill services__pill--outline">Go-to-Market</span>
-        <span class="services__pill services__pill--outline">Advisory</span>
-      </div>
-    </div>
+
+    <!-- Index — the services as a large type list; hover/tap drives the preview -->
+    <ul class="services__index" role="list">
+      ${SERVICES.map(
+        (s, i) => `
+      <li class="services__row${i === 0 ? ' is-active' : ''}" data-service="${s.id}">
+        <button type="button" class="services__row-btn" aria-expanded="${i === 0}">
+          <span class="services__row-title">${s.title}</span>
+          ${arrow}
+        </button>
+        <div class="services__row-reveal">
+          <p class="services__row-sub">${s.sub.join(' · ')}</p>
+        </div>
+      </li>`
+      ).join('')}
+    </ul>
+
   </div>
 </section>
 `
+
+export function init() {
+  const section = document.querySelector('.services')
+  if (!section) return
+
+  const rows = [...section.querySelectorAll('.services__row')]
+  const scenes = [...section.querySelectorAll('.services__scene')]
+  const captions = [...section.querySelectorAll('.services__caption')]
+
+  function activate(id) {
+    rows.forEach((row) => {
+      const on = row.dataset.service === id
+      row.classList.toggle('is-active', on)
+      row.querySelector('.services__row-btn').setAttribute('aria-expanded', on)
+    })
+    scenes.forEach((s) => s.classList.toggle('is-active', s.dataset.scene === id))
+    captions.forEach((c) => c.classList.toggle('is-active', c.dataset.caption === id))
+  }
+
+  rows.forEach((row) => {
+    const id = row.dataset.service
+    row.addEventListener('mouseenter', () => activate(id))
+    row.querySelector('.services__row-btn').addEventListener('click', () => activate(id))
+    row.querySelector('.services__row-btn').addEventListener('focus', () => activate(id))
+  })
+
+  // Fade the glass spheres in as the section enters view, so the backdrop-filter
+  // lens's first (lazy) compile happens under cover of the fade rather than
+  // popping in cold. rootMargin gives the filter a head start before it's seen.
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries, obs) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            section.classList.add('is-inview')
+            obs.disconnect()
+          }
+        })
+      },
+      { rootMargin: '0px 0px -15% 0px' }
+    )
+    io.observe(section)
+  } else {
+    section.classList.add('is-inview')
+  }
+}
