@@ -80,6 +80,17 @@ export function init() {
     el.style.backgroundImage = chainBg
   })
 
+  // Run the mobile marquee only while the strip is meaningfully on screen.
+  // The negative bottom margin keeps it still while it merely peeks over
+  // the fold — the hero owns the landing viewport's motion.
+  const track = section.querySelector('.trust__track')
+  if (track) {
+    new IntersectionObserver(([entry]) => {
+      track.classList.toggle('is-running', entry.isIntersecting)
+    }, { threshold: 0.6, rootMargin: '0px 0px -200px 0px' })
+      .observe(track.closest('.trust__rail') || section)
+  }
+
   const tether = section.querySelector('.trust__tether')
   const logos = gsap.utils.toArray('[data-trust-logo]', section)
   if (!logos.length) return
