@@ -3,6 +3,14 @@ import chainOutlinePhone from '../assets/fullylinkedvectorchainbluephone.svg'
 import chainLink     from '../assets/singlechainlinkvectorblue.svg?raw'
 import doubleLink    from '../assets/doublylinkedchainvectorblue.svg?raw'
 import fullChain     from '../assets/fullylinkedbluevectorchain.svg?raw'
+import earthRaw      from '../assets/tethrearth.svg?raw'
+
+// Recolored for the light headline background (source asset is styled for dark
+// surfaces) and stripped of its fixed pixel size so it scales with the text via CSS
+const earthIcon = earthRaw
+  .replace(/width="64" height="64" /, '')
+  .replace('fill="white" fill-opacity="0.1"', 'fill="#0755E9" fill-opacity="0.08"')
+  .replace(/stroke="white"/g, 'stroke="#0755E9"')
 
 // 16 links — Problem positions (all scattered/broken)
 export const PROBLEM_POS = [
@@ -100,12 +108,16 @@ export const html = `
             </h2>
             <div class="problem-items">
               <div class="problem-item">
-                <span class="problem-item__title">NO LOCAL INFRASTRUCTURE</span>
-                <p class="problem-item__body">No local legal or HR presence, slow and expensive global EOR platforms.</p>
+                <span class="problem-item__title">Global EORs don't go deep.</span>
+                <p class="problem-item__body">Slow, expensive, and built for 100 countries at once. Their fees eat the savings, and none of them actually know the talent market here.</p>
               </div>
               <div class="problem-item">
-                <span class="problem-item__title">TALENT LEFT UNDERUTILIZED</span>
-                <p class="problem-item__body">Managing remote employees across legal, payroll, and performance is a full-time job in itself.</p>
+                <span class="problem-item__title">Going direct is a legal maze.</span>
+                <p class="problem-item__body">No entity, no local HR, no compliance footprint. Setting that up from abroad takes months and specialist knowledge you don't have.</p>
+              </div>
+              <div class="problem-item">
+                <span class="problem-item__title">Hiring is only half the job.</span>
+                <p class="problem-item__body">Payroll, contracts, performance, offboarding — managing remote employees is a full-time operation in itself.</p>
               </div>
             </div>
           </div>
@@ -121,12 +133,16 @@ export const html = `
             </h2>
             <div class="problem-items">
               <div class="problem-item">
-                <span class="problem-item__title">END-TO-END MANAGED</span>
-                <p class="problem-item__body">A single invoice covers the full employee lifecycle — sourcing, onboarding, payroll, compliance, and performance support.</p>
+                <span class="problem-item__title">Your team, minus the burden.</span>
+                <p class="problem-item__body">You direct the work. We carry everything else: sourcing, contracts, payroll, compliance — all in one.</p>
               </div>
               <div class="problem-item">
-                <span class="problem-item__title">ZERO HR OVERHEAD</span>
-                <p class="problem-item__body">No HR overhead for the client. Talent that performs like an internal team.</p>
+                <span class="problem-item__title">Hire in days, not months.</span>
+                <p class="problem-item__body">No entity to set up, no local counsel to retain. You pick the person. We've done the rest.</p>
+              </div>
+              <div class="problem-item">
+                <span class="problem-item__title">Transparent pricing, no surprises.</span>
+                <p class="problem-item__body">One clear fee. You always know what you're paying and what it covers.</p>
               </div>
             </div>
           </div>
@@ -147,16 +163,20 @@ export const html = `
             </div>
             <h2 class="problem-headline">
               Rooted in Pakistan.<br>
-              <strong>Built for US teams.</strong>
+              <strong>Built for <span class="problem-headline__globe" aria-label="international" role="img">${earthIcon}</span> teams.</strong>
             </h2>
             <div class="problem-items">
               <div class="problem-item">
-                <span class="problem-item__title">REAL LOCAL DEPTH</span>
-                <p class="problem-item__body">Unlike global EORs with shell offices, <strong style="color:#0755E9">Tethr</strong> operates from within Pakistan's talent community — with genuine investment in every hire.</p>
+                <span class="problem-item__title">We are the local presence.</span>
+                <p class="problem-item__body">Not a shell office — an operating company inside Pakistan's talent market. We know who's actually good before you ever see a CV.</p>
               </div>
               <div class="problem-item">
-                <span class="problem-item__title">BUILT FOR SCALE</span>
-                <p class="problem-item__body">From your first hire to a full team — one contract, one point of contact, zero overhead on your side.</p>
+                <span class="problem-item__title">Hiring, de-risked.</span>
+                <p class="problem-item__body">Vetted before you meet them, employed through our entity, compliance fully handled. If a hire doesn't work out, we find the replacement.</p>
+              </div>
+              <div class="problem-item">
+                <span class="problem-item__title">Full visibility, always.</span>
+                <p class="problem-item__body">Every salary, invoice, and employee record lives in the <strong style="color:#0755E9">Tethr</strong> platform. You see what we see.</p>
               </div>
             </div>
           </div>

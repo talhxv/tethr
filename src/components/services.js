@@ -149,6 +149,27 @@ export function init() {
     row.querySelector('.services__row-btn').addEventListener('focus', () => activate(id))
   })
 
+  // Scroll-driven activation — as the index scrolls past the pinned preview,
+  // whichever row crosses the viewport's center band becomes active. Hover
+  // still fires activate() directly above, so a deliberate hover always wins
+  // over whatever the scroll position would otherwise pick.
+  let hovering = false
+  section.addEventListener('mouseenter', () => (hovering = true), true)
+  section.addEventListener('mouseleave', () => (hovering = false), true)
+
+  if ('IntersectionObserver' in window && window.matchMedia('(min-width: 901px)').matches) {
+    const scrollIO = new IntersectionObserver(
+      (entries) => {
+        if (hovering) return
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) activate(entry.target.dataset.service)
+        })
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: 0 }
+    )
+    rows.forEach((row) => scrollIO.observe(row))
+  }
+
   // Fade the glass spheres in as the section enters view, so the backdrop-filter
   // lens's first (lazy) compile happens under cover of the fade rather than
   // popping in cold. rootMargin gives the filter a head start before it's seen.

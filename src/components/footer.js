@@ -34,14 +34,13 @@ export const html = `
       <div class="footer-nav__col">
         <span class="footer-nav__label">Quick Links</span>
         <a href="#" class="footer-nav__link">Apply</a>
-        <a href="#" class="footer-nav__link">About Us</a>
-        <a href="#" class="footer-nav__link">Open Positions</a>
-        <a href="#" class="footer-nav__link">Services</a>
+        <a href="#hiring" class="footer-nav__link">Work With Tethr</a>
+        <a href="#services" class="footer-nav__link">Services</a>
       </div>
       <div class="footer-nav__col">
         <span class="footer-nav__label">Company</span>
-        <a href="#" class="footer-nav__link">About Us</a>
-        <a href="#" class="footer-nav__link">Open Positions</a>
+        <a href="#manifesto-track" class="footer-nav__link">About Us</a>
+        <a href="/positions.html" class="footer-nav__link">Open Positions</a>
       </div>
       <div class="footer-connect">
         <span class="footer-nav__label">Connect</span>

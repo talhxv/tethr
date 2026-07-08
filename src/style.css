@@ -654,13 +654,14 @@ code {
    "One invoice. One partner." block played */
 .hero-sub__title {
   text-align: center;
+  font-family: 'Manrope', sans-serif;
   font-size: clamp(30px, 4.2vw, 38px);
   font-weight: 600;
   color: #08060d;
   letter-spacing: -1.5px;
   line-height: 1.15;
   margin: 0 auto;
-  max-width: 760px;
+  max-width: 820px;
 }
 
 .hero-panel {
@@ -711,8 +712,9 @@ code {
 
 .hero-panel__claim {
   margin: 0;
+  font-family: 'Manrope', sans-serif;
   font-size: 21px;
-  font-weight: 700;
+  font-weight: 500;
   color: #08060d;
   letter-spacing: -0.5px;
   line-height: 1.35;
@@ -937,17 +939,6 @@ code {
   /* Manifesto banner */
   .manifesto-banner {
     border-radius: 16px;
-  }
-
-  /* Hiring toggle */
-  .hiring-toggle__btn {
-    padding: 10px 18px;
-    font-size: 14px;
-  }
-
-  .hiring-content {
-    min-height: 60px;
-    padding: 24px 0;
   }
 
   /* CTA */
@@ -1210,6 +1201,18 @@ code {
   strong { font-weight: 600; }
 }
 
+/* Globe glyph standing in for a word in the headline — scales with the
+   surrounding text via em units instead of a fixed pixel size */
+.problem-headline__globe {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  vertical-align: -0.1em;
+  margin: 0 0.06em;
+
+  svg { width: 100%; height: 100%; display: block; }
+}
+
 .problem-items {
   display: flex;
   flex-direction: column;
@@ -1225,19 +1228,20 @@ code {
 .problem-item__title {
   display: block;
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(12px, 1vw, 14px);
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  color: #aaa;
-  text-transform: uppercase;
-  margin-bottom: 10px;
+  font-size: clamp(17px, 1.6vw, 22px);
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: #1a1a2e;
+  text-transform: none;
+  margin-bottom: 8px;
 }
 
 .problem-item__body {
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(16px, 1.4vw, 20px);
+  font-size: clamp(13px, 1vw, 15px);
+  font-weight: 400;
   line-height: 1.55;
-  color: #2a2a2a;
+  color: #767a8a;
   margin: 0;
 }
 
@@ -1289,7 +1293,8 @@ code {
   }
   .problem-headline { font-size: 22px; line-height: 1.18; }
   .problem-item { padding: 12px 0; }
-  .problem-item__body { font-size: 14px; line-height: 1.5; }
+  .problem-item__title { font-size: 16px; margin-bottom: 6px; }
+  .problem-item__body { font-size: 13px; line-height: 1.5; }
 }
 
 /* Phone: hero collapses to vertical flow (8px bottom padding) with no extended
@@ -1305,171 +1310,49 @@ code {
 /* ── HIRING ── */
 
 .hiring-section {
-  padding: 80px 0 0;
+  padding: 80px 0 120px;
 }
 
-.hiring-toggle-wrap {
-  position: absolute;
-  top: 28px;
-  left: 0;
-  right: 0;
+.hiring-content {
+  max-width: 1100px;
+  margin: 0 auto;
   display: flex;
-  justify-content: center;
-  z-index: 2;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.hiring-toggle {
-  position: relative;
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  background: #0d1f4a;
-  border-radius: 999px;
-  padding: 5px;
-}
-
-.hiring-toggle__pill {
+/* ── Step 02's funnel panel ──
+   The isometric diagram lives in a frosted-glass panel that blooms upward
+   out of step 02 on hover — anchored above the row's center column, out of
+   flow, so nothing shifts and nothing is reserved at rest. Same glass
+   vocabulary as the hero panel. */
+.hiring-annot-panel {
   position: absolute;
-  top: 5px;
-  left: 5px;
-  width: calc(50% - 5px);
-  height: calc(100% - 10px);
-  background: #2B44FF;
-  border-radius: 999px;
-  transition: transform 360ms cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-}
-
-.hiring-toggle__btn {
-  position: relative;
-  z-index: 1;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: 'Manrope', sans-serif;
-  font-weight: 500;
-  font-size: 14px;
-  padding: 9px 24px;
-  border-radius: 999px;
-  color: rgba(255,255,255,0.4);
-  transition: color 300ms ease;
-  white-space: nowrap;
-}
-
-.hiring-toggle__btn.active { color: #fff; font-weight: 600; }
-
-/* ── Scroll track ── */
-.hiring-track {
-  position: relative;
-}
-
-.hiring-sticky {
-  height: 100svh;
-  min-height: 560px;
-}
-
-/* SVG connecting lines */
-.hiring-lines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Step text blocks */
-.hiring-step {
-  position: absolute;
-  max-width: 320px;
-  z-index: 1;
-  transition: opacity 0.35s ease;
-  cursor: pointer;
-}
-
-.hiring-step:hover { opacity: 1 !important; }
-
-.hiring-step--01 {
-  left: clamp(40px, 6vw, 100px);
-  top: 14%;
-  text-align: right;
-}
-
-.hiring-step--03 {
-  left: clamp(40px, 6vw, 100px);
-  top: 62%;
-  text-align: right;
-}
-
-.hiring-step--02 {
-  right: clamp(40px, 6vw, 100px);
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: left;
-}
-
-.hiring-step__label {
-  display: block;
-  font-family: 'Manrope', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #2B44FF;
-  margin-bottom: 18px;
-}
-
-.hiring-step__headline {
-  font-family: 'Manrope', sans-serif;
-  font-size: clamp(22px, 2.2vw, 34px);
-  font-weight: 400;
-  line-height: 1.22;
-  color: #001131;
-  margin: 0 0 14px;
-  letter-spacing: -0.5px;
-}
-
-.hiring-step__headline strong { font-weight: 700; }
-
-.hiring-step__desc {
-  font-family: 'Manrope', sans-serif;
-  font-size: 15px;
-  color: rgba(0, 17, 49, 0.45);
-  line-height: 1.7;
-  margin: 0;
-}
-
-/* Center visual */
-.hiring-center {
-  position: absolute;
+  bottom: calc(100% + 16px);
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 3vw, 36px);
+  padding: 26px 30px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid rgba(7, 85, 233, 0.14);
+  box-shadow: 0 24px 64px -28px rgba(0, 17, 49, 0.28);
 }
 
-/* Large background step number */
-.hiring-stack-num {
-  position: absolute;
-  right: calc(100% - 10px);
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: 'Manrope', sans-serif;
-  font-size: 80px;
-  font-weight: 900;
-  color: rgba(0, 17, 49, 0.055);
-  letter-spacing: -4px;
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-}
-
-/* Stack container */
+/* Stack container — sized to hold the fanned-open state within the panel */
 .hiring-stack {
   position: relative;
-  width: 420px;
-  height: 460px;
+  flex-shrink: 0;
+  width: clamp(190px, 15vw, 225px);
+  height: clamp(195px, 15.5vw, 230px);
 }
 
-/* Isometric card layers — physically stacked, mid layers slide up via GSAP */
+/* Isometric card layers — flush at rest, fanned apart by GSAP when open */
 .hiring-layer {
   position: absolute;
   left: 0;
@@ -1483,23 +1366,150 @@ code {
   display: block;
 }
 
-.hiring-stack-tag {
-  text-align: center;
+.hiring-layer--base { bottom: 0; }
+.hiring-layer--mid1 { bottom: 30px; }
+.hiring-layer--mid2 { bottom: 60px; }
+
+.hiring-callouts-svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hiring-callouts {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2vh, 22px);
+  width: clamp(190px, 17vw, 230px);
+  text-align: left;
+  pointer-events: none;
+}
+
+.hiring-callout__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: 'Manrope', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #2B44FF;
-  margin-top: 20px;
+  color: #0755E9;
+  margin-bottom: 4px;
 }
 
-/* Base sits at bottom of stack space */
-.hiring-layer--base { bottom: 0; }
+.hiring-callout__num { opacity: 0.55; }
 
-/* Mid layers sit progressively higher (snug isometric offset) */
-.hiring-layer--mid1 { bottom: 52px; }
-.hiring-layer--mid2 { bottom: 104px; }
+.hiring-callout__text {
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #767a8a;
+}
+
+.hiring-headline {
+  margin: 28px 0 56px;
+  text-align: center;
+}
+
+/* Three-step row — left to right, no back-and-forth scanning */
+.hiring-steps {
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(24px, 4vw, 48px);
+  text-align: left;
+}
+
+/* The tether — drawn left to right by GSAP as the steps land */
+.hiring-steps__line {
+  position: absolute;
+  top: 14px;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  border-top: 1.5px dashed rgba(31, 143, 92, 0.4);
+  z-index: 0;
+  will-change: clip-path;
+}
+
+.hiring-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Milestone pill — echoes the section-label num/line/title vocabulary */
+.hiring-step__tag {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #e9f7f0;
+  border: 1px solid rgba(31, 143, 92, 0.35);
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #1F8F5C;
+  margin-bottom: 18px;
+}
+
+.hiring-step__tag-num { opacity: 0.55; }
+
+.hiring-step__tag-line {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: #1F8F5C;
+  opacity: 0.45;
+}
+
+/* Final state pill — filled, the process lands here. (Selected by data-idx,
+   not :last-child — the annot panel is the row's actual last child.) */
+.hiring-step[data-idx="2"] .hiring-step__tag {
+  background: #1F8F5C;
+  border-color: #1F8F5C;
+  color: #fff;
+}
+
+.hiring-step[data-idx="2"] .hiring-step__tag-num { opacity: 0.65; }
+
+.hiring-step[data-idx="2"] .hiring-step__tag-line {
+  background: #fff;
+  opacity: 0.5;
+}
+
+.hiring-step__headline {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(18px, 1.7vw, 22px);
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: #1a1a2e;
+  line-height: 1.3;
+  margin: 0 0 10px;
+}
+
+.hiring-step__headline strong { font-weight: 700; }
+
+.hiring-step__desc {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(14px, 1.1vw, 15.5px);
+  font-weight: 400;
+  line-height: 1.6;
+  color: #767a8a;
+  margin: 0;
+  max-width: 300px;
+}
 
 
 /* ── OPEN POSITIONS ── */
@@ -1980,60 +1990,52 @@ code {
 }
 
 /* ── HIRING MOBILE ── */
-.hiring-mobile-text {
-  display: none;
-}
-
 @media (max-width: 768px) {
-  .hiring-step { display: none; }
-  .hiring-lines { display: none; }
-  .hiring-stack-num { display: none; }
+  .hiring-section { padding: 56px 0 80px; }
 
-  .hiring-sticky {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  .hiring-headline { margin: 20px 0 36px; }
+
+  .hiring-steps {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .hiring-steps__line { display: none; }
+
+  .hiring-step__desc { max-width: 300px; }
+
+  /* No hover on touch — the panel joins the flow as an inline card slotted
+     right after step 02 (order beats DOM position in the 1-col grid).
+     transform:none!important wins over GSAP's inline centering transform. */
+  .hiring-annot-panel {
+    position: static;
+    transform: none !important;
+    order: 4;
+    width: 100%;
+    box-sizing: border-box;
     justify-content: center;
-    gap: 0;
+    gap: 16px;
+    padding: 18px 16px;
   }
 
-  .hiring-center {
-    position: relative;
-    left: auto;
-    top: auto;
-    transform: none;
-    margin-top: 90px;
-  }
+  .hiring-step[data-idx="2"] { order: 5; }
 
   .hiring-stack {
-    width: 88vw;
-    max-width: 340px;
-    height: 240px;
+    width: 38vw;
+    max-width: 160px;
+    height: 150px;
   }
 
-  .hiring-layer--mid1 { bottom: 28px; }
-  .hiring-layer--mid2 { bottom: 56px; }
-
-  #hiringStack { touch-action: manipulation; }
-
-  .hiring-mobile-text {
-    display: block;
-    text-align: center;
-    padding: 24px 32px 0;
-    max-width: 320px;
+  .hiring-callouts {
+    width: auto;
+    flex: 0 1 190px;
+    gap: 12px;
   }
 
-  .hiring-mobile-text .hiring-step__label {
-    margin-bottom: 10px;
-  }
+  .hiring-callout__text { font-size: 11.5px; }
 
-  .hiring-mobile-text .hiring-step__headline {
-    font-size: 22px;
-    margin-bottom: 10px;
-  }
-
-  .hiring-top-bar .section-label,
-  .hiring-top-bar { padding: 20px 24px; }
+  .hiring-layer--mid1 { bottom: 22px; }
+  .hiring-layer--mid2 { bottom: 44px; }
 }
 
 /* ── SERVICES ── */
@@ -2052,6 +2054,14 @@ code {
   gap: clamp(40px, 6vw, 88px);
   align-items: start;
   text-align: left;
+}
+
+/* Preview pins in place while the index scrolls past beside it; the active
+   scene advances on scroll (see services.js) but a hover on any row still
+   wins immediately. */
+.services__preview {
+  position: sticky;
+  top: 120px;
 }
 
 /* Preview stage — one rounded canvas; the scene art crossfades inside it
@@ -2383,6 +2393,9 @@ code {
   .services__layout {
     grid-template-columns: 1fr;
     gap: 28px;
+  }
+  .services__preview {
+    position: static;
   }
   .services__stage {
     height: 260px;
@@ -2768,6 +2781,7 @@ code {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 6px;
 }
 
 .footer-nav__label {
@@ -2781,7 +2795,7 @@ code {
 }
 
 .footer-nav__link {
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
   font-size: 15px;
   font-weight: 400;
@@ -3221,7 +3235,15 @@ code {
 .trust {
   max-width: 1328px;
   margin: 0 auto;
-  padding: 64px 24px 40px;
+  padding: 32px 24px 40px;
+}
+
+/* Desktop only — give the strip more room before the manifesto's negative
+   margin pulls it in, so it doesn't read as cramped against it. */
+@media (min-width: 769px) {
+  .trust {
+    padding-bottom: 120px;
+  }
 }
 
 /* One tether line — eyebrow, chain rail, logos on a shared centerline.

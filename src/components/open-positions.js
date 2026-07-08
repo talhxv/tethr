@@ -92,7 +92,7 @@ export const html = `
   <!-- Header -->
   <div class="op-header padded">
     <div class="section-label">
-      <span class="section-label__num">04</span>
+      <span class="section-label__num">00</span>
       <span class="section-label__line"></span>
       <span class="section-label__title">OPEN POSITIONS</span>
     </div>
