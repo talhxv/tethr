@@ -28,17 +28,17 @@ export const html = `
   </div>
 
   <nav class="mobile-menu__links">
-    <a href="#services" class="mobile-menu__link">Services</a>
+    <a href="/#services" class="mobile-menu__link">Services</a>
     <a href="/positions.html" class="mobile-menu__link">Open Positions</a>
-    <a href="#manifesto-track" class="mobile-menu__link">About Us</a>
+    <a href="/#manifesto-track" class="mobile-menu__link">About Us</a>
   </nav>
 
   <div class="mobile-menu__footer">
     <div class="mobile-menu__socials">
-      <a href="#" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
-      <a href="#" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
-      <a href="#" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
-      <a href="#" aria-label="Twitter"><img src="${twitter}" alt="Twitter" /></a>
+      <a href="https://www.linkedin.com/company/tethrhq" target="_blank" rel="noopener" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
+      <a href="https://www.facebook.com/tethrhq" target="_blank" rel="noopener" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
+      <a href="https://www.instagram.com/tethrhq" target="_blank" rel="noopener" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
+      <a href="https://twitter.com/tethrhq" target="_blank" rel="noopener" aria-label="Twitter"><img src="${twitter}" alt="Twitter" /></a>
     </div>
     <div class="mobile-menu__footer-divider" aria-hidden="true"></div>
     <a href="#" class="mobile-menu__apply">Apply <img src="${arrowSlantUp}" alt="" aria-hidden="true" /></a>
@@ -52,9 +52,9 @@ export const html = `
     <img src="${tethrFontLogo}" class="navbar-logo--wordmark" alt="Tethr" />
   </a>
   <div class="navbar-links">
-    <a href="#services" class="navbar-link">Services</a>
+    <a href="/#services" class="navbar-link">Services</a>
     <a href="/positions.html" class="navbar-link">Open positions</a>
-    <a href="#manifesto-track" class="navbar-link">About us</a>
+    <a href="/#manifesto-track" class="navbar-link">About us</a>
   </div>
   <a href="#" class="navbar-apply">Apply <img src="${arrowSlantUp}" class="navbar-apply-arrow" aria-hidden="true" /></a>
   <button class="navbar-burger" aria-label="Menu">

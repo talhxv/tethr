@@ -34,21 +34,21 @@ export const html = `
       <div class="footer-nav__col">
         <span class="footer-nav__label">Quick Links</span>
         <a href="#" class="footer-nav__link">Apply</a>
-        <a href="#hiring" class="footer-nav__link">Work With Tethr</a>
-        <a href="#services" class="footer-nav__link">Services</a>
+        <a href="/#hiring" class="footer-nav__link">Work With Tethr</a>
+        <a href="/#services" class="footer-nav__link">Services</a>
       </div>
       <div class="footer-nav__col">
         <span class="footer-nav__label">Company</span>
-        <a href="#manifesto-track" class="footer-nav__link">About Us</a>
+        <a href="/#manifesto-track" class="footer-nav__link">About Us</a>
         <a href="/positions.html" class="footer-nav__link">Open Positions</a>
       </div>
       <div class="footer-connect">
         <span class="footer-nav__label">Connect</span>
         <div class="footer-social-icons">
-          <a href="#" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
-          <a href="#" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
-          <a href="#" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
-          <a href="#" aria-label="Twitter / X"><img src="${twitter}" alt="Twitter" /></a>
+          <a href="https://www.linkedin.com/company/tethrhq" target="_blank" rel="noopener" aria-label="LinkedIn"><img src="${linkedin}" alt="LinkedIn" /></a>
+          <a href="https://www.facebook.com/tethrhq" target="_blank" rel="noopener" aria-label="Facebook"><img src="${facebook}" alt="Facebook" /></a>
+          <a href="https://www.instagram.com/tethrhq" target="_blank" rel="noopener" aria-label="Instagram"><img src="${instagram}" alt="Instagram" /></a>
+          <a href="https://twitter.com/tethrhq" target="_blank" rel="noopener" aria-label="Twitter / X"><img src="${twitter}" alt="Twitter" /></a>
         </div>
       </div>
       </nav>
