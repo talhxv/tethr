@@ -2375,9 +2375,18 @@ code {
 }
 
 /* Glass sphere — liquid glass: lens layer refracts the backdrop, body adds frost + tint */
+/* Idles at 0.001 (kept painting, lens stays compiled — same trick as
+   .services__scene) until services.js adds .is-inview ahead of the section
+   scrolling in; the fade covers the lens's first paint on cold loads. */
 .services__glass-sphere {
   border-radius: 50%;
   overflow: visible;
+  opacity: 0.001;
+  transition: opacity 0.6s ease;
+}
+
+.services.is-inview .services__glass-sphere {
+  opacity: 1;
 }
 
 /* Refraction layer: bends whatever is painted behind the sphere (Chromium only) */

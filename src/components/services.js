@@ -80,6 +80,10 @@ export const html = `
   </defs>
 </svg>
 
+<!-- Forces #liquid-lens to compile + decode its feImage map at page load
+     (see .lens-warmup in style.css) -->
+<div class="lens-warmup" aria-hidden="true"></div>
+
 <div class="section-label section-label--spaced padded" id="services">
   <span class="section-label__num">03</span>
   <span class="section-label__line"></span>
@@ -170,9 +174,11 @@ export function init() {
     rows.forEach((row) => scrollIO.observe(row))
   }
 
-  // Fade the glass spheres in as the section enters view, so the backdrop-filter
-  // lens's first (lazy) compile happens under cover of the fade rather than
-  // popping in cold. rootMargin gives the filter a head start before it's seen.
+  // Fade the glass spheres in before the section scrolls into view, so the
+  // backdrop-filter lens's first (lazy) compile happens under cover of the
+  // fade rather than popping in cold. The positive rootMargin fires ~40% of a
+  // viewport early: scrolling visitors arrive after the fade has finished,
+  // while a cold load directly at the section still gets the covering fade.
   if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver(
       (entries, obs) => {
@@ -183,7 +189,7 @@ export function init() {
           }
         })
       },
-      { rootMargin: '0px 0px -15% 0px' }
+      { rootMargin: '0px 0px 40% 0px' }
     )
     io.observe(section)
   } else {
