@@ -184,6 +184,19 @@ export const html = `
       </div>
 
     </div>
+
+    <!-- Scene progress tether — hangs in the gutter left of the frame;
+         links fill with scroll, clicking one jumps to its scene -->
+    <div class="manifesto-rail" id="manifesto-rail" role="group" aria-label="Manifesto scenes">
+      <div class="manifesto-rail__track">
+        <div class="manifesto-rail__fill" id="manifesto-rail-fill"></div>
+      </div>
+      ${['For Talent. By Talent.', 'The Problem', 'The Solution', 'How Tethr Does It'].map((label, i) => `
+      <button class="manifesto-rail__node" type="button" data-scene="${i}" aria-label="${label}">
+        <span class="manifesto-rail__tip">${label}</span>
+      </button>`).join('')}
+    </div>
+
   </div>
 </div>
 `

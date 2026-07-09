@@ -19,6 +19,9 @@ export function initManifesto() {
   const problemItems = document.querySelectorAll('#problem-text .problem-item')
   const solutionItems= document.querySelectorAll('#solution-text .problem-item')
   const tethrItems   = document.querySelectorAll('#tethr-text .problem-item')
+  const rail         = document.getElementById('manifesto-rail')
+  const railFill     = document.getElementById('manifesto-rail-fill')
+  const railNodes    = rail ? [...rail.querySelectorAll('.manifesto-rail__node')] : []
 
   if (!track || !links.length) return
 
@@ -132,4 +135,55 @@ export function initManifesto() {
   tl.to(tethrItems, { opacity: 1, y: 0, duration: 0.04, stagger: 0.015 }, 0.89)
 
   // ── Hold: user reads tethr section (0.93–1.0) ──
+
+  // ── Progress rail ──
+  // Timeline progress where each scene sits fully rendered (mid-hold):
+  // banner 0, problem hold 0.22–0.44, solution hold 0.68–0.80, tethr hold 0.93–1.0
+  const SCENE_PROGRESS = [0, 0.30, 0.74, 0.97]
+
+  if (rail && railFill && railNodes.length === SCENE_PROGRESS.length) {
+    const segments = SCENE_PROGRESS.length - 1
+
+    // Piecewise map so the fill reaches each evenly-spaced node exactly when
+    // its scene is fully rendered
+    const fillPct = p => {
+      for (let i = 0; i < segments; i++) {
+        if (p <= SCENE_PROGRESS[i + 1]) {
+          const f = (p - SCENE_PROGRESS[i]) / (SCENE_PROGRESS[i + 1] - SCENE_PROGRESS[i])
+          return (Math.max(i + f, 0) / segments) * 100
+        }
+      }
+      return 100
+    }
+
+    const updateRail = () => {
+      const p = tl.progress()
+      railFill.style.height = fillPct(p) + '%'
+      let current = 0
+      SCENE_PROGRESS.forEach((t, i) => { if (p >= t - 0.02) current = i })
+      railNodes.forEach((node, i) => {
+        node.classList.toggle('is-active', i <= current)
+        node.classList.toggle('is-current', i === current)
+        if (i === current) node.setAttribute('aria-current', 'step')
+        else node.removeAttribute('aria-current')
+      })
+    }
+
+    // Driven by the timeline (not raw scroll) so the rail matches the
+    // scrubbed playhead, including the catch-up after a node click
+    tl.eventCallback('onUpdate', updateRail)
+    updateRail()
+
+    // Clicking a node jumps the scroll straight to that scene's rendered
+    // state; the scrub then fast-forwards the animation to catch up
+    railNodes.forEach((node, i) => {
+      node.addEventListener('click', () => {
+        const st = tl.scrollTrigger
+        window.scrollTo({
+          top: st.start + SCENE_PROGRESS[i] * (st.end - st.start),
+          behavior: 'auto',
+        })
+      })
+    })
+  }
 }
