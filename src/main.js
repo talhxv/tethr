@@ -1,4 +1,5 @@
 import './style.css'
+import { scrollToHash } from './lib/page-transition.js'
 import { html as navbarHtml, init as initNavbar } from './components/navbar.js'
 import { html as heroHtml, init as initHero } from './components/hero.js'
 // Trust strip (Recognised by / Clutch & Trustpilot) — unrendered for now, kept for later use.
@@ -28,3 +29,5 @@ initHiring()
 initServices()
 initFooter()
 initCta()
+
+scrollToHash()

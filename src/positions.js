@@ -1,4 +1,5 @@
 import './style.css'
+import { scrollToHash } from './lib/page-transition.js'
 import { html as navbarHtml, init as initNavbar } from './components/navbar.js'
 import { html as positionsHtml, init as initPositions } from './components/open-positions.js'
 import { html as footerHtml, init as initFooter } from './components/footer.js'
@@ -12,3 +13,5 @@ ${footerHtml}
 initNavbar()
 initPositions() // async — Notion data loads in the background
 initFooter()
+
+scrollToHash()

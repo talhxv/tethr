@@ -1,4 +1,5 @@
 import './style.css'
+import { scrollToHash } from './lib/page-transition.js'
 import { html as notFoundHtml, init as initNotFound } from './components/not-found.js'
 import { html as footerHtml, init as initFooter } from './components/footer.js'
 
@@ -11,3 +12,5 @@ document.querySelector('#app').innerHTML = `
 
 initNotFound()
 initFooter()
+
+scrollToHash()
