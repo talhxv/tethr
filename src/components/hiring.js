@@ -49,6 +49,12 @@ export const html = `
 
     <div class="hiring-steps" id="hiringSteps">
       <div class="hiring-steps__line" id="hiringStepsLine"></div>
+
+      <!-- Tether — dashed leader from the step 02 pill up to the panel's
+           underside; same grammar as the callout leader lines inside it -->
+      <svg class="hiring-tether" id="hiringTether" aria-hidden="true">
+        <line id="hiringTetherLine" stroke="rgba(7,85,233,0.5)" stroke-width="1.2" stroke-dasharray="3 6" stroke-linecap="round" />
+      </svg>
       ${STEPS.map((s, i) => `
       <div class="hiring-step" data-idx="${i}">
         <span class="hiring-step__tag">
@@ -101,8 +107,11 @@ export function init() {
   const steps    = document.querySelectorAll('.hiring-step')
   const calloutsSvg = document.getElementById('hiringCalloutsSvg')
   const callouts = [...document.querySelectorAll('.hiring-callout')]
+  const tether     = document.getElementById('hiringTether')
+  const tetherLine = document.getElementById('hiringTetherLine')
   const layers   = [l1, l2, l3]
   const mobileMq = window.matchMedia('(max-width: 768px)')
+  const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)')
   if (!section || !panel || !stack) return
 
   /* Layers rest flush (closed deck) inside the hidden panel and fan open as
@@ -111,7 +120,15 @@ export function init() {
   const REST_Y = mobileMq.matches ? [0, 22, 44] : [0, 30, 60]
   const FAN    = [0, -14, -28]
 
-  gsap.set(panel, { autoAlpha: 0, y: 10, xPercent: mobileMq.matches ? 0 : -50 })
+  const PANEL_GAP = 32 // must match .hiring-annot-panel's bottom offset
+  const animate = !reduceMq.matches
+
+  gsap.set(panel, {
+    autoAlpha: 0, y: 8,
+    xPercent: mobileMq.matches ? 0 : -50,
+    scale: !mobileMq.matches && animate ? 0.97 : 1,
+    transformOrigin: '50% 100%',
+  })
   gsap.set(l2, { y: REST_Y[1] })
   gsap.set(l3, { y: REST_Y[2] })
   gsap.set(headline, { opacity: 0, y: 12 })
@@ -129,8 +146,50 @@ export function init() {
 
   let annotActive = false
 
+  /* ── Bloom at the cursor, then plant ──
+     The panel opens at the pointer's x — the one cursor-aware moment — and
+     holds still there. A dashed tether from the step 02 pill to its
+     underside says what the panel is: that pill's internals, exploded.
+     Same leader-line grammar as the callouts inside. */
+  const cursor = { x: 0, has: false }
+
+  function seedCursor(e) {
+    const r = stepsRow.getBoundingClientRect()
+    cursor.x = e.clientX - r.left
+    cursor.has = true
+  }
+
+  // Panel-center x offset from the row's center, clamped so it stays inside
+  function plantX() {
+    const rowW = stepsRow.offsetWidth
+    const half = panel.offsetWidth / 2
+    const cx = Math.max(half - 12, Math.min(rowW - half + 12, cursor.x))
+    return cx - rowW / 2
+  }
+
+  function drawTether(drawIn) {
+    const pill = steps[1] && steps[1].querySelector('.hiring-step__tag')
+    if (!pill) return
+    const rowR = stepsRow.getBoundingClientRect()
+    const pillR = pill.getBoundingClientRect()
+    const x1 = pillR.left - rowR.left + pillR.width / 2
+    const y1 = pillR.top - rowR.top - 6
+    const x2 = stepsRow.offsetWidth / 2 + Number(gsap.getProperty(panel, 'x'))
+    const y2 = -PANEL_GAP + 2
+    tetherLine.setAttribute('x1', x1)
+    tetherLine.setAttribute('y1', y1)
+    tetherLine.setAttribute('x2', drawIn ? x1 : x2)
+    tetherLine.setAttribute('y2', drawIn ? y1 : y2)
+    if (drawIn) {
+      gsap.to(tetherLine, { attr: { x2, y2 }, duration: 0.3, ease: 'power2.out', delay: 0.08 })
+    }
+  }
+
   function drawCalloutLines(animate) {
     const pR = panel.getBoundingClientRect()
+    // Rects are measured mid-bloom (panel scaled ~0.97); normalize back to
+    // local units so line endpoints land right once the scale reaches 1
+    const s = pR.width / panel.offsetWidth || 1
     calloutsSvg.innerHTML = ''
     callouts.forEach((c, idx) => {
       const li = +c.dataset.layer
@@ -138,10 +197,10 @@ export function init() {
       const cR = c.getBoundingClientRect()
       // Anchor to where the layer will be once the fan-open tween lands
       const curY = Number(gsap.getProperty(layers[li], 'y'))
-      const x1 = lR.left - pR.left + lR.width * 0.8
-      const y1 = lR.top - pR.top + lR.height * 0.45 + (FAN[li] - curY)
-      const x2 = cR.left - pR.left - 10
-      const y2 = cR.top - pR.top + cR.height / 2
+      const x1 = (lR.left - pR.left + lR.width * 0.8) / s
+      const y1 = (lR.top - pR.top + lR.height * 0.45) / s + (FAN[li] - curY)
+      const x2 = (cR.left - pR.left) / s - 10
+      const y2 = (cR.top - pR.top + cR.height / 2) / s
       const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line')
       ln.setAttribute('x1', x1)
       ln.setAttribute('y1', y1)
@@ -161,8 +220,15 @@ export function init() {
     if (annotActive) return
     annotActive = true
     // Panel opens over the headline band on desktop — quiet it down
-    if (!mobileMq.matches) gsap.to(headline, { opacity: 0.08, duration: 0.25, overwrite: 'auto' })
-    gsap.to(panel, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power3.out', overwrite: 'auto' })
+    if (!mobileMq.matches) {
+      gsap.to(headline, { opacity: 0.08, duration: 0.25, overwrite: 'auto' })
+      // Plant at the cursor's x before revealing; it stays put from here
+      if (cursor.has) gsap.set(panel, { x: plantX() })
+      if (animate) gsap.to(panel, { scale: 1, duration: 0.25, ease: 'power3.out', overwrite: 'auto' })
+      drawTether(animate)
+      gsap.fromTo(tether, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, delay: 0.04, overwrite: 'auto' })
+    }
+    gsap.to(panel, { autoAlpha: 1, y: 0, duration: 0.22, ease: 'power3.out', overwrite: 'auto' })
     gsap.to(l2, { y: FAN[1], duration: 0.5, ease: 'power3.out', delay: 0.06, overwrite: 'auto' })
     gsap.to(l3, { y: FAN[2], duration: 0.5, ease: 'power3.out', delay: 0.06, overwrite: 'auto' })
     gsap.to(callouts, { autoAlpha: 1, x: 0, duration: 0.3, stagger: 0.08, delay: 0.16, overwrite: 'auto' })
@@ -172,17 +238,20 @@ export function init() {
   function hideAnnotations(instant) {
     if (!annotActive) return
     annotActive = false
+    const resetScale = !mobileMq.matches && animate ? 0.97 : 1
     if (instant) {
       gsap.set(headline, { opacity: 1 })
-      gsap.set(panel, { autoAlpha: 0, y: 10 })
+      gsap.set(panel, { autoAlpha: 0, y: 8, scale: resetScale })
       gsap.set(callouts, { autoAlpha: 0, x: 8 })
+      gsap.set(tether, { autoAlpha: 0 })
       gsap.set(l2, { y: REST_Y[1] })
       gsap.set(l3, { y: REST_Y[2] })
       calloutsSvg.innerHTML = ''
       return
     }
     gsap.to(headline, { opacity: 1, duration: 0.3, overwrite: 'auto' })
-    gsap.to(panel, { autoAlpha: 0, y: 10, duration: 0.22, ease: 'power2.in', overwrite: 'auto' })
+    gsap.to(panel, { autoAlpha: 0, y: 8, scale: resetScale, duration: 0.2, ease: 'power2.in', overwrite: 'auto' })
+    gsap.to(tether, { autoAlpha: 0, duration: 0.16, overwrite: 'auto' })
     gsap.to(l2, { y: REST_Y[1], duration: 0.25, delay: 0.18, overwrite: 'auto' })
     gsap.to(l3, { y: REST_Y[2], duration: 0.25, delay: 0.18, overwrite: 'auto' })
     gsap.to(callouts, { autoAlpha: 0, x: 8, duration: 0.18, overwrite: 'auto' })
@@ -222,11 +291,12 @@ export function init() {
   }
 
   /* The diagram belongs to step 02 alone — it blooms out of that step and
-     out of no other. The panel is a DOM child of the row, so moving the
-     pointer up into it keeps it open; leaving the row closes it. */
+     out of no other, opening at the cursor's x and planting itself there.
+     Leaving the row closes it. */
   steps.forEach((el, i) => {
-    el.addEventListener('mouseenter', () => {
+    el.addEventListener('mouseenter', (e) => {
       if (!settled || mobileMq.matches) return
+      seedCursor(e)
       setActiveStep(i)
       if (i === 1) showAnnotations()
       else hideAnnotations()
@@ -242,6 +312,9 @@ export function init() {
   }
 
   window.addEventListener('resize', () => {
-    if (annotActive) drawCalloutLines(false)
+    if (!annotActive) return
+    if (!mobileMq.matches && cursor.has) gsap.set(panel, { x: plantX() })
+    drawCalloutLines(false)
+    if (!mobileMq.matches) drawTether(false)
   })
 }

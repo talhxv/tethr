@@ -1454,14 +1454,17 @@ code {
 
 /* ── Step 02's funnel panel ──
    The isometric diagram lives in a frosted-glass panel that blooms upward
-   out of step 02 on hover — anchored above the row's center column, out of
-   flow, so nothing shifts and nothing is reserved at rest. Same glass
-   vocabulary as the hero panel. */
+   out of step 02 on hover — it opens at the cursor's x (GSAP sets the
+   transform once) and plants itself there, tied back to the step 02 pill
+   by a dashed tether. Out of flow, so nothing shifts and nothing is
+   reserved at rest. Same glass vocabulary as the hero panel. */
 .hiring-annot-panel {
   position: absolute;
-  bottom: calc(100% + 16px);
+  bottom: calc(100% + 32px); /* PANEL_GAP in hiring.js must match */
   left: 50%;
   z-index: 2;
+  pointer-events: none;
+  will-change: transform, opacity;
   display: flex;
   align-items: center;
   gap: clamp(24px, 3vw, 36px);
@@ -1506,6 +1509,16 @@ code {
   overflow: visible;
   pointer-events: none;
   z-index: 1;
+}
+
+/* Pill-to-panel tether — sits over the row, under the panel and step pills */
+.hiring-tether {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
 }
 
 .hiring-callouts {
@@ -1561,7 +1574,7 @@ code {
   top: 14px;
   left: calc(100% / 6);
   right: calc(100% / 6);
-  border-top: 1.5px dashed rgba(31, 143, 92, 0.4);
+  border-top: 1.5px dashed rgba(7, 85, 233, 0.4);
   z-index: 0;
   will-change: clip-path;
 }
@@ -1583,14 +1596,14 @@ code {
   gap: 8px;
   padding: 7px 14px;
   border-radius: 999px;
-  background: #e9f7f0;
-  border: 1px solid rgba(31, 143, 92, 0.35);
+  background: #E7EFFF;
+  border: 1px solid rgba(7, 85, 233, 0.35);
   font-family: 'Manrope', sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #1F8F5C;
+  color: #0755E9;
   margin-bottom: 18px;
 }
 
@@ -1600,15 +1613,15 @@ code {
   width: 12px;
   height: 2px;
   border-radius: 1px;
-  background: #1F8F5C;
+  background: #0755E9;
   opacity: 0.45;
 }
 
 /* Final state pill — filled, the process lands here. (Selected by data-idx,
    not :last-child — the annot panel is the row's actual last child.) */
 .hiring-step[data-idx="2"] .hiring-step__tag {
-  background: #1F8F5C;
-  border-color: #1F8F5C;
+  background: #0755E9;
+  border-color: #0755E9;
   color: #fff;
 }
 
@@ -2131,6 +2144,7 @@ code {
   }
 
   .hiring-steps__line { display: none; }
+  .hiring-tether { display: none; }
 
   .hiring-step__desc { max-width: 300px; }
 
@@ -2888,7 +2902,7 @@ code {
 .footer-lead {
   display: flex;
   align-items: center;
-  gap: 48px;
+  gap: 32px;
 }
 
 .footer-logo {
@@ -2902,6 +2916,8 @@ code {
 .footer-logo__icon {
   height: 90px;
   width: auto;
+  /* Asset is brand blue; footer sits on navy, so force it white */
+  filter: brightness(0) invert(1);
 }
 
 /* hidden on desktop — info block replaces it */
@@ -2955,7 +2971,7 @@ code {
 .footer-info {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 32px;
 }
 
 .footer-globe {
