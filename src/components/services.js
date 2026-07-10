@@ -24,30 +24,34 @@ const SERVICES = [
   },
 ]
 
-const sphere = `
-  <div class="services__sphere services__glass-sphere" role="presentation" aria-hidden="true">
-    <div class="glass-sphere__lens"></div>
-    <div class="glass-sphere__body"></div>
-    <div class="glass-sphere__glint"></div>
-    <div class="glass-sphere__rim"></div>
-  </div>`
-
 // Scene art per service — the compositions from the old cards, now living in
 // one shared stage that crossfades as the index is browsed.
 const SCENES = {
   software: `
     <img src="${swirl}" class="services__swirl" alt="" />
-    <img src="${tethrEarth}" class="services__earth" alt="" />
-    ${sphere}`,
+    <img src="${tethrEarth}" class="services__earth" alt="" />`,
   automations: `
     <img src="${swirl}" class="services__swirl services__swirl--auto" alt="" />
-    <img src="${settingsCog}" class="services__cog" alt="" />
-    ${sphere}`,
+    <img src="${settingsCog}" class="services__cog" alt="" />`,
   consulting: `
     <img src="${swirl}" class="services__swirl services__swirl--consult" alt="" />
-    <img src="${executionStack}" class="services__stack" alt="" />
-    ${sphere}`,
+    <img src="${executionStack}" class="services__stack" alt="" />`,
 }
+
+/* ONE glass sphere for the whole stage, not one per scene. It sits outside
+   the crossfading scenes so its backdrop-filter lens is never wrapped in an
+   animating-opacity group — opacity < 1 on any ancestor forms a backdrop
+   root that cuts the lens off from the real backdrop, which is what made
+   the refraction render once wrong during the fade and again right after
+   it (the "double render"). This sphere never fades; it just is, and it
+   glides between per-scene anchors (see [data-scene] rules in style.css). */
+const sphere = `
+  <div class="services__sphere services__glass-sphere" data-scene="software" role="presentation" aria-hidden="true">
+    <div class="glass-sphere__lens"></div>
+    <div class="glass-sphere__body"></div>
+    <div class="glass-sphere__glint"></div>
+    <div class="glass-sphere__rim"></div>
+  </div>`
 
 const arrow = `
   <svg class="services__row-arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -99,6 +103,7 @@ export const html = `
           (s, i) => `
         <div class="services__scene services__scene--${s.id}${i === 0 ? ' is-active' : ''}" data-scene="${s.id}" aria-hidden="true">${SCENES[s.id]}</div>`
         ).join('')}
+        ${sphere}
       </div>
       <div class="services__captions">
         ${SERVICES.map(
@@ -135,6 +140,7 @@ export function init() {
   const rows = [...section.querySelectorAll('.services__row')]
   const scenes = [...section.querySelectorAll('.services__scene')]
   const captions = [...section.querySelectorAll('.services__caption')]
+  const stageSphere = section.querySelector('.services__sphere')
 
   function activate(id) {
     rows.forEach((row) => {
@@ -144,6 +150,7 @@ export function init() {
     })
     scenes.forEach((s) => s.classList.toggle('is-active', s.dataset.scene === id))
     captions.forEach((c) => c.classList.toggle('is-active', c.dataset.caption === id))
+    if (stageSphere) stageSphere.dataset.scene = id
   }
 
   rows.forEach((row) => {
@@ -174,25 +181,4 @@ export function init() {
     rows.forEach((row) => scrollIO.observe(row))
   }
 
-  // Fade the glass spheres in before the section scrolls into view, so the
-  // backdrop-filter lens's first (lazy) compile happens under cover of the
-  // fade rather than popping in cold. The positive rootMargin fires ~40% of a
-  // viewport early: scrolling visitors arrive after the fade has finished,
-  // while a cold load directly at the section still gets the covering fade.
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver(
-      (entries, obs) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            section.classList.add('is-inview')
-            obs.disconnect()
-          }
-        })
-      },
-      { rootMargin: '0px 0px 40% 0px' }
-    )
-    io.observe(section)
-  } else {
-    section.classList.add('is-inview')
-  }
 }

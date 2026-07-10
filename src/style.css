@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:ital,wght@0,400;0,600;0,800;1,400;1,600;1,800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400;1,500;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
 :root {
@@ -1647,7 +1647,7 @@ code {
 .hiring-step__desc {
   font-family: 'Manrope', sans-serif;
   font-size: clamp(14px, 1.1vw, 15.5px);
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.6;
   color: #767a8a;
   margin: 0;
@@ -2218,14 +2218,14 @@ code {
   overflow: hidden;
 }
 
-/* Idle scenes sit at 0.001 (not 0) so the browser keeps painting them and the
-   sphere's backdrop-filter lens stays compiled — otherwise it pops in a beat
-   late on every switch. No will-change here: a permanent backdrop root would
-   cut the lens off from the stage background and darken the refraction. */
+/* Scenes hold only the art now — the glass sphere lives beside them in the
+   stage (one sphere, never inside a fading scene; see .services__sphere).
+   That keeps its backdrop-filter lens out of these opacity groups, so the
+   crossfade can't distort or re-trigger the refraction. */
 .services__scene {
   position: absolute;
   inset: 0;
-  opacity: 0.001;
+  opacity: 0;
   transition: opacity 0.35s ease;
   pointer-events: none;
 }
@@ -2379,28 +2379,48 @@ code {
   z-index: 0;
 }
 
-.services__scene--software .services__sphere {
+/* The stage's single sphere — lives beside the scenes, not inside them, and
+   glides between per-scene anchors as the active scene changes. Anchors are
+   all top/left so the transition interpolates cleanly. */
+.services__sphere {
   position: absolute;
-  bottom: 36px;
+  z-index: 1;
+  pointer-events: none;
+  transition: top 0.45s ease, left 0.45s ease, width 0.45s ease, height 0.45s ease;
+}
+
+.services__sphere[data-scene="software"] {
+  top: calc(100% - 132px); /* bottom: 36px at 96px */
   left: 120px;
   width: 96px;
   height: 96px;
-  z-index: 1;
+}
+
+.services__sphere[data-scene="automations"] {
+  top: 24px;
+  left: calc(50% - 70px); /* was left: 50% + translateX(-80%) at 88px */
+  width: 88px;
+  height: 88px;
+}
+
+.services__sphere[data-scene="consulting"] {
+  /* Over the stack's lower-right quadrant and the swirl's upper arc, so the
+     lens has line art to bend — same overlap the other two scenes get */
+  top: 118px;
+  left: calc(100% - 240px);
+  width: 88px;
+  height: 88px;
 }
 
 /* Glass sphere — liquid glass: lens layer refracts the backdrop, body adds frost + tint */
-/* Idles at 0.001 (kept painting, lens stays compiled — same trick as
-   .services__scene) until services.js adds .is-inview ahead of the section
-   scrolling in; the fade covers the lens's first paint on cold loads. */
+/* Never fade this (or any ancestor of it): opacity < 1 forms a backdrop
+   root that cuts the lens off from the real backdrop, so the refraction
+   renders wrong during the fade and re-renders right after it settles.
+   The sphere is simply always on; .lens-warmup precompiles the filter at
+   page load so it arrives statically, refraction and all. */
 .services__glass-sphere {
   border-radius: 50%;
   overflow: visible;
-  opacity: 0.001;
-  transition: opacity 0.6s ease;
-}
-
-.services.is-inview .services__glass-sphere {
-  opacity: 1;
 }
 
 /* Refraction layer: bends whatever is painted behind the sphere (Chromium only) */
@@ -2499,15 +2519,6 @@ code {
   z-index: 0;
 }
 
-.services__scene--automations .services__sphere {
-  position: absolute;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-80%);
-  width: 88px;
-  height: 88px;
-  z-index: 1;
-}
 
 /* Consulting scene */
 .services__scene--consulting .services__swirl--consult {
@@ -2527,15 +2538,6 @@ code {
   width: 55%;
   opacity: 0.5;
   z-index: 0;
-}
-
-.services__scene--consulting .services__sphere {
-  position: absolute;
-  top: 20px;
-  right: 100px;
-  width: 88px;
-  height: 88px;
-  z-index: 1;
 }
 
 @media (max-width: 900px) {
