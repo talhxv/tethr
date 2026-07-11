@@ -1869,6 +1869,14 @@ code {
   flex-shrink: 0;
 }
 
+/* Dept + employment pills travel together ahead of the title */
+.op-row__badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .op-row__title {
   font-family: 'Manrope', sans-serif;
   font-size: clamp(18px, 2.2vw, 28px);
@@ -1939,6 +1947,9 @@ code {
   min-height: 0;
   opacity: 0;
   transition: opacity 0.25s ease;
+  /* Undoes #app's global text-align: center, which was centering the
+     blurb's last line */
+  text-align: left;
 }
 
 .op-row.open .op-row__expand {
@@ -1948,6 +1959,49 @@ code {
 .op-row.open .op-row__expand-inner {
   opacity: 1;
   transition: opacity 0.3s ease 0.1s;
+}
+
+/* Fact pills — same grammar as the hiring section's milestone tags.
+   Employment rides in the title row beside the dept pill (filled blue, the
+   scan-level fact); compensation sits in the drawer footer as a tinted
+   figure, paired with the apply action across the row. */
+.op-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 999px;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Dash echoes the hiring pills' tag-line */
+.op-pill__line {
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+/* Sized to the dept pill it sits beside */
+.op-pill--type {
+  background: #0755E9;
+  color: #fff;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 5px 12px;
+}
+
+/* Money reads as a figure, not a tracked-out tag */
+.op-pill--comp {
+  background: #E7EFFF;
+  border: 1px solid rgba(7, 85, 233, 0.35);
+  color: #0755E9;
+  font-size: 12.5px;
+  letter-spacing: 0.2px;
+  padding: 6px 14px;
 }
 
 .op-row__blurb {
@@ -1984,28 +2038,30 @@ code {
   letter-spacing: 0.5px;
 }
 
-/* Quiet text link, not a filled pill — the arrow nudges right on hover */
+/* Outline pill at the row's right margin — same grammar as the footer
+   note's "Send an open application", fills blue on hover */
 .op-row__apply {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 0;
+  gap: 8px;
+  padding: 10px 22px;
   background: none;
+  border: 1.5px solid rgba(43, 68, 255, 0.3);
+  border-radius: 999px;
   color: #2B44FF;
   font-family: 'Manrope', sans-serif;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: gap 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   flex-shrink: 0;
 }
 
-.op-row__apply svg { transition: transform 0.2s ease; }
-
 .op-row__apply:hover {
-  color: #0755E9;
-  gap: 11px;
+  background: #2B44FF;
+  border-color: #2B44FF;
+  color: #fff;
 }
 
 /* Empty state */
@@ -2577,7 +2633,12 @@ code {
   position: relative;
   width: calc(100% - 32px);
   margin: 20px 16px 0;
-  min-height: 640px;
+  /* A flat 640px reads as full-screen on short viewports (14" laptops are
+     often ~800-850px tall even at desktop widths) since flex-centering just
+     pads the difference with empty space. Scale off viewport height instead,
+     capped at the old 640px for tall screens and floored so it never gets
+     cramped. */
+  min-height: clamp(460px, 62vh, 640px);
   background-color: #ffffff;
   border-radius: 28px;
   overflow: hidden;
@@ -2641,12 +2702,33 @@ code {
 
 .cta__sphere {
   position: absolute;
-  left: calc(50% + 180px);
-  top: calc(41% + 0px);
+  left: calc(50% + 165px);
+  top: 37%; /* straddles the heading's second line, partway onto "Real." —
+               part of the word reads plain, part through the glass */
   width: 110px;
   height: 110px;
   pointer-events: none;
-  z-index: 2;
+  /* Above .cta__content (z 3) so the heading paints into the lens's
+     backdrop and gets refracted — below it the text just draws over
+     the sphere and the glass reads as inert */
+  z-index: 4;
+}
+
+/* Letters live under this sphere — swap in the text-tuned lens (gentler
+   bend, wider clear center) and thin the frost so "Real." stays readable
+   through the glass instead of washing into smudges */
+.cta__sphere .glass-sphere__lens {
+  backdrop-filter: url(#liquid-lens-text);
+}
+
+.cta__sphere .glass-sphere__body {
+  backdrop-filter: blur(0.4px) saturate(1.2) contrast(1.06);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.45),
+    inset 0 -2px 6px rgba(43,68,255,0.16),
+    inset 0 0 8px rgba(255,255,255,0.06),
+    0 12px 40px rgba(43,68,255,0.18),
+    0 2px 8px rgba(0,0,0,0.12);
 }
 
 .cta__content {

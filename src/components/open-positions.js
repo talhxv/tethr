@@ -34,12 +34,14 @@ function jobRow(job, index) {
   <article class="op-row" data-id="${job.id}" data-dept="${job.department}" style="animation-delay:${index * 80}ms">
     <div class="op-row__main">
       <div class="op-row__left">
-        <span class="op-row__dept" style="background:${d.bg};color:${d.text}">${job.department || 'General'}</span>
+        <div class="op-row__badges">
+          <span class="op-row__dept" style="background:${d.bg};color:${d.text}">${job.department || 'General'}</span>
+          ${job.type ? `<span class="op-pill op-pill--type"><span class="op-pill__line"></span>${job.type}</span>` : ''}
+        </div>
         <h2 class="op-row__title">${job.title}</h2>
       </div>
       <div class="op-row__meta">
         ${job.location ? `<span class="op-row__location">${job.location}</span>` : ''}
-        ${job.type     ? `<span class="op-row__type">${job.type}</span>` : ''}
         <div class="op-row__arrow" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M3.75 14.25L14.25 3.75M14.25 3.75H6.75M14.25 3.75V11.25" stroke="#2B44FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -52,6 +54,7 @@ function jobRow(job, index) {
       ${job.blurb ? `<p class="op-row__blurb">${job.blurb}</p>` : ''}
       <div class="op-row__footer">
         <div class="op-row__tags">
+          ${job.compensation ? `<span class="op-pill op-pill--comp">${job.compensation}</span>` : ''}
           ${tags.map(t => `<span class="op-row__tag">${t}</span>`).join('')}
         </div>
         <a href="${TALLY_FORM_URL}?position=${encodeURIComponent(job.title)}" class="op-row__apply" data-apply data-position="${escapeAttr(job.title)}" target="_blank" rel="noopener">Apply for this role

@@ -12,18 +12,40 @@ function text(prop) {
   return ''
 }
 
+// Description is one rich-text field carrying two things: a "Type · Comp"
+// meta line and the actual blurb, e.g. "Full-Time · $500–$700/mo\nFront-line
+// IT support...". Employment type already has its own reliable Notion
+// select (mapped to `type` below), so only compensation gets pulled out of
+// the free-text meta line — the rest becomes the plain blurb paragraph.
+function parseDescription(raw) {
+  const value = String(raw ?? '').trim()
+  if (!value) return { blurb: '', compensation: '' }
+
+  const nl = value.indexOf('\n')
+  const firstLine = (nl === -1 ? value : value.slice(0, nl)).trim()
+  const dot = firstLine.indexOf('·') // ·
+
+  if (dot === -1) return { blurb: value, compensation: '' }
+
+  const compensation = firstLine.slice(dot + 1).trim()
+  const blurb = nl === -1 ? '' : value.slice(nl + 1).trim()
+  return { blurb, compensation }
+}
+
 function mapPage(page) {
   const p = page.properties
+  const { blurb, compensation } = parseDescription(text(p['Description']))
   return {
-    id:         page.id,
-    title:      text(p['Position']),
-    department: text(p['Client']),
-    type:       text(p['Employment Type']),
-    location:   text(p['Location']),
-    blurb:      text(p['Description']),
-    tags:       [],
-    applyUrl:   '',
-    status:     text(p['Status']),
+    id:           page.id,
+    title:        text(p['Position']),
+    department:   text(p['Client']),
+    type:         text(p['Employment Type']),
+    location:     text(p['Location']),
+    blurb,
+    compensation,
+    tags:         [],
+    applyUrl:     '',
+    status:       text(p['Status']),
   }
 }
 
