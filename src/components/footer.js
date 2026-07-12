@@ -62,6 +62,21 @@ export const html = `
 `
 
 export function init() {
+  /* Overscroll bounce / pinch-zoom-out reveals the canvas (html background)
+     beyond the page's end — white by default, which amputates the cropped
+     wordmark. Near the footer, tint the canvas navy so the void continues
+     it; restore above so a top bounce still shows white behind the light
+     page opening. (Elements can't paint into the void — canvas color is
+     the only thing browsers render there.) */
+  const canvas = document.documentElement
+  function tintCanvas() {
+    const nearEnd = window.innerHeight + window.scrollY >= canvas.scrollHeight - 320
+    canvas.style.backgroundColor = nearEnd ? '#001B4D' : ''
+  }
+  window.addEventListener('scroll', tintCanvas, { passive: true })
+  window.addEventListener('resize', tintCanvas, { passive: true })
+  tintCanvas()
+
   let colon = true
   const el = document.getElementById('footer-clock')
   if (!el) return

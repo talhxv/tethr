@@ -65,6 +65,11 @@ html {
 
 body {
   margin: 0;
+  /* Own opaque background — the page must not rely on the canvas being
+     white, because footer.js tints the canvas (html) navy near the page
+     end so overscroll/zoom-out voids continue the footer instead of
+     cutting the wordmark off with white */
+  background: #fff;
 }
 
 h1,
