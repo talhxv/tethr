@@ -2455,33 +2455,36 @@ a.op-row {
   transform: translateY(-1px);
 }
 
-.op-detail__share {
+/* Refer a friend — a quiet mono aside in the back-link's voice, at the
+   strip's far end. One filled action per row; utilities don't wear pills. */
+.op-detail__refer {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  padding: 13px 26px;
+  margin-left: auto;
+  padding: 8px 2px;
   background: none;
-  border: 1.5px solid rgba(43, 68, 255, 0.3);
-  border-radius: 999px;
-  color: #2B44FF;
-  font-family: 'Manrope', sans-serif;
-  font-size: 14px;
+  border: none;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
   font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.op-detail__share:hover {
-  background: rgba(43, 68, 255, 0.06);
-  border-color: #2B44FF;
-}
-
-/* Confirmed state borrows the comp pill's tinted voice */
-.op-detail__share.copied {
-  background: #E7EFFF;
-  border-color: rgba(7, 85, 233, 0.35);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: #0755E9;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
+
+.op-detail__refer svg {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.op-detail__refer:hover { color: #2B44FF; }
+.op-detail__refer:hover svg { transform: rotate(-14deg); }
+
+/* Confirmed — the ink settles to navy */
+.op-detail__refer.copied { color: #001131; }
 
 /* Detail skeleton for direct-link landings */
 .op-skeleton--back     { width: 170px; height: 14px; margin-bottom: 40px; }
@@ -2492,8 +2495,8 @@ a.op-row {
 @media (max-width: 640px) {
   .op-detail__title { letter-spacing: -1px; }
   .op-detail__cta { flex-direction: column; align-items: stretch; }
-  .op-detail__apply,
-  .op-detail__share { justify-content: center; }
+  .op-detail__apply { justify-content: center; }
+  .op-detail__refer { margin: 4px 0 0; justify-content: center; }
 }
 
 /* ── HIRING MOBILE ── */

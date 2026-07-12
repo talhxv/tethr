@@ -1,4 +1,5 @@
 import { fetchJobs } from '../lib/notion.js'
+import { exciteNavbar } from './navbar.js'
 import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
 
 // Tally application form. Create it at tally.so, connect it to your Notion
@@ -115,10 +116,12 @@ function detailHtml(job) {
           <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
-      <button type="button" class="op-detail__share" data-refer>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M10 14a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M14 10a5 5 0 0 0-7.07 0L4.1 12.83a5 5 0 0 0 7.07 7.07l1.32-1.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <button type="button" class="op-detail__refer" data-refer>
+        <!-- navbarchainlink.svg, inlined so it inherits the button's
+             hover/copied color -->
+        <svg width="18" height="6" viewBox="0 0 14 5" fill="none" aria-hidden="true">
+          <path d="M4.46582 2.2063C4.46582 1.9626 4.66338 1.76505 4.90708 1.76505H9.31967C9.56337 1.76505 9.76093 1.9626 9.76093 2.2063C9.76093 2.45 9.56337 2.64756 9.31967 2.64756H4.90708C4.66338 2.64756 4.46582 2.45 4.46582 2.2063Z" fill="currentColor"/>
+          <path d="M4.75195 0C5.67337 0.000126237 6.46188 0.565786 6.79199 1.36816H5.59766C5.39561 1.17821 5.12443 1.06055 4.8252 1.06055H2.13281C1.50968 1.06055 1.00433 1.56545 1.00391 2.18848C1.00393 2.81185 1.50943 3.31738 2.13281 3.31738H4.8252C5.08614 3.31738 5.3254 3.22783 5.5166 3.0791H6.77734C6.43908 3.86349 5.66021 4.41296 4.75195 4.41309H2.20605C0.987671 4.41292 2.22361e-05 3.42447 0 2.20605C0.00032914 0.987899 0.98786 0.000160668 2.20605 0H4.75195ZM11.7109 0C12.9289 0.000371713 13.9166 0.98805 13.917 2.20605C13.9169 3.42426 12.9291 4.41271 11.7109 4.41309H9.16504C8.25683 4.41296 7.47794 3.86347 7.13965 3.0791H8.39941C8.59073 3.22806 8.83054 3.31738 9.0918 3.31738H11.7852C12.408 3.31695 12.9128 2.81231 12.9131 2.18945C12.9129 1.56649 12.4081 1.06098 11.7852 1.06055H9.0918C8.79262 1.06055 8.52137 1.17815 8.31934 1.36816H7.125C7.45512 0.56579 8.24364 0.000123454 9.16504 0H11.7109Z" fill="currentColor"/>
         </svg>
         <span data-refer-label>Refer a friend</span>
       </button>
@@ -353,6 +356,7 @@ export async function init() {
   }
 
   function showList() {
+    exciteNavbar(false) // a hovered CTA can be removed without its mouseleave
     setListChrome(true)
     document.title = 'Open Positions – Tethr'
     renderPage(currentPage)
@@ -361,6 +365,7 @@ export async function init() {
   // ── Detail view ──
 
   function showDetail(job) {
+    exciteNavbar(false)
     setListChrome(false)
     document.title = job ? `${job.title} – Tethr` : 'Position not found – Tethr'
     list.innerHTML = job ? detailHtml(job) : notFoundHtml()
@@ -385,6 +390,12 @@ export async function init() {
       })
     })
 
+    // Hovering the page's apply CTA excites the navbar the same way its own
+    // apply button does — chain speeds up, nav glows
+    const applyBtn = list.querySelector('.op-detail__apply')
+    applyBtn?.addEventListener('mouseenter', () => exciteNavbar(true))
+    applyBtn?.addEventListener('mouseleave', () => exciteNavbar(false))
+
     // Refer a friend — copies the job's direct link to the clipboard
     const referBtn = list.querySelector('[data-refer]')
     referBtn?.addEventListener('click', async () => {
@@ -402,7 +413,7 @@ export async function init() {
         ta.remove()
       }
       referBtn.classList.add('copied')
-      label.textContent = 'Link copied — send it over'
+      label.textContent = 'Link copied'
       setTimeout(() => {
         referBtn.classList.remove('copied')
         label.textContent = 'Refer a friend'

@@ -67,6 +67,11 @@ export const html = `
 </nav>
 `
 
+// Lets other components put the navbar in its excited state (chain speeds
+// up + glow), e.g. the job detail page's apply button. Wired in init().
+let setExcitedRef = null
+export function exciteNavbar(on) { setExcitedRef?.(on) }
+
 export function init() {
   const nav = document.querySelector('.navbar')
 
@@ -107,15 +112,33 @@ export function init() {
     })
   })
 
+  // The chain normally only animates at the top of the page (perf), but the
+  // excited state overrides the pause so hovers further down the page (e.g.
+  // the job detail apply button) still get the racing chain.
+  let excited = false
+
+  function syncRunning() {
+    const shouldRun = links.length && (window.scrollY === 0 || excited)
+    if (shouldRun && rafId === null) {
+      lastTime = null
+      rafId = requestAnimationFrame(tick)
+    } else if (!shouldRun && rafId !== null) {
+      cancelAnimationFrame(rafId)
+      rafId = null
+    }
+  }
+
+  function setExcited(on) {
+    excited = on
+    speed = on ? SPEED_HOVER : SPEED_NORMAL
+    nav.style.boxShadow = on ? '0 0 12px 2px rgba(43,68,255,0.15)' : ''
+    syncRunning()
+  }
+  setExcitedRef = setExcited
+
   ;[applyBtn, burgerBtn].forEach(btn => {
-    btn.addEventListener('mouseenter', () => {
-      speed = SPEED_HOVER
-      nav.style.boxShadow = '0 0 12px 2px rgba(43,68,255,0.15)'
-    })
-    btn.addEventListener('mouseleave', () => {
-      speed = SPEED_NORMAL
-      nav.style.boxShadow = ''
-    })
+    btn.addEventListener('mouseenter', () => setExcited(true))
+    btn.addEventListener('mouseleave', () => setExcited(false))
   })
 
   function tick(now) {
@@ -216,23 +239,12 @@ export function init() {
       links.push({ g, pos: (i / N) * totalLength })
     }
 
-    rafId = requestAnimationFrame(tick)
+    syncRunning()
   }
 
   buildChainBorder()
 
-  let paused = false
-  window.addEventListener('scroll', () => {
-    const atTop = window.scrollY === 0
-    if (!atTop && !paused) {
-      paused = true
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null }
-    } else if (atTop && paused) {
-      paused = false
-      lastTime = null
-      rafId = requestAnimationFrame(tick)
-    }
-  }, { passive: true })
+  window.addEventListener('scroll', syncRunning, { passive: true })
 
   let resizeTimer
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(buildChainBorder, 150) })
