@@ -40,7 +40,7 @@ export const html = `
       <div class="footer-nav__col">
         <span class="footer-nav__label">Company</span>
         <a href="/#manifesto-track" class="footer-nav__link">About Us</a>
-        <a href="/positions.html" class="footer-nav__link">Open Positions</a>
+        <a href="/positions" class="footer-nav__link">Open Positions</a>
       </div>
       <div class="footer-connect">
         <span class="footer-nav__label">Connect</span>

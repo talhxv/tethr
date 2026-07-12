@@ -2294,6 +2294,208 @@ code {
   .op-row__left { gap: 8px; }
 }
 
+/* ── JOB DETAIL — the SPA view at /positions/<slug> ── */
+
+/* Rows are now real links to the direct URL */
+a.op-row {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Leave animation — rows/chrome fade upward before the detail view enters.
+   Stagger comes from an inline animation-delay set in JS, which survives
+   this shorthand because inline declarations win per-property. */
+@keyframes op-fade-out {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+.op-section .op-leaving {
+  animation: op-fade-out 0.26s ease both;
+  pointer-events: none;
+}
+
+.op-detail {
+  max-width: 860px;
+  text-align: left;
+  padding-top: 8px;
+}
+
+/* Entry — each block rises in sequence, same motion grammar as the rows */
+.op-detail > * { animation: op-row-in 0.45s ease both; }
+.op-detail > :nth-child(2) { animation-delay: 0.05s; }
+.op-detail > :nth-child(3) { animation-delay: 0.10s; }
+.op-detail > :nth-child(4) { animation-delay: 0.15s; }
+.op-detail > :nth-child(5) { animation-delay: 0.20s; }
+.op-detail > :nth-child(6) { animation-delay: 0.25s; }
+.op-detail > :nth-child(7) { animation-delay: 0.30s; }
+.op-detail > :nth-child(8) { animation-delay: 0.35s; }
+.op-detail > :nth-child(9) { animation-delay: 0.40s; }
+
+/* Back link — section-label mono vocabulary with the row-arrow circle */
+.op-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #0755E9;
+  text-decoration: none;
+  margin-bottom: 36px;
+}
+
+.op-detail__back-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(43, 68, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2B44FF;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.op-detail__back:hover .op-detail__back-circle {
+  background: #2B44FF;
+  border-color: #2B44FF;
+  color: #fff;
+}
+
+.op-detail__badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.op-detail__title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(34px, 4.5vw, 60px);
+  font-weight: 800;
+  color: #001131;
+  line-height: 1.06;
+  letter-spacing: -1.5px;
+  margin: 0 0 12px;
+}
+
+/* The post's opening line, in the CTA heading's serif italic accent */
+.op-detail__tagline {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: clamp(20px, 2.4vw, 28px);
+  color: #0755E9;
+  letter-spacing: -0.2px;
+  margin: 0 0 22px;
+}
+
+.op-detail__facts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+/* Standard section divider — 64px, 3px, blue */
+.op-detail__rule {
+  width: 64px;
+  height: 3px;
+  border-radius: 2px;
+  background: #2B44FF;
+  margin: 0 0 28px;
+}
+
+.op-detail__blurb {
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  color: rgba(0,17,49,0.55);
+  line-height: 1.75;
+  max-width: 680px;
+  margin: 0 0 32px;
+}
+
+.op-detail__cols {
+  margin-bottom: 32px;
+}
+
+/* CTA strip — filled apply pill + copy-link pill for sharing the direct URL */
+.op-detail__cta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(0, 17, 49, 0.08);
+}
+
+.op-detail__apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 30px;
+  background: #2B44FF;
+  border: 1.5px solid #2B44FF;
+  border-radius: 999px;
+  color: #fff;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.op-detail__apply:hover {
+  background: #001131;
+  border-color: #001131;
+  transform: translateY(-1px);
+}
+
+.op-detail__share {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 26px;
+  background: none;
+  border: 1.5px solid rgba(43, 68, 255, 0.3);
+  border-radius: 999px;
+  color: #2B44FF;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.op-detail__share:hover {
+  background: rgba(43, 68, 255, 0.06);
+  border-color: #2B44FF;
+}
+
+/* Confirmed state borrows the comp pill's tinted voice */
+.op-detail__share.copied {
+  background: #E7EFFF;
+  border-color: rgba(7, 85, 233, 0.35);
+  color: #0755E9;
+}
+
+/* Detail skeleton for direct-link landings */
+.op-skeleton--back     { width: 170px; height: 14px; margin-bottom: 40px; }
+.op-skeleton--headline { width: min(480px, 75vw); height: 46px; border-radius: 8px; margin: 16px 0 22px; }
+.op-skeleton--line     { width: min(640px, 90vw); height: 14px; margin-bottom: 12px; }
+.op-skeleton--line-short { width: min(420px, 60vw); }
+
+@media (max-width: 640px) {
+  .op-detail__title { letter-spacing: -1px; }
+  .op-detail__cta { flex-direction: column; align-items: stretch; }
+  .op-detail__apply,
+  .op-detail__share { justify-content: center; }
+}
+
 /* ── HIRING MOBILE ── */
 @media (max-width: 768px) {
   .hiring-section { padding: 56px 0 80px; }

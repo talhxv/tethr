@@ -75,6 +75,15 @@ function parseDescription(raw) {
   return out
 }
 
+// URL-safe slug for direct links: /positions/<slug>
+function slugify(s) {
+  return String(s ?? '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 function mapPage(page) {
   const p = page.properties
   const d = parseDescription(text(p['Description']))
@@ -82,6 +91,7 @@ function mapPage(page) {
   return {
     id:           page.id,
     title:        text(p['Position']),
+    slug:         slugify(text(p['Position'])) || page.id,
     department:   text(p['Client']),
     type,
     // Every Tethr role is remote — default when the Notion select is unset

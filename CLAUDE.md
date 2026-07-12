@@ -24,4 +24,4 @@ Vanilla JavaScript + Vite, no framework. ES Modules throughout (`"type": "module
 
 **Static assets:** Files in `public/` are served as-is (e.g. `public/icons.svg` for the SVG sprite). Images imported inside `src/` are processed by Vite.
 
-There is no `vite.config.js` — default Vite conventions apply (entry: `index.html`, output: `dist/`).
+**Vite config:** `vite.config.js` declares three HTML entries (`index.html`, `positions.html`, `404.html`), a dev proxy for the Notion API (`/notion-api`, auth injected from `VITE_NOTION_TOKEN`), and a middleware serving `positions.html` for the clean URLs `/positions` and `/positions/<job-slug>` (mirrored in production by `vercel.json` rewrites).

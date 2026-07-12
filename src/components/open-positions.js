@@ -26,12 +26,19 @@ function deptColor(dept) {
   return DEPT_COLORS[dept] ?? { bg: 'rgba(7,85,233,0.08)', text: '#0755E9' }
 }
 
+// /positions/<slug> → the slug; /positions or /positions.html → null
+function slugFromPath() {
+  const m = window.location.pathname.match(/^\/positions\/([^/]+?)\/?$/)
+  return m ? decodeURIComponent(m[1]) : null
+}
+
+// List rows are real links so the direct URL is middle-clickable and
+// crawlable; a click handler upgrades plain clicks to the SPA transition.
 function jobRow(job, index) {
-  const d    = deptColor(job.department)
-  const tags = Array.isArray(job.tags) ? job.tags : []
+  const d = deptColor(job.department)
 
   return `
-  <article class="op-row" data-id="${job.id}" data-dept="${job.department}" style="animation-delay:${index * 80}ms">
+  <a class="op-row" href="/positions/${job.slug}" data-slug="${escapeAttr(job.slug)}" style="animation-delay:${index * 80}ms">
     <div class="op-row__main">
       <div class="op-row__left">
         <div class="op-row__badges">
@@ -49,36 +56,95 @@ function jobRow(job, index) {
         </div>
       </div>
     </div>
-    <div class="op-row__expand">
-      <div class="op-row__expand-inner">
-      ${job.tagline ? `<p class="op-row__tagline">${job.tagline}</p>` : ''}
-      ${job.blurb ? `<p class="op-row__blurb">${job.blurb}</p>` : ''}
-      ${job.doList.length || job.needList.length ? `
-      <div class="op-row__cols">
-        ${job.doList.length ? `
-        <div class="op-row__col">
-          <span class="op-row__col-label"><span class="op-pill__line"></span>What you'll do</span>
-          <ul class="op-row__list">${job.doList.map(li => `<li>${li}</li>`).join('')}</ul>
-        </div>` : ''}
-        ${job.needList.length ? `
-        <div class="op-row__col">
-          <span class="op-row__col-label"><span class="op-pill__line"></span>What we need</span>
-          <ul class="op-row__list">${job.needList.map(li => `<li>${li}</li>`).join('')}</ul>
-        </div>` : ''}
+  </a>`
+}
+
+// Full-page job view rendered at /positions/<slug>
+function detailHtml(job) {
+  const d = deptColor(job.department)
+  // The location already has its own pill here — drop tags that repeat it
+  const tags = (Array.isArray(job.tags) ? job.tags : [])
+    .filter(t => t.toLowerCase() !== String(job.location ?? '').toLowerCase())
+
+  return `
+  <article class="op-detail">
+    <a href="/positions" class="op-detail__back" data-back>
+      <span class="op-detail__back-circle" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      All open positions
+    </a>
+
+    <div class="op-detail__badges">
+      <span class="op-row__dept" style="background:${d.bg};color:${d.text}">${job.department || 'General'}</span>
+      ${job.type ? `<span class="op-pill op-pill--type"><span class="op-pill__line"></span>${job.type}</span>` : ''}
+    </div>
+
+    <h1 class="op-detail__title">${job.title}</h1>
+    ${job.tagline ? `<p class="op-detail__tagline">${job.tagline}</p>` : ''}
+
+    <div class="op-detail__facts">
+      ${job.location ? `<span class="op-row__tag">${job.location}</span>` : ''}
+      ${job.compensation ? `<span class="op-pill op-pill--comp">${job.compensation}</span>` : ''}
+      ${tags.map(t => `<span class="op-row__tag">${t}</span>`).join('')}
+    </div>
+
+    <div class="op-detail__rule" aria-hidden="true"></div>
+
+    ${job.blurb ? `<p class="op-detail__blurb">${job.blurb}</p>` : ''}
+
+    ${job.doList.length || job.needList.length ? `
+    <div class="op-row__cols op-detail__cols">
+      ${job.doList.length ? `
+      <div class="op-row__col">
+        <span class="op-row__col-label"><span class="op-pill__line"></span>What you'll do</span>
+        <ul class="op-row__list">${job.doList.map(li => `<li>${li}</li>`).join('')}</ul>
       </div>` : ''}
-      ${job.note ? `<p class="op-row__note"><strong>Note:</strong> ${job.note}</p>` : ''}
-      <div class="op-row__footer">
-        <div class="op-row__tags">
-          ${job.compensation ? `<span class="op-pill op-pill--comp">${job.compensation}</span>` : ''}
-          ${tags.map(t => `<span class="op-row__tag">${t}</span>`).join('')}
-        </div>
-        <a href="${TALLY_FORM_URL}?position=${encodeURIComponent(job.title)}" class="op-row__apply" data-apply data-position="${escapeAttr(job.title)}" target="_blank" rel="noopener">Apply for this role
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-      </div>
-      </div>
+      ${job.needList.length ? `
+      <div class="op-row__col">
+        <span class="op-row__col-label"><span class="op-pill__line"></span>What we need</span>
+        <ul class="op-row__list">${job.needList.map(li => `<li>${li}</li>`).join('')}</ul>
+      </div>` : ''}
+    </div>` : ''}
+
+    ${job.note ? `<p class="op-row__note"><strong>Note:</strong> ${job.note}</p>` : ''}
+
+    <div class="op-detail__cta">
+      <a href="${TALLY_FORM_URL}?position=${encodeURIComponent(job.title)}" class="op-detail__apply" data-apply data-position="${escapeAttr(job.title)}" target="_blank" rel="noopener">Apply for this role
+        <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
+          <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <button type="button" class="op-detail__share" data-refer>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M10 14a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 10a5 5 0 0 0-7.07 0L4.1 12.83a5 5 0 0 0 7.07 7.07l1.32-1.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-refer-label>Refer a friend</span>
+      </button>
+    </div>
+  </article>`
+}
+
+// Shown when a shared link points at a role that's gone
+function notFoundHtml() {
+  return `
+  <article class="op-detail">
+    <a href="/positions" class="op-detail__back" data-back>
+      <span class="op-detail__back-circle" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      All open positions
+    </a>
+    <h1 class="op-detail__title">This position has closed.</h1>
+    <div class="op-detail__rule" aria-hidden="true"></div>
+    <p class="op-detail__blurb">The role behind this link isn't open right now — it may have been filled, or the link has changed. The roles we're still hiring for are one click away.</p>
+    <div class="op-detail__cta">
+      <a href="/positions" class="op-detail__apply" data-back>View open positions
+        <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
+          <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
     </div>
   </article>`
 }
@@ -100,6 +166,22 @@ function skeletonRows(n = 3) {
       </div>
     </div>
   </article>`).join('')
+}
+
+// Skeleton for a direct landing on /positions/<slug>
+function detailSkeleton() {
+  return `
+  <div class="op-detail op-detail--skeleton">
+    <span class="op-skeleton op-skeleton--back"></span>
+    <div class="op-detail__badges">
+      <span class="op-skeleton op-skeleton--pill"></span>
+      <span class="op-skeleton op-skeleton--pill op-skeleton--pill-wide"></span>
+    </div>
+    <span class="op-skeleton op-skeleton--headline"></span>
+    <span class="op-skeleton op-skeleton--line"></span>
+    <span class="op-skeleton op-skeleton--line"></span>
+    <span class="op-skeleton op-skeleton--line op-skeleton--line-short"></span>
+  </div>`
 }
 
 export const html = `
@@ -126,7 +208,7 @@ export const html = `
     <div class="op-filters__rule" aria-hidden="true"></div>
   </div>
 
-  <!-- Listings -->
+  <!-- Listings / job detail -->
   <div class="op-list padded" id="opList">
     ${skeletonRows(3)}
   </div>
@@ -158,14 +240,39 @@ export const html = `
 const PER_PAGE = 6
 
 export async function init() {
-  const list       = document.getElementById('opList')
-  const filtersEl  = document.getElementById('opFilters')
-  const pagination = document.getElementById('opPagination')
-  const pageNums   = document.getElementById('opPageNumbers')
-  const prevBtn    = document.getElementById('opPrev')
-  const nextBtn    = document.getElementById('opNext')
+  const list        = document.getElementById('opList')
+  const filtersEl   = document.getElementById('opFilters')
+  const filtersWrap = document.querySelector('.op-filters')
+  const footerNote  = document.querySelector('.op-footer-note')
+  const pagination  = document.getElementById('opPagination')
+  const pageNums    = document.getElementById('opPageNumbers')
+  const prevBtn     = document.getElementById('opPrev')
+  const nextBtn     = document.getElementById('opNext')
 
   let jobs = []
+  let filtered = []
+  let currentPage = 1
+  // Whether the current detail view was reached from the list in this
+  // session (→ back link can use history.back) or via a direct link
+  let cameFromList = false
+
+  // Filters + pagination + "don't see a fit" only belong to the list view
+  function setListChrome(visible) {
+    ;[filtersWrap, footerNote].forEach(el => {
+      if (!el) return
+      el.style.display = visible ? '' : 'none'
+      el.classList.remove('op-leaving')
+    })
+    if (!visible) pagination.style.display = 'none'
+    pagination.classList.remove('op-leaving')
+  }
+
+  // Landing straight on a job URL: show the detail skeleton, not list rows
+  if (slugFromPath()) {
+    setListChrome(false)
+    list.innerHTML = detailSkeleton()
+  }
+
   let fetchError = false
   try {
     jobs = await fetchJobs()
@@ -179,6 +286,8 @@ export async function init() {
     return
   }
 
+  filtered = [...jobs]
+
   // Build filter buttons from unique departments
   const depts = [...new Set(jobs.map(j => j.department).filter(Boolean))]
   if (depts.length && filtersEl) {
@@ -187,10 +296,9 @@ export async function init() {
       depts.map(d => `<button class="op-filter" data-filter="${d}">${d}</button>`).join('')
   }
 
-  let filtered = [...jobs]
-  let currentPage = 1
-
   function totalPages() { return Math.max(1, Math.ceil(filtered.length / PER_PAGE)) }
+
+  // ── List view ──
 
   function renderPage(page) {
     currentPage = Math.min(Math.max(1, page), totalPages())
@@ -201,13 +309,13 @@ export async function init() {
       ? slice.map((job, i) => jobRow(job, i)).join('')
       : `<p style="padding:2rem 0;color:rgba(0,17,49,0.4)">No open positions in this category.</p>`
 
-    // Expand rows on click
-    list.querySelectorAll('.op-row').forEach(row => {
+    // Plain click → SPA transition; modified clicks keep native link behavior
+    list.querySelectorAll('.op-row[data-slug]').forEach(row => {
       row.addEventListener('click', (e) => {
-        if (e.target.closest('[data-apply]')) return // let the apply link navigate
-        const isOpen = row.classList.contains('open')
-        list.querySelectorAll('.op-row').forEach(r => r.classList.remove('open'))
-        if (!isOpen) row.classList.add('open')
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        e.preventDefault()
+        const job = jobs.find(j => j.slug === row.dataset.slug)
+        if (job) openJob(job, row)
       })
     })
 
@@ -244,6 +352,100 @@ export async function init() {
     )
   }
 
+  function showList() {
+    setListChrome(true)
+    document.title = 'Open Positions – Tethr'
+    renderPage(currentPage)
+  }
+
+  // ── Detail view ──
+
+  function showDetail(job) {
+    setListChrome(false)
+    document.title = job ? `${job.title} – Tethr` : 'Position not found – Tethr'
+    list.innerHTML = job ? detailHtml(job) : notFoundHtml()
+    wireDetail()
+  }
+
+  function wireDetail() {
+    list.querySelectorAll('[data-back]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return
+        e.preventDefault()
+        const detail = list.querySelector('.op-detail')
+        if (detail) detail.classList.add('op-leaving')
+        setTimeout(() => {
+          if (cameFromList) {
+            history.back() // popstate handler re-renders the list
+          } else {
+            history.pushState({}, '', '/positions')
+            showList()
+          }
+        }, 240)
+      })
+    })
+
+    // Refer a friend — copies the job's direct link to the clipboard
+    const referBtn = list.querySelector('[data-refer]')
+    referBtn?.addEventListener('click', async () => {
+      const label = referBtn.querySelector('[data-refer-label]')
+
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+      } catch {
+        // Clipboard API unavailable (http, old browser) — textarea fallback
+        const ta = document.createElement('textarea')
+        ta.value = window.location.href
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        ta.remove()
+      }
+      referBtn.classList.add('copied')
+      label.textContent = 'Link copied — send it over'
+      setTimeout(() => {
+        referBtn.classList.remove('copied')
+        label.textContent = 'Refer a friend'
+      }, 2200)
+    })
+  }
+
+  // List → detail: URL flips to the direct link, the other rows fade out
+  // staggered while the clicked one lingers, then the detail view enters
+  function openJob(job, clickedRow) {
+    cameFromList = true
+    history.pushState({}, '', `/positions/${job.slug}`)
+    document.title = `${job.title} – Tethr`
+
+    const rows = [...list.querySelectorAll('.op-row')]
+    let maxDelay = 0
+    rows.forEach((row, i) => {
+      const delay = row === clickedRow ? rows.length * 30 + 100 : i * 30
+      maxDelay = Math.max(maxDelay, delay)
+      row.style.animationDelay = `${delay}ms`
+      row.classList.add('op-leaving')
+    })
+    ;[filtersWrap, pagination, footerNote].forEach(el => el?.classList.add('op-leaving'))
+
+    setTimeout(() => {
+      showDetail(job)
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }, maxDelay + 240)
+  }
+
+  // ── Routing ──
+
+  function route() {
+    const slug = slugFromPath()
+    if (slug) {
+      showDetail(jobs.find(j => j.slug === slug))
+    } else {
+      showList()
+    }
+  }
+
+  window.addEventListener('popstate', route)
+
   prevBtn.addEventListener('click', () => renderPage(currentPage - 1))
   nextBtn.addEventListener('click', () => renderPage(currentPage + 1))
 
@@ -258,5 +460,5 @@ export async function init() {
     })
   })
 
-  renderPage(1)
+  route()
 }
