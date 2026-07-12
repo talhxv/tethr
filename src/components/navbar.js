@@ -20,11 +20,13 @@ export const html = `
       <img src="${tethrLogo}" class="mobile-menu__icon" alt="" aria-hidden="true" />
       <img src="${tethrFontLogo}" class="mobile-menu__wordmark" alt="Tethr" />
     </a>
+    <!-- Starts as an exact copy of the navbar burger (it sits pinned on the
+         same point), then its dashes morph into an X as the menu opens -->
     <button class="mobile-menu__close" id="mobileMenuClose" aria-label="Close menu">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <line x1="2" y1="2" x2="18" y2="18" stroke="#2B44FF" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="18" y1="2" x2="2" y2="18" stroke="#2B44FF" stroke-width="2.5" stroke-linecap="round"/>
-      </svg>
+      <span class="mobile-menu__close-box" aria-hidden="true">
+        <span class="mobile-menu__close-line mobile-menu__close-line--top"></span>
+        <span class="mobile-menu__close-line mobile-menu__close-line--bottom"></span>
+      </span>
     </button>
   </div>
 

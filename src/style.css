@@ -197,6 +197,44 @@ code {
   transform: translate(-50%, -50%);
 }
 
+/* Burger→X morph: the box mirrors the navbar burger's 26×13 geometry
+   (full top line, shorter right-anchored bottom line); opening slides both
+   dashes to the middle and crosses them, closing plays it backwards while
+   the circle drains */
+.mobile-menu__close-box {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 13px;
+}
+
+.mobile-menu__close-line {
+  position: absolute;
+  height: 2.5px;
+  border-radius: 1.25px;
+  background: #2B44FF;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu__close-line--top    { top: 0;    left: 0;  width: 26px; }
+.mobile-menu__close-line--bottom { bottom: 0; right: 0; width: 18px; }
+
+/* A beat after the bloom starts, the dashes snap into an X */
+.mobile-menu.open .mobile-menu__close-line {
+  transition-delay: 0.1s;
+}
+
+.mobile-menu.open .mobile-menu__close-line--top {
+  width: 22px;
+  transform: translate(2px, 5.25px) rotate(45deg);
+}
+
+.mobile-menu.open .mobile-menu__close-line--bottom {
+  width: 22px;
+  transform: translate(-2px, -5.25px) rotate(-45deg);
+}
+
 .mobile-menu__links {
   display: flex;
   flex-direction: column;
