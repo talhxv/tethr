@@ -1,3 +1,4 @@
+import { initStickerSplash } from './sticker-splash.js'
 import tethrLogo from '../assets/tethrlogo.svg'
 import tethrFontLogo from '../assets/tethrfontlogo.svg'
 import arrowSlantUp from '../assets/arrowslantup.svg'
@@ -98,6 +99,11 @@ export function init() {
   document.body.appendChild(mobileMenu)
 
   burgerBtn.addEventListener('click', () => {
+    // Aim the menu's circle reveal at the burger's actual center — the menu
+    // is fixed to the viewport, so client coordinates map straight onto it
+    const r = burgerBtn.getBoundingClientRect()
+    mobileMenu.style.setProperty('--menu-origin-x', `${r.left + r.width / 2}px`)
+    mobileMenu.style.setProperty('--menu-origin-y', `${r.top + r.height / 2}px`)
     mobileMenu.classList.add('open')
     document.body.style.overflow = 'hidden'
   })
@@ -243,6 +249,8 @@ export function init() {
   }
 
   buildChainBorder()
+
+  initStickerSplash()
 
   window.addEventListener('scroll', syncRunning, { passive: true })
 

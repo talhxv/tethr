@@ -145,7 +145,9 @@ code {
   flex-direction: column;
   padding: 0 24px 48px;
   box-sizing: border-box;
-  clip-path: circle(0% at calc(100% - 40px) 50px);
+  /* Circle blooms from the burger's real center, measured in JS on tap —
+     the fallbacks only cover a tap before that measurement exists */
+  clip-path: circle(0% at var(--menu-origin-x, calc(100% - 40px)) var(--menu-origin-y, 50px));
   visibility: hidden;
   pointer-events: none;
   transition: clip-path 0.52s cubic-bezier(0.4, 0, 0.2, 1),
@@ -153,7 +155,7 @@ code {
 }
 
 .mobile-menu.open {
-  clip-path: circle(150% at calc(100% - 40px) 50px);
+  clip-path: circle(150% at var(--menu-origin-x, calc(100% - 40px)) var(--menu-origin-y, 50px));
   visibility: visible;
   pointer-events: all;
   transition: clip-path 0.52s cubic-bezier(0.4, 0, 0.2, 1),
@@ -3954,3 +3956,72 @@ a.op-row {
   }
 }
 
+
+/* ══ STICKER SPLASH — the navbar sticker easter egg ══ */
+
+/* The navbar sticker becomes the trigger */
+.navbar-sticker--egg {
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.navbar-sticker--egg:hover {
+  transform: rotate(-7deg) scale(1.08);
+}
+
+html.splash-lock,
+html.splash-lock body {
+  overflow: hidden;
+}
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+}
+
+/* CTA-blue circle that erupts from the sticker's navbar position */
+.splash__fill {
+  position: absolute;
+  border-radius: 50%;
+  background: #0755E9;
+  will-change: transform;
+}
+
+/* Shadow lives here, on the OUTER element, so it follows the clipped shape
+   instead of getting cut off at the clip rectangle (which reads as a faint
+   box around the sticker) */
+.splash__sticker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(480px, 74vw);
+  visibility: hidden;
+  will-change: transform;
+  filter: drop-shadow(0 30px 70px rgba(0, 8, 30, 0.4));
+}
+
+/* The wipe runs on this inner wrapper */
+.splash__clip {
+  position: relative;
+  will-change: clip-path;
+}
+
+.splash__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+/* Soft highlight that travels with the adhesion/peel edge */
+.splash__peel {
+  position: absolute;
+  top: -8%;
+  bottom: -8%;
+  left: -14%;
+  width: 13%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  pointer-events: none;
+}
