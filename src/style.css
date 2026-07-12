@@ -1658,7 +1658,7 @@ code {
 /* ── OPEN POSITIONS ── */
 
 .op-section {
-  padding: 80px 0 120px;
+  padding: 28px 0 120px;
   /* relative + z-index 0 forms a stacking context so the negative-z chains
      stay inside the section instead of dropping behind the page background */
   position: relative;
@@ -1703,7 +1703,13 @@ code {
 }
 
 .op-header {
-  margin-bottom: 56px;
+  margin-bottom: 36px;
+}
+
+/* Page opener, not a between-sections divider — drop the shared label's
+   48px (32px mobile) top margin */
+.op-header .section-label {
+  margin-top: 0;
 }
 
 .op-hero {
@@ -1836,10 +1842,13 @@ code {
   background-size: 200% 100%;
   animation: shimmer 1.4s ease infinite;
 }
-.op-skeleton--tag   { width: 80px;  height: 22px; margin-bottom: 10px; }
-.op-skeleton--title { width: 260px; height: 26px; }
-.op-skeleton--meta  { width: 100px; height: 18px; }
-.op-row--skeleton   { pointer-events: none; }
+/* Blob shapes mirror the live row: dept + employment pills, title, and the
+   round arrow — the structural classes around them supply real spacing */
+.op-skeleton--pill      { width: 76px;  height: 24px; border-radius: 999px; }
+.op-skeleton--pill-wide { width: 100px; }
+.op-skeleton--title     { width: min(260px, 50vw); height: 26px; border-radius: 6px; }
+.op-skeleton--arrow     { width: 36px; height: 36px; border-radius: 50%; }
+.op-row--skeleton       { pointer-events: none; }
 
 .op-row__main {
   display: flex;
@@ -2004,14 +2013,92 @@ code {
   padding: 6px 14px;
 }
 
+/* ── Drawer content — mirrors the LinkedIn post layout in site grammar ── */
+
+/* Tagline — the post's short opening line, in the CTA heading's serif
+   italic accent ("Let's tethr") */
+.op-row__tagline {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: clamp(19px, 2vw, 24px);
+  color: #0755E9;
+  letter-spacing: -0.2px;
+  margin: 2px 0 10px;
+}
+
 .op-row__blurb {
   font-family: 'Manrope', sans-serif;
   font-size: 15px;
   color: rgba(0,17,49,0.55);
   line-height: 1.7;
   max-width: 640px;
+  margin: 0 0 24px;
+}
+
+/* What you'll do / What we need — two columns like the post */
+.op-row__cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px clamp(32px, 5vw, 72px);
+  max-width: 860px;
+  margin: 0 0 24px;
+}
+
+/* Mono label with the pill dash — section-label vocabulary at drawer scale */
+.op-row__col-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #0755E9;
+  margin-bottom: 12px;
+}
+
+.op-row__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.op-row__list li {
+  position: relative;
+  padding-left: 20px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(0,17,49,0.62);
+}
+
+/* Dash markers — same stroke as the pill tag-lines */
+.op-row__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65em;
+  width: 10px;
+  height: 2px;
+  border-radius: 1px;
+  background: #0755E9;
+  opacity: 0.45;
+}
+
+.op-row__note {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13.5px;
+  color: rgba(0,17,49,0.5);
   margin: 0 0 20px;
-  padding-bottom: 4px;
+}
+
+.op-row__note strong {
+  color: #001131;
+  font-weight: 700;
 }
 
 .op-row__footer {
@@ -2027,15 +2114,22 @@ code {
   flex-wrap: wrap;
 }
 
+/* Quiet outline pills — third voice in the footer after the comp pill,
+   same radius and height so the row reads as one family */
 .op-row__tag {
+  display: inline-flex;
+  align-items: center;
   font-family: 'Manrope', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(0,17,49,0.4);
-  background: rgba(0,17,49,0.05);
-  padding: 4px 10px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(0,17,49,0.5);
+  background: transparent;
+  border: 1px solid rgba(0,17,49,0.15);
+  padding: 6px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 /* Outline pill at the row's right margin — same grammar as the footer
@@ -2186,6 +2280,13 @@ code {
   .op-row__title { text-align: left; }
   .op-row__meta { gap: 0; }
   .op-row__footer { flex-direction: column; align-items: flex-start; gap: 16px; }
+  /* Post columns stack on phones */
+  .op-row__cols { grid-template-columns: 1fr; gap: 20px; }
+  /* Tighter vertical rhythm — rows are two stacked lines on phones and
+     don't need desktop-scale breathing room */
+  .op-header { margin-bottom: 20px; }
+  .op-row__main { padding: 18px 0; }
+  .op-row__left { gap: 8px; }
 }
 
 /* ── HIRING MOBILE ── */

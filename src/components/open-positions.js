@@ -51,7 +51,22 @@ function jobRow(job, index) {
     </div>
     <div class="op-row__expand">
       <div class="op-row__expand-inner">
+      ${job.tagline ? `<p class="op-row__tagline">${job.tagline}</p>` : ''}
       ${job.blurb ? `<p class="op-row__blurb">${job.blurb}</p>` : ''}
+      ${job.doList.length || job.needList.length ? `
+      <div class="op-row__cols">
+        ${job.doList.length ? `
+        <div class="op-row__col">
+          <span class="op-row__col-label"><span class="op-pill__line"></span>What you'll do</span>
+          <ul class="op-row__list">${job.doList.map(li => `<li>${li}</li>`).join('')}</ul>
+        </div>` : ''}
+        ${job.needList.length ? `
+        <div class="op-row__col">
+          <span class="op-row__col-label"><span class="op-pill__line"></span>What we need</span>
+          <ul class="op-row__list">${job.needList.map(li => `<li>${li}</li>`).join('')}</ul>
+        </div>` : ''}
+      </div>` : ''}
+      ${job.note ? `<p class="op-row__note"><strong>Note:</strong> ${job.note}</p>` : ''}
       <div class="op-row__footer">
         <div class="op-row__tags">
           ${job.compensation ? `<span class="op-pill op-pill--comp">${job.compensation}</span>` : ''}
@@ -74,12 +89,14 @@ function skeletonRows(n = 3) {
   <article class="op-row op-row--skeleton" style="animation-delay:${i * 80}ms">
     <div class="op-row__main">
       <div class="op-row__left">
-        <span class="op-skeleton op-skeleton--tag"></span>
+        <div class="op-row__badges">
+          <span class="op-skeleton op-skeleton--pill"></span>
+          <span class="op-skeleton op-skeleton--pill op-skeleton--pill-wide"></span>
+        </div>
         <span class="op-skeleton op-skeleton--title"></span>
       </div>
       <div class="op-row__meta">
-        <span class="op-skeleton op-skeleton--meta"></span>
-        <span class="op-skeleton op-skeleton--meta"></span>
+        <span class="op-skeleton op-skeleton--arrow"></span>
       </div>
     </div>
   </article>`).join('')
