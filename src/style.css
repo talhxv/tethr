@@ -181,15 +181,20 @@ code {
 .mobile-menu__icon     { height: 22px; width: auto; }
 .mobile-menu__wordmark { height: 16px; width: auto; }
 
+/* Pinned to the burger's measured center (same vars the circle reveal
+   blooms from), so the X lands exactly where the burger was */
 .mobile-menu__close {
   background: none;
   border: none;
   cursor: pointer;
   padding: 8px;
-  margin-right: -4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: fixed;
+  left: var(--menu-origin-x, calc(100% - 40px));
+  top: var(--menu-origin-y, 50px);
+  transform: translate(-50%, -50%);
 }
 
 .mobile-menu__links {
