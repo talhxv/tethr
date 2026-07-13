@@ -33,24 +33,17 @@ export function initStickerSplash() {
 function splash(origin) {
   const el = document.createElement('div')
   el.className = 'splash'
-  // The clip wipe runs on an inner wrapper while the drop-shadow lives on
-  // the outer one — shadowing the *clipped* result. Clipping a shadowed
-  // element instead cuts the shadow off at the clip rectangle, which reads
-  // as a faint box around the sticker.
+  // Just the sticker itself — no shadow, no highlight strip. Anything
+  // rectangular layered around the art reads as a box on the flat blue.
   el.innerHTML = `
     <div class="splash__fill"></div>
     <div class="splash__sticker">
-      <div class="splash__clip">
-        <img class="splash__img" src="${stickerSrc}" alt="" draggable="false">
-        <div class="splash__peel"></div>
-      </div>
+      <img class="splash__img" src="${stickerSrc}" alt="" draggable="false">
     </div>`
   document.body.appendChild(el)
 
   const fill  = el.querySelector('.splash__fill')
   const stick = el.querySelector('.splash__sticker')
-  const clip  = el.querySelector('.splash__clip')
-  const peel  = el.querySelector('.splash__peel')
 
   // The flood circle grows from the sticker's center until it covers the
   // farthest viewport corner
@@ -82,16 +75,13 @@ function splash(origin) {
   tl.to(fill, { scale: 1, duration: 0.55, ease: 'power3.in' })
 
     // 2 — stick: the sticker adheres left-to-right, lands tilted, presses flat
-    .set(stick, { autoAlpha: 1, rotation: -12, scale: 1.16 })
-    .set(clip, { clipPath: HIDE_R }, '<')
-    .to(clip, { clipPath: SHOWN, duration: 0.55, ease: 'power2.inOut' }, '+=0.05')
-    .fromTo(peel, { left: '-14%' }, { left: '110%', duration: 0.55, ease: 'power2.inOut' }, '<')
+    .set(stick, { autoAlpha: 1, rotation: -12, scale: 1.16, clipPath: HIDE_R })
+    .to(stick, { clipPath: SHOWN, duration: 0.55, ease: 'power2.inOut' }, '+=0.05')
     .to(stick, { rotation: -7, scale: 1, duration: 0.55, ease: 'power2.out' }, '<')
     .to(stick, { scale: 0.965, duration: 0.09, repeat: 1, yoyo: true, ease: 'power1.inOut' })
 
     // 3 — peel: same sweep, opposite effect — the left edge lifts first
-    .to(clip, { clipPath: HIDE_L, duration: 0.5, ease: 'power2.inOut' }, '+=0.45')
-    .fromTo(peel, { left: '-14%' }, { left: '110%', duration: 0.5, ease: 'power2.inOut' }, '<')
+    .to(stick, { clipPath: HIDE_L, duration: 0.5, ease: 'power2.inOut' }, '+=0.45')
     .to(stick, { rotation: -13, scale: 1.08, duration: 0.5, ease: 'power2.in' }, '<')
 
     // 4 — the splash drains back into the navbar

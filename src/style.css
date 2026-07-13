@@ -4032,23 +4032,15 @@ html.splash-lock body {
   will-change: transform;
 }
 
-/* Shadow lives here, on the OUTER element, so it follows the clipped shape
-   instead of getting cut off at the clip rectangle (which reads as a faint
-   box around the sticker) */
+/* No shadow, no overlays — anything rectangular layered around the art
+   reads as a faint box on the flat blue */
 .splash__sticker {
   position: absolute;
   left: 50%;
   top: 50%;
   width: min(480px, 74vw);
   visibility: hidden;
-  will-change: transform;
-  filter: drop-shadow(0 30px 70px rgba(0, 8, 30, 0.4));
-}
-
-/* The wipe runs on this inner wrapper */
-.splash__clip {
-  position: relative;
-  will-change: clip-path;
+  will-change: transform, clip-path;
 }
 
 .splash__img {
@@ -4056,15 +4048,4 @@ html.splash-lock body {
   width: 100%;
   height: auto;
   user-select: none;
-}
-
-/* Soft highlight that travels with the adhesion/peel edge */
-.splash__peel {
-  position: absolute;
-  top: -8%;
-  bottom: -8%;
-  left: -14%;
-  width: 13%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-  pointer-events: none;
 }
