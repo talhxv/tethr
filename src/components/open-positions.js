@@ -158,11 +158,11 @@ function skeletonRows(n = 3) {
   <article class="op-row op-row--skeleton" style="animation-delay:${i * 80}ms">
     <div class="op-row__main">
       <div class="op-row__left">
+        <span class="op-skeleton op-skeleton--title"></span>
         <div class="op-row__badges">
           <span class="op-skeleton op-skeleton--pill"></span>
           <span class="op-skeleton op-skeleton--pill op-skeleton--pill-wide"></span>
         </div>
-        <span class="op-skeleton op-skeleton--title"></span>
       </div>
       <div class="op-row__meta">
         <span class="op-skeleton op-skeleton--arrow"></span>
