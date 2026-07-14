@@ -2379,6 +2379,8 @@ a.op-row {
 .op-detail > :nth-child(7) { animation-delay: 0.30s; }
 .op-detail > :nth-child(8) { animation-delay: 0.35s; }
 .op-detail > :nth-child(9) { animation-delay: 0.40s; }
+.op-detail > :nth-child(10) { animation-delay: 0.45s; }
+.op-detail > :nth-child(11) { animation-delay: 0.50s; }
 
 /* Back link — section-label mono vocabulary with the row-arrow circle */
 .op-detail__back {
@@ -2533,6 +2535,97 @@ a.op-row {
 
 /* Confirmed — the ink settles to navy */
 .op-detail__refer.copied { color: #001131; }
+
+/* "Who are we?" — collapsed context for a reader who landed straight on
+   this job link and hasn't seen the manifesto. Same accordion grammar as
+   the job rows: circle arrow fills blue and rotates open, panel expands
+   via the 0fr→1fr grid trick. */
+.op-whoarewe {
+  border-top: 1px solid rgba(0, 17, 49, 0.08);
+  margin-top: 8px;
+}
+
+.op-whoarewe__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 22px 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.op-whoarewe__title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(22px, 2.6vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #0755E9;
+}
+
+.op-whoarewe__arrow {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(43, 68, 255, 0.25);
+  color: #2B44FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.3s ease;
+}
+
+.op-whoarewe__btn:hover .op-whoarewe__arrow,
+.op-whoarewe.is-open .op-whoarewe__arrow {
+  background: #2B44FF;
+  border-color: #2B44FF;
+  color: #fff;
+}
+
+.op-whoarewe.is-open .op-whoarewe__arrow {
+  transform: rotate(90deg);
+}
+
+.op-whoarewe__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.op-whoarewe.is-open .op-whoarewe__panel {
+  grid-template-rows: 1fr;
+}
+
+.op-whoarewe__panel-inner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.op-whoarewe.is-open .op-whoarewe__panel-inner {
+  opacity: 1;
+  transition: opacity 0.3s ease 0.1s;
+  padding-bottom: 28px;
+}
+
+.op-whoarewe__body {
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  color: rgba(0, 17, 49, 0.6);
+  line-height: 1.7;
+  max-width: 640px;
+  margin: 0 0 16px;
+}
+
+.op-whoarewe__list {
+  max-width: 640px;
+}
 
 /* Detail skeleton for direct-link landings */
 .op-skeleton--back     { width: 170px; height: 14px; margin-bottom: 40px; }

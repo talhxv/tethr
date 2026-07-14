@@ -60,6 +60,32 @@ function jobRow(job, index) {
   </a>`
 }
 
+// Collapsed by default — someone arriving straight from a shared job link
+// hasn't seen the manifesto/hiring sections, so this is the short version:
+// what Tethr is, in the fewest words that still land. Copy condensed from
+// the hero strap and the manifesto's "How Tethr Does It" scene.
+const whoWeAreHtml = `
+  <div class="op-whoarewe" id="opWhoWeAre">
+    <button type="button" class="op-whoarewe__btn" aria-expanded="false" aria-controls="opWhoWeArePanel">
+      <span class="op-whoarewe__title">Who are we?</span>
+      <span class="op-whoarewe__arrow" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M7 17 17 7M8.5 7H17v8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </button>
+    <div class="op-whoarewe__panel" id="opWhoWeArePanel">
+      <div class="op-whoarewe__panel-inner">
+        <p class="op-whoarewe__body">Tethr is a managed offshore workforce platform — we pair global teams with vetted talent in Pakistan and carry the sourcing, contracts, payroll, and compliance that come with it. You get a fully-formed teammate, not a hiring project.</p>
+        <ul class="op-row__list op-whoarewe__list">
+          <li>Managed, not a marketplace — we employ the talent; you direct the work.</li>
+          <li>Vetted before you ever see a CV, and replaced at no cost if a hire doesn't work out.</li>
+          <li>Full visibility, always — every salary, invoice, and record lives in the Tethr platform.</li>
+        </ul>
+      </div>
+    </div>
+  </div>`
+
 // Full-page job view rendered at /positions/<slug>
 function detailHtml(job) {
   const d = deptColor(job.department)
@@ -109,6 +135,8 @@ function detailHtml(job) {
     </div>` : ''}
 
     ${job.note ? `<p class="op-row__note"><strong>Note:</strong> ${job.note}</p>` : ''}
+
+    ${whoWeAreHtml}
 
     <div class="op-detail__cta">
       <a href="${TALLY_FORM_URL}?position=${encodeURIComponent(job.title)}" class="op-detail__apply" data-apply data-position="${escapeAttr(job.title)}" target="_blank" rel="noopener">Apply for this role
@@ -388,6 +416,14 @@ export async function init() {
           }
         }, 240)
       })
+    })
+
+    // "Who are we?" accordion — collapsed by default, one open toggle
+    const whoBtn = list.querySelector('.op-whoarewe__btn')
+    whoBtn?.addEventListener('click', () => {
+      const open = whoBtn.getAttribute('aria-expanded') === 'true'
+      whoBtn.setAttribute('aria-expanded', String(!open))
+      whoBtn.closest('.op-whoarewe').classList.toggle('is-open', !open)
     })
 
     // Hovering the page's apply CTA excites the navbar the same way its own
