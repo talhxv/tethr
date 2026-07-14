@@ -2327,6 +2327,9 @@ code {
     gap: 10px;
     text-align: left;
   }
+  /* Desktop reads title-then-badges (fixed title alignment regardless of
+     badge width); mobile keeps its own stacked order — badges on top */
+  .op-row__badges { order: -1; }
   .op-row__title { text-align: left; }
   .op-row__meta { gap: 0; }
   .op-row__footer { flex-direction: column; align-items: flex-start; gap: 16px; }

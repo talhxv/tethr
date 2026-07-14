@@ -42,11 +42,11 @@ function jobRow(job, index) {
   <a class="op-row" href="/positions/${job.slug}" data-slug="${escapeAttr(job.slug)}" style="animation-delay:${index * 80}ms">
     <div class="op-row__main">
       <div class="op-row__left">
+        <h2 class="op-row__title">${job.title}</h2>
         <div class="op-row__badges">
           <span class="op-row__dept" style="background:${d.bg};color:${d.text}">${job.department || 'General'}</span>
           ${job.type ? `<span class="op-pill op-pill--type"><span class="op-pill__line"></span>${job.type}</span>` : ''}
         </div>
-        <h2 class="op-row__title">${job.title}</h2>
       </div>
       <div class="op-row__meta">
         ${job.location ? `<span class="op-row__location">${job.location}</span>` : ''}
