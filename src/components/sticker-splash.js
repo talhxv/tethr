@@ -42,7 +42,7 @@ function splash(origin) {
     <div class="splash__sticker">
       <img class="splash__img" src="${stickerSrc}" alt="" draggable="false">
     </div>
-    <p class="splash__wink">We like people who click things <span class="splash__wink-face">:)</span></p>`
+    <p class="splash__wink"><span class="splash__wink-face">:)</span></p>`
   document.body.appendChild(el)
 
   const fill  = el.querySelector('.splash__fill')

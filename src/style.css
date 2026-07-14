@@ -4050,7 +4050,7 @@ html.splash-lock body {
   user-select: none;
 }
 
-/* The nod under the sticker — CTA-heading serif italic, white on the blue */
+/* The nod under the sticker — just a face that winks */
 .splash__wink {
   position: absolute;
   left: 50%;
@@ -4058,16 +4058,12 @@ html.splash-lock body {
   margin: 0;
   text-align: center;
   font-family: 'Instrument Serif', serif;
-  font-style: italic;
-  font-size: clamp(26px, 4.6vw, 52px);
-  letter-spacing: -0.5px;
+  font-size: clamp(64px, 9vw, 120px);
   color: #fff;
   white-space: nowrap;
   visibility: hidden;
 }
 
 .splash__wink-face {
-  font-style: normal;
   display: inline-block;
-  margin-left: 0.15em;
 }
