@@ -68,6 +68,7 @@ function splash(origin) {
   })
   gsap.set(stick, { xPercent: -50, yPercent: -50, autoAlpha: 0 })
   gsap.set(wink, { xPercent: -50, yPercent: -50, autoAlpha: 0 })
+  gsap.set(face, { transformOrigin: '50% 60%' })
 
   document.documentElement.classList.add('splash-lock')
 
@@ -90,12 +91,16 @@ function splash(origin) {
     .to(stick, { clipPath: HIDE_L, duration: 0.4, ease: 'power2.inOut' }, '+=0.2')
     .to(stick, { rotation: -13, scale: 1.08, duration: 0.4, ease: 'power2.in' }, '<')
 
-    // 4 — the nod that was under the sticker, landing on an actual wink
+    // 4 — the nod that was under the sticker, landing on an actual wink:
+    // the face squints down, the eye flips mid-squint, and it pops back
+    // open with a little overshoot — a blink, not a character swap
     .fromTo(wink,
       { autoAlpha: 0, y: 16, scale: 0.96 },
       { autoAlpha: 1, y: 0, scale: 1, duration: 0.3, ease: 'power2.out' })
-    .call(() => { face.textContent = ';)' }, null, '+=0.3')
-    .to(wink, { autoAlpha: 0, y: -12, duration: 0.25, ease: 'power2.in' }, '+=0.55')
+    .to(face, { scaleY: 0.68, scaleX: 1.06, duration: 0.1, ease: 'power2.in' }, '+=0.3')
+    .call(() => { face.textContent = ';)' })
+    .to(face, { scaleY: 1, scaleX: 1, duration: 0.4, ease: 'back.out(2.6)' })
+    .to(wink, { autoAlpha: 0, y: -12, duration: 0.25, ease: 'power2.in' }, '+=0.45')
 
     // 5 — the splash drains back into the navbar
     .to(fill, { scale: 0, duration: 0.45, ease: 'power3.inOut' }, '-=0.05')
