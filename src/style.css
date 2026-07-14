@@ -2614,7 +2614,10 @@ a.op-row {
 .op-whoarewe.is-open .op-whoarewe__panel-inner {
   opacity: 1;
   transition: opacity 0.3s ease 0.1s;
-  padding-bottom: 28px;
+  /* Small on purpose — .op-detail__cta right after this already carries
+     its own 40px margin + 32px padding + divider, so a big pad here on
+     top of that stacked into a ~100px dead gap before the Apply button */
+  padding-bottom: 6px;
 }
 
 .op-whoarewe__body {
