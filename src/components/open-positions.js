@@ -69,18 +69,18 @@ const whoWeAreHtml = `
     <button type="button" class="op-whoarewe__btn" aria-expanded="false" aria-controls="opWhoWeArePanel">
       <span class="op-whoarewe__title">Who are we?</span>
       <span class="op-whoarewe__arrow" aria-hidden="true">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M7 17 17 7M8.5 7H17v8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+          <path d="M7 17 17 7M8.5 7H17v8.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </span>
     </button>
     <div class="op-whoarewe__panel" id="opWhoWeArePanel">
       <div class="op-whoarewe__panel-inner">
-        <p class="op-whoarewe__body">Tethr is a managed offshore workforce platform — we pair global teams with vetted talent in Pakistan and carry the sourcing, contracts, payroll, and compliance that come with it. You get a fully-formed teammate, not a hiring project.</p>
+        <p class="op-whoarewe__body">You'd be working through Tethr. We match you to the role, put you on payroll, sort the contract and compliance side, and stay your point of contact for both you and the client. You just show up and do the work.</p>
         <ul class="op-row__list op-whoarewe__list">
-          <li>Managed, not a marketplace — we employ the talent; you direct the work.</li>
-          <li>Vetted before you ever see a CV, and replaced at no cost if a hire doesn't work out.</li>
-          <li>Full visibility, always — every salary, invoice, and record lives in the Tethr platform.</li>
+          <li>You're hired and paid through Tethr, not left to freelance it alone.</li>
+          <li>Vetted once, then matched to roles that actually fit you.</li>
+          <li>Your contract, pay, and records all live in one place you can see.</li>
         </ul>
       </div>
     </div>

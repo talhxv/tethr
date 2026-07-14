@@ -2537,21 +2537,24 @@ a.op-row {
 .op-detail__refer.copied { color: #001131; }
 
 /* "Who are we?" — collapsed context for a reader who landed straight on
-   this job link and hasn't seen the manifesto. Same accordion grammar as
-   the job rows: circle arrow fills blue and rotates open, panel expands
-   via the 0fr→1fr grid trick. */
+   this job link and hasn't seen the manifesto. Deliberately discreet: no
+   bigger than the CTA button text, and the arrow sits right next to the
+   words instead of pinned to the row's far edge — this is a quiet toggle,
+   not another headline competing with the job title. Same accordion
+   grammar as the job rows: circle arrow fills blue and rotates open,
+   panel expands via the 0fr→1fr grid trick. */
 .op-whoarewe {
   border-top: 1px solid rgba(0, 17, 49, 0.08);
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .op-whoarewe__btn {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: flex-start;
+  gap: 10px;
   width: 100%;
-  padding: 22px 0;
+  padding: 16px 0;
   margin: 0;
   background: none;
   border: 0;
@@ -2561,15 +2564,15 @@ a.op-row {
 
 .op-whoarewe__title {
   font-family: 'Manrope', sans-serif;
-  font-size: clamp(22px, 2.6vw, 32px);
-  font-weight: 600;
-  letter-spacing: -0.5px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
   color: #0755E9;
 }
 
 .op-whoarewe__arrow {
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   border-radius: 50%;
   border: 1.5px solid rgba(43, 68, 255, 0.25);
