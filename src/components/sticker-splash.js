@@ -35,15 +35,20 @@ function splash(origin) {
   el.className = 'splash'
   // Just the sticker itself — no shadow, no highlight strip. Anything
   // rectangular layered around the art reads as a box on the flat blue.
+  // The wink line is the payoff hiding "under" the sticker: it says
+  // "For Talent. By Talent." — peel it off and, well, we meant you.
   el.innerHTML = `
     <div class="splash__fill"></div>
     <div class="splash__sticker">
       <img class="splash__img" src="${stickerSrc}" alt="" draggable="false">
-    </div>`
+    </div>
+    <p class="splash__wink">By talent, we meant you <span class="splash__wink-face">:)</span></p>`
   document.body.appendChild(el)
 
   const fill  = el.querySelector('.splash__fill')
   const stick = el.querySelector('.splash__sticker')
+  const wink  = el.querySelector('.splash__wink')
+  const face  = el.querySelector('.splash__wink-face')
 
   // The flood circle grows from the sticker's center until it covers the
   // farthest viewport corner
@@ -62,6 +67,7 @@ function splash(origin) {
     scale: 0,
   })
   gsap.set(stick, { xPercent: -50, yPercent: -50, autoAlpha: 0 })
+  gsap.set(wink, { xPercent: -50, yPercent: -50, autoAlpha: 0 })
 
   document.documentElement.classList.add('splash-lock')
 
@@ -81,11 +87,19 @@ function splash(origin) {
     .to(stick, { scale: 0.965, duration: 0.09, repeat: 1, yoyo: true, ease: 'power1.inOut' })
 
     // 3 — peel: same sweep, opposite effect — the left edge lifts first
-    .to(stick, { clipPath: HIDE_L, duration: 0.5, ease: 'power2.inOut' }, '+=0.45')
-    .to(stick, { rotation: -13, scale: 1.08, duration: 0.5, ease: 'power2.in' }, '<')
+    .to(stick, { clipPath: HIDE_L, duration: 0.45, ease: 'power2.inOut' }, '+=0.3')
+    .to(stick, { rotation: -13, scale: 1.08, duration: 0.45, ease: 'power2.in' }, '<')
 
-    // 4 — the splash drains back into the navbar
-    .to(fill, { scale: 0, duration: 0.55, ease: 'power3.inOut' }, '+=0.08')
+    // 4 — the nod that was under the sticker, with an actual wink
+    .fromTo(wink,
+      { autoAlpha: 0, y: 16, scale: 0.96 },
+      { autoAlpha: 1, y: 0, scale: 1, duration: 0.4, ease: 'power2.out' }, '+=0.05')
+    .call(() => { face.textContent = ';)' }, null, '+=0.4')
+    .call(() => { face.textContent = ':)' }, null, '+=0.25')
+    .to(wink, { autoAlpha: 0, y: -12, duration: 0.3, ease: 'power2.in' }, '+=0.5')
+
+    // 5 — the splash drains back into the navbar
+    .to(fill, { scale: 0, duration: 0.5, ease: 'power3.inOut' }, '-=0.05')
 
   return new Promise((resolve) => {
     tl.eventCallback('onComplete', () => {
