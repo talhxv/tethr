@@ -33,7 +33,7 @@ export const html = `
       <nav class="footer-nav" aria-label="Footer navigation">
       <div class="footer-nav__col">
         <span class="footer-nav__label">Quick Links</span>
-        <a href="#" class="footer-nav__link">Apply</a>
+        <a href="/apply" data-transition class="footer-nav__link">Apply</a>
         <a href="/#hiring" class="footer-nav__link">Work With Tethr</a>
         <a href="/#services" class="footer-nav__link">Services</a>
       </div>

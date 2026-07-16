@@ -62,7 +62,7 @@ export const html = `
       Let's <em class="cta__tethr">tethr</em><br>Something Real.
     </h2>
     <div class="cta__btns">
-      <a href="#" class="cta__btn cta__btn--primary">Apply <img src="${arrowRight}" class="cta__arrow" alt="" /></a>
+      <a href="/apply" data-transition class="cta__btn cta__btn--primary">Apply <img src="${arrowRight}" class="cta__arrow" alt="" /></a>
       <a href="#" class="cta__btn cta__btn--secondary">Hire Talent</a>
     </div>
   </div>

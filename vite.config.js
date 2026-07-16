@@ -1,12 +1,15 @@
 import { defineConfig, loadEnv } from 'vite'
 
-/* /positions and /positions/<job-slug> are clean URLs onto positions.html
-   (the page routes the slug client-side). Prod is handled by the same
-   rewrites in vercel.json; this middleware mirrors them for dev/preview. */
+/* /positions, /positions/<job-slug>, and /apply are clean URLs onto their
+   .html entries (the positions page routes the slug client-side). Prod is
+   handled by the same rewrites in vercel.json; this middleware mirrors
+   them for dev/preview. */
 const positionsCleanUrls = () => (req, _res, next) => {
   const path = req.url.split('?')[0]
   if (path === '/positions' || /^\/positions\/[^.]+$/.test(path)) {
     req.url = '/positions.html'
+  } else if (path === '/apply') {
+    req.url = '/apply.html'
   }
   next()
 }
@@ -32,6 +35,7 @@ export default defineConfig(({ mode }) => {
         input: {
           main:      'index.html',
           positions: 'positions.html',
+          apply:     'apply.html',
           notFound:  '404.html',
         },
       },

@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/positions", "destination": "/positions.html" },
-    { "source": "/positions/:slug", "destination": "/api/position-page?slug=:slug" }
+    { "source": "/positions/:slug", "destination": "/api/position-page?slug=:slug" },
+    { "source": "/apply", "destination": "/apply.html" }
   ]
 }

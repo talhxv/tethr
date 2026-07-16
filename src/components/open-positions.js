@@ -9,6 +9,11 @@ import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
 const TALLY_FORM_ID  = 'yP7a2d'
 const TALLY_FORM_URL = `https://tally.so/r/${TALLY_FORM_ID}`
 
+// Talent pool / open-application form — same one linked from the apply-choice
+// "Join the talent pool" card, for candidates with no specific role to apply to.
+const TALENT_POOL_FORM_ID  = 'Y5vkxd'
+const TALENT_POOL_FORM_URL = `https://tally.so/r/${TALENT_POOL_FORM_ID}`
+
 const escapeAttr = (s) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -258,7 +263,7 @@ export const html = `
   <!-- Bottom note -->
   <div class="op-footer-note padded">
     <p class="op-footer-note__prompt">Don't see a fit?</p>
-    <a href="${TALLY_FORM_URL}?position=${encodeURIComponent('Open application')}" data-apply target="_blank" rel="noopener" class="op-footer-note__link">Send an open application
+    <a href="${TALENT_POOL_FORM_URL}?position=${encodeURIComponent('Open application')}" data-apply target="_blank" rel="noopener" class="op-footer-note__link">Send an open application
       <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
         <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>

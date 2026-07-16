@@ -1,18 +1,17 @@
 import './style.css'
-import { scrollToHash, wirePageLeave } from './lib/page-transition.js'
+import { wirePageLeave } from './lib/page-transition.js'
 import { html as navbarHtml, init as initNavbar } from './components/navbar.js'
-import { html as positionsHtml, init as initPositions } from './components/open-positions.js'
+import { html as applyHtml, init as initApply } from './components/apply-choice.js'
 import { html as footerHtml, init as initFooter } from './components/footer.js'
 
 document.querySelector('#app').innerHTML = `
 <div class="navbar-wrap">${navbarHtml}</div>
-${positionsHtml}
+${applyHtml}
 ${footerHtml}
 `
 
 initNavbar()
-initPositions() // async — Notion data loads in the background
+initApply()
 initFooter()
 
-scrollToHash()
 wirePageLeave()
