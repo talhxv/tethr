@@ -303,6 +303,17 @@ code {
 
 .mobile-menu__apply img { width: 9px; height: 9px; }
 
+/* "Work with us" is wider than the old "Apply" label — the footer row
+   (socials + divider + pill) was already tight on narrow phones, so give
+   it back some room rather than letting the pill clip off-screen */
+@media (max-width: 400px) {
+  .mobile-menu__socials { gap: 2px; }
+  .mobile-menu__socials a { padding: 4px; }
+  .mobile-menu__socials img { width: 24px; height: 24px; }
+  .mobile-menu__footer-divider { margin: 0 12px; }
+  .mobile-menu__apply { padding: 12px 18px; font-size: 13.5px; gap: 4px; }
+}
+
 /* ── Navbar ── */
 .navbar-wrap {
   position: sticky;
@@ -4183,6 +4194,18 @@ body.page-leaving #app {
 .apply-section {
   min-height: calc(100svh - 420px);
   padding-bottom: 120px;
+}
+
+/* Back link on the join/hire panels — not nested in .op-detail here, so it
+   needs its own entrance animation instead of inheriting that selector's,
+   and its wrapper needs the left align .op-detail normally provides
+   (otherwise it inherits #app's global text-align: center) */
+.apply-section .op-detail__back {
+  animation: op-row-in 0.4s ease both;
+}
+
+.apply-section .apply-choice__back-wrap {
+  text-align: left;
 }
 
 /* Headline left, live roles count right — the op-hero balance, so the page

@@ -32,7 +32,6 @@ export const html = `
 
   <nav class="mobile-menu__links">
     <a href="/#services" class="mobile-menu__link">Services</a>
-    <a href="/positions" class="mobile-menu__link">Open Positions</a>
     <a href="/#manifesto-track" class="mobile-menu__link">About Us</a>
   </nav>
 
@@ -44,7 +43,7 @@ export const html = `
       <a href="https://twitter.com/tethrhq" target="_blank" rel="noopener" aria-label="Twitter"><img src="${twitter}" alt="Twitter" /></a>
     </div>
     <div class="mobile-menu__footer-divider" aria-hidden="true"></div>
-    <a href="/apply" data-transition class="mobile-menu__apply">Apply <img src="${arrowSlantUp}" alt="" aria-hidden="true" /></a>
+    <a href="/apply" data-transition class="mobile-menu__apply">Work with us <img src="${arrowSlantUp}" alt="" aria-hidden="true" /></a>
   </div>
 </div>
 
@@ -56,10 +55,9 @@ export const html = `
   </a>
   <div class="navbar-links">
     <a href="/#services" class="navbar-link">Services</a>
-    <a href="/positions" class="navbar-link">Open positions</a>
     <a href="/#manifesto-track" class="navbar-link">About us</a>
   </div>
-  <a href="/apply" data-transition class="navbar-apply">Apply <img src="${arrowSlantUp}" class="navbar-apply-arrow" aria-hidden="true" /></a>
+  <a href="/apply" data-transition class="navbar-apply">Work with us <img src="${arrowSlantUp}" class="navbar-apply-arrow" aria-hidden="true" /></a>
   <button class="navbar-burger" aria-label="Menu">
     <svg width="26" height="13" viewBox="0 0 26 13" fill="none" xmlns="http://www.w3.org/2000/svg">
       <line x1="0" y1="1.25" x2="26" y2="1.25" stroke="#2B44FF" stroke-width="2.5" stroke-linecap="round"/>
