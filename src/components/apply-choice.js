@@ -10,7 +10,7 @@ const TALENT_POOL_FORM_URL = `https://tally.so/r/${TALENT_POOL_FORM_ID}`
 // Client / "hire talent" lead form. Create it at tally.so (company name,
 // what you need staffed, contact info), then paste the form id here — the
 // part after /r/ in the form URL (e.g. tally.so/r/wAbCdE -> 'wAbCdE').
-const CLIENT_FORM_ID  = 'REPLACE_ME'
+const CLIENT_FORM_ID  = 'GxjYve'
 const CLIENT_FORM_URL = `https://tally.so/r/${CLIENT_FORM_ID}`
 
 const STATES = ['root', 'join', 'hire']
