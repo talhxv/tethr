@@ -6,6 +6,7 @@ import express from 'express'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import crypto from 'node:crypto'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(__dirname, 'dist')
@@ -13,7 +14,9 @@ const SITE = process.env.SITE_URL ?? 'https://tethrhq.com'
 const PORT = process.env.PORT ?? 3000
 
 const app = express()
-app.use(express.json())
+// Keep the raw body around for Tally's webhook signature check — HMAC has to
+// run over the exact bytes Tally signed, not a re-serialized JSON.stringify
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf } }))
 app.disable('x-powered-by')
 
 // ---- /api/notion ---------------------------------------------------------
@@ -41,6 +44,70 @@ app.post('/api/notion', async (req, res) => {
   } catch {
     res.status(500).json({ error: 'Failed to reach Notion API' })
   }
+})
+
+// ---- /api/applications/webhook ---------------------------------------------
+// Fired by a Tally webhook (configured separately from the native Notion
+// integration, which still writes the submission straight to Notion for the
+// human triage board) the moment someone applies. The JD is never sent by
+// Tally or duplicated into Notion — it's looked up fresh here by matching
+// the submitted "position" value against the Job Openings DB, then handed
+// off alongside the raw submission for AI parsing.
+function verifyTallySignature(req) {
+  const secret = process.env.TALLY_WEBHOOK_SECRET
+  if (!secret) return true // no secret configured — skip (e.g. local testing)
+
+  const signature = req.get('Tally-Signature')
+  if (!signature || !req.rawBody) return false
+
+  const expected = crypto.createHmac('sha256', secret).update(req.rawBody).digest('base64')
+  const a = Buffer.from(signature)
+  const b = Buffer.from(expected)
+  return a.length === b.length && crypto.timingSafeEqual(a, b)
+}
+
+async function fetchJobOpenings() {
+  const token = process.env.VITE_NOTION_TOKEN
+  const dbId = process.env.VITE_NOTION_DB_ID
+
+  const notion = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Notion-Version': '2022-06-28',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ page_size: 100 }),
+  })
+  const data = await notion.json()
+  return (data.results ?? [])
+    .filter((p) => !p.archived)
+    .map((p) => ({
+      title: text(p.properties['Position']),
+      description: text(p.properties['Description']),
+    }))
+}
+
+app.post('/api/applications/webhook', async (req, res) => {
+  if (!verifyTallySignature(req)) {
+    return res.status(401).json({ error: 'Invalid signature' })
+  }
+
+  const fields = req.body?.data?.fields ?? []
+  const position = fields.find((f) => f.label?.toLowerCase() === 'position')?.value
+
+  let jd = ''
+  try {
+    const jobs = await fetchJobOpenings()
+    jd = jobs.find((j) => j.title === position)?.description ?? ''
+  } catch (err) {
+    console.error('Failed to fetch Job Openings for JD lookup:', err)
+  }
+
+  // AI parsing call goes here — e.g. await parseApplication({ fields, jd })
+  console.log('New application for', JSON.stringify(position), '— JD resolved:', jd.length > 0)
+
+  res.status(200).json({ received: true })
 })
 
 // ---- /positions/:slug -----------------------------------------------------

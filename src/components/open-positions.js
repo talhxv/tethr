@@ -4,8 +4,12 @@ import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
 
 // Tally application form. Create it at tally.so, connect it to your Notion
 // Applications DB, and add a hidden field whose query-parameter key is
-// "position" so each role pre-fills. Then paste the form id below — it's the
-// part after /r/ in the form URL (e.g. tally.so/r/wAbCdE → 'wAbCdE').
+// "position" so each role pre-fills. A separate Tally webhook (see
+// POST /api/applications/webhook in server.js) fires on every submission and
+// resolves the JD by title-matching "position" against the Job Openings DB —
+// the JD is never duplicated into the URL or into Notion. Then paste the
+// form id below — it's the part after /r/ in the form URL (e.g.
+// tally.so/r/wAbCdE → 'wAbCdE').
 const TALLY_FORM_ID  = 'yP7a2d'
 const TALLY_FORM_URL = `https://tally.so/r/${TALLY_FORM_ID}`
 
