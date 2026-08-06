@@ -48,11 +48,22 @@ app.post('/api/notion', async (req, res) => {
 
 // ---- /api/applications/webhook ---------------------------------------------
 // Fired by a Tally webhook (configured separately from the native Notion
-// integration, which still writes the submission straight to Notion for the
-// human triage board) the moment someone applies. The JD is never sent by
-// Tally or duplicated into Notion — it's looked up fresh here by matching
-// the submitted "position" value against the Job Openings DB, then handed
-// off alongside the raw submission for AI parsing.
+// integration, which still creates the submission row itself, resume upload
+// and all). The JD text lives only in the Job Openings DB — this resolves it
+// by title-matching the submitted "position" value, then writes it onto the
+// matching Submissions row's "Job Description" property.
+//
+// The webhook and Tally's own Notion write are two independent deliveries —
+// neither is guaranteed to land first — so the row this writes to is found
+// by "Submission ID" (map Tally's built-in Submission ID to that property in
+// the Notion integration setup), retried a few times in case the webhook
+// beats Tally's own write to Notion.
+const NOTION_HEADERS = (token) => ({
+  Authorization: `Bearer ${token}`,
+  'Notion-Version': '2022-06-28',
+  'Content-Type': 'application/json',
+})
+
 function verifyTallySignature(req) {
   const secret = process.env.TALLY_WEBHOOK_SECRET
   if (!secret) return true // no secret configured — skip (e.g. local testing)
@@ -72,11 +83,7 @@ async function fetchJobOpenings() {
 
   const notion = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Notion-Version': '2022-06-28',
-      'Content-Type': 'application/json',
-    },
+    headers: NOTION_HEADERS(token),
     body: JSON.stringify({ page_size: 100 }),
   })
   const data = await notion.json()
@@ -88,26 +95,86 @@ async function fetchJobOpenings() {
     }))
 }
 
-app.post('/api/applications/webhook', async (req, res) => {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+// Retries because the webhook can arrive before Tally's own Notion write
+// finishes creating the row it needs to find
+async function findSubmissionPage(submissionId, { attempts = 5, delayMs = 2000 } = {}) {
+  const token = process.env.VITE_NOTION_TOKEN
+  const dbId = process.env.VITE_NOTION_APPLICATIONS_DB_ID
+
+  for (let i = 0; i < attempts; i++) {
+    const notion = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+      method: 'POST',
+      headers: NOTION_HEADERS(token),
+      body: JSON.stringify({
+        filter: { property: 'Submission ID', rich_text: { equals: submissionId } },
+      }),
+    })
+    if (!notion.ok) {
+      throw new Error(`Notion query failed (${notion.status}): ${await notion.text()}`)
+    }
+    const data = await notion.json()
+    if (data.results?.[0]) return data.results[0]
+    if (i < attempts - 1) await sleep(delayMs)
+  }
+  return null
+}
+
+// Notion caps a single rich_text object at 2000 characters
+function toRichText(value) {
+  const chunks = []
+  for (let i = 0; i < value.length; i += 2000) chunks.push(value.slice(i, i + 2000))
+  return chunks.map((content) => ({ text: { content } }))
+}
+
+async function writeJobDescription(pageId, jd) {
+  const token = process.env.VITE_NOTION_TOKEN
+  const res = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+    method: 'PATCH',
+    headers: NOTION_HEADERS(token),
+    body: JSON.stringify({ properties: { 'Job Description': { rich_text: toRichText(jd) } } }),
+  })
+  if (!res.ok) {
+    throw new Error(`Notion PATCH failed (${res.status}): ${await res.text()}`)
+  }
+}
+
+async function resolveAndWriteJd({ position, submissionId }) {
+  const jobs = await fetchJobOpenings()
+  const jd = jobs.find((j) => j.title === position)?.description ?? ''
+  if (!jd) {
+    console.log('No JD match for position', JSON.stringify(position))
+    return
+  }
+
+  const page = await findSubmissionPage(submissionId)
+  if (!page) {
+    console.error('Submission row never appeared for Submission ID', submissionId)
+    return
+  }
+
+  await writeJobDescription(page.id, jd)
+  console.log('Wrote JD to submission', submissionId, 'for position', JSON.stringify(position))
+}
+
+app.post('/api/applications/webhook', (req, res) => {
   if (!verifyTallySignature(req)) {
     return res.status(401).json({ error: 'Invalid signature' })
   }
 
   const fields = req.body?.data?.fields ?? []
   const position = fields.find((f) => f.label?.toLowerCase() === 'position')?.value
+  const submissionId = req.body?.data?.submissionId
 
-  let jd = ''
-  try {
-    const jobs = await fetchJobOpenings()
-    jd = jobs.find((j) => j.title === position)?.description ?? ''
-  } catch (err) {
-    console.error('Failed to fetch Job Openings for JD lookup:', err)
-  }
-
-  // AI parsing call goes here — e.g. await parseApplication({ fields, jd })
-  console.log('New application for', JSON.stringify(position), '— JD resolved:', jd.length > 0)
-
+  // Ack Tally immediately — the Notion lookup/retry loop runs after the
+  // response so Tally isn't kept waiting on it
   res.status(200).json({ received: true })
+
+  if (!position || !submissionId) return
+  resolveAndWriteJd({ position, submissionId }).catch((err) =>
+    console.error('Failed to resolve/write JD:', err),
+  )
 })
 
 // ---- /positions/:slug -----------------------------------------------------

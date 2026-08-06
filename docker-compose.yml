@@ -5,6 +5,7 @@ services:
     environment:
       - VITE_NOTION_TOKEN=${VITE_NOTION_TOKEN}
       - VITE_NOTION_DB_ID=${VITE_NOTION_DB_ID}
+      - VITE_NOTION_APPLICATIONS_DB_ID=${VITE_NOTION_APPLICATIONS_DB_ID}
       - SITE_URL=${SITE_URL:-https://tethrhq.com}
       - TALLY_WEBHOOK_SECRET=${TALLY_WEBHOOK_SECRET}
     expose:
