@@ -398,10 +398,12 @@ code {
   gap: 8px;
 }
 
+/* 12px margin + the navbar's own 20px left padding = 32px, matching the
+   32px gap on the right (12px padding + the CTA's 20px margin-right) */
 .navbar-logo--img {
   height: 40px;
   width: auto;
-  margin-left: 40px;
+  margin-left: 12px;
 }
 
 .navbar-logo--icon {
@@ -434,6 +436,30 @@ code {
   transition: color 0.18s ease;
 
   &:hover { color: #2B44FF; }
+}
+
+.navbar-link--positions {
+  position: relative;
+  z-index: 2;
+  padding-right: 2px;
+}
+
+/* Hidden until there's actually an open role, then a plain static dot —
+   an iPhone-style notification badge, nothing more */
+.navbar-blob {
+  position: absolute;
+  top: -3px;
+  right: -10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2B44FF;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.navbar-blob.is-visible {
+  opacity: 1;
 }
 
 .navbar-apply {
@@ -2316,28 +2342,29 @@ code {
   margin: 0 0 16px;
 }
 
-/* Outline pill that fills on hover — matches the navbar/CTA button language */
+/* Filled CTA pill — same language as the navbar's "Work with us" button,
+   since this is now the primary path to the talent pool */
 .op-footer-note__link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 13px 26px;
-  border: 1.5px solid rgba(43, 68, 255, 0.3);
+  background: #2B44FF;
+  border: 1.5px solid #2B44FF;
   border-radius: 999px;
   font-family: 'Manrope', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #2B44FF;
+  color: #fff;
   text-decoration: none;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .op-footer-note__link svg { width: 11px; height: 11px; }
 
 .op-footer-note__link:hover {
-  background: #2B44FF;
-  color: #fff;
-  border-color: #2B44FF;
+  background: #1a33ee;
+  border-color: #1a33ee;
   transform: translateY(-1px);
 }
 
@@ -4264,23 +4291,6 @@ body.page-leaving #app {
   line-height: 1.7;
   max-width: 460px;
   margin: 0;
-}
-
-/* Count slot is reserved from the start (no layout shift), then fades in
-   when Notion answers. Reuses the op-count number/label styles. */
-.apply-hero__count {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-shrink: 0;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.apply-hero__count.is-in {
-  opacity: 1;
-  transform: none;
 }
 
 .apply-choices {

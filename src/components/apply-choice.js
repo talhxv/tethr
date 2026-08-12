@@ -1,5 +1,4 @@
 import { exciteNavbar } from './navbar.js'
-import { fetchJobs } from '../lib/notion.js'
 import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
 
 // Client / "hire talent" lead form. Create it at tally.so (company name,
@@ -8,7 +7,7 @@ import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
 const CLIENT_FORM_ID  = 'GxjYve'
 const CLIENT_FORM_URL = `https://tally.so/r/${CLIENT_FORM_ID}`
 
-const STATES = ['root', 'join', 'hire']
+const STATES = ['root', 'hire']
 
 const arrow = `
   <div class="op-row__arrow apply-choice__arrow" aria-hidden="true">
@@ -20,7 +19,6 @@ const arrow = `
 // Chain glyphs in the hero art's own vocabulary (stroked stadium rects).
 // Single link: Tethr as one entity reaching out to hire on your behalf.
 // Two joined links: there's a live role to link yourself into.
-// Solid + dashed: we hold your place until the next link exists.
 const singleLinkGlyph = `
   <span class="apply-choice__link" aria-hidden="true">
     <svg viewBox="0 0 56 26" fill="none">
@@ -33,14 +31,6 @@ const linkedGlyph = `
     <svg viewBox="0 0 56 26" fill="none">
       <rect x="1.25" y="1.25" width="32" height="23.5" rx="11.75" stroke="currentColor" stroke-width="2.5"/>
       <rect x="22.75" y="1.25" width="32" height="23.5" rx="11.75" stroke="currentColor" stroke-width="2.5"/>
-    </svg>
-  </span>`
-
-const awaitingGlyph = `
-  <span class="apply-choice__link" aria-hidden="true">
-    <svg viewBox="0 0 56 26" fill="none">
-      <rect x="1.25" y="1.25" width="32" height="23.5" rx="11.75" stroke="currentColor" stroke-width="2.5"/>
-      <rect x="22.75" y="1.25" width="32" height="23.5" rx="11.75" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 5" opacity="0.45"/>
     </svg>
   </span>`
 
@@ -72,46 +62,11 @@ function rootHtml() {
       </div>
       ${arrow}
     </a>
-    <a class="apply-choice" href="/apply#join" data-goto="join" style="animation-delay:220ms">
+    <a class="apply-choice" href="/positions" data-transition style="animation-delay:220ms">
       ${linkedGlyph}
       <div class="apply-choice__text">
         <h2 class="apply-choice__title">Join Tethr</h2>
-        <p class="apply-choice__sub">Apply for a role that's live right now, or get on our radar for the next one.</p>
-      </div>
-      ${arrow}
-    </a>
-  </div>`
-}
-
-function joinHtml() {
-  return `
-  ${backLink}
-  <div class="apply-hero padded">
-    <div class="apply-hero__text">
-      <h1 class="apply-hero__headline">Two ways <em class="apply-hero__em">in.</em></h1>
-      <p class="apply-hero__sub">Apply to a role that's live right now, or put yourself on our radar for whatever opens next.</p>
-    </div>
-    <!-- Fades in once Notion answers; stays empty (not broken) if it doesn't -->
-    <div class="apply-hero__count" id="applyCount" aria-hidden="true">
-      <span class="op-count__num"></span>
-      <span class="op-count__label">roles open<br>right now</span>
-    </div>
-  </div>
-
-  <div class="apply-choices padded">
-    <a class="apply-choice" href="/positions" data-transition style="animation-delay:120ms">
-      ${linkedGlyph}
-      <div class="apply-choice__text">
-        <h2 class="apply-choice__title">Apply for an open position</h2>
-        <p class="apply-choice__sub">Browse the roles we're hiring for right now and apply directly.</p>
-      </div>
-      ${arrow}
-    </a>
-    <a class="apply-choice" href="/pool" target="_blank" rel="noopener" style="animation-delay:220ms">
-      ${awaitingGlyph}
-      <div class="apply-choice__text">
-        <h2 class="apply-choice__title">Join the talent pool</h2>
-        <p class="apply-choice__sub">No matching role yet? Introduce yourself once and we'll reach out when one fits.</p>
+        <p class="apply-choice__sub">Browse the roles we're hiring for right now — no fit yet? Send an open application straight from there.</p>
       </div>
       ${arrow}
     </a>
@@ -142,7 +97,6 @@ function hireHtml() {
 
 function renderState(state) {
   if (state === 'hire') return hireHtml()
-  if (state === 'join') return joinHtml()
   return rootHtml()
 }
 
@@ -174,7 +128,7 @@ export const html = `
 export function init() {
   const stage = document.getElementById('applyStage')
 
-  function wireStage(state) {
+  function wireStage() {
     // Hovering a choice excites the navbar, same as the apply buttons do
     stage.querySelectorAll('.apply-choice').forEach(choice => {
       choice.addEventListener('mouseenter', () => exciteNavbar(true))
@@ -197,21 +151,6 @@ export function init() {
       history.pushState({}, '', '/apply')
       transitionTo('root')
     })
-
-    // Live count of open roles, in the positions-page count grammar. The slot
-    // is reserved in the layout, so nothing shifts when it lands — and a
-    // failed or empty fetch just leaves the hero as it was.
-    if (state === 'join') {
-      fetchJobs()
-        .then(jobs => {
-          if (!jobs.length) return
-          const count = document.getElementById('applyCount')
-          count.querySelector('.op-count__num').textContent = jobs.length
-          count.setAttribute('aria-hidden', 'false')
-          count.classList.add('is-in')
-        })
-        .catch(() => {})
-    }
   }
 
   function transitionTo(state) {
@@ -223,12 +162,12 @@ export function init() {
     })
     setTimeout(() => {
       stage.innerHTML = renderState(state)
-      wireStage(state)
+      wireStage()
       window.scrollTo({ top: 0, behavior: 'auto' })
     }, leaving.length * 30 + 240)
   }
 
   window.addEventListener('popstate', () => transitionTo(stateFromHash()))
 
-  wireStage(stateFromHash())
+  wireStage()
 }

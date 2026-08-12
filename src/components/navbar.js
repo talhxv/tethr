@@ -1,4 +1,5 @@
 import { initStickerSplash } from './sticker-splash.js'
+import { fetchJobs } from '../lib/notion.js'
 import tethrLogo from '../assets/tethrlogo.svg'
 import tethrFontLogo from '../assets/tethrfontlogo.svg'
 import arrowSlantUp from '../assets/arrowslantup.svg'
@@ -33,6 +34,7 @@ export const html = `
   <nav class="mobile-menu__links">
     <a href="/#services" class="mobile-menu__link">Services</a>
     <a href="/#manifesto-track" class="mobile-menu__link">About Us</a>
+    <a href="/positions" data-transition class="mobile-menu__link">Open Positions</a>
   </nav>
 
   <div class="mobile-menu__footer">
@@ -56,6 +58,10 @@ export const html = `
   <div class="navbar-links">
     <a href="/#services" class="navbar-link">Services</a>
     <a href="/#manifesto-track" class="navbar-link">About us</a>
+    <a href="/positions" data-transition class="navbar-link navbar-link--positions">
+      Open Positions
+      <span class="navbar-blob" id="navBlob" aria-hidden="true"></span>
+    </a>
   </div>
   <a href="/apply" data-transition class="navbar-apply">Work with us <img src="${arrowSlantUp}" class="navbar-apply-arrow" aria-hidden="true" /></a>
   <button class="navbar-burger" aria-label="Menu">
@@ -251,6 +257,15 @@ export function init() {
   buildChainBorder()
 
   initStickerSplash()
+
+  // Sneaky little notification dot on "Open Positions" — invisible until
+  // Notion confirms there's actually something open
+  const navBlob = document.getElementById('navBlob')
+  if (navBlob) {
+    fetchJobs()
+      .then(jobs => { if (jobs.length) navBlob.classList.add('is-visible') })
+      .catch(() => {})
+  }
 
   window.addEventListener('scroll', syncRunning, { passive: true })
 
