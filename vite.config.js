@@ -1,15 +1,23 @@
 import { defineConfig, loadEnv } from 'vite'
 
+// Vanity redirect to the talent-pool Tally form, shareable as tethrhq.com/pool
+// instead of the raw tally.so link. Mirrors the redirect in vercel.json.
+const POOL_REDIRECT_URL = 'https://tally.so/r/Y5vkxd?position=Talent%20pool'
+
 /* /positions, /positions/<job-slug>, and /apply are clean URLs onto their
    .html entries (the positions page routes the slug client-side). Prod is
    handled by the same rewrites in vercel.json; this middleware mirrors
    them for dev/preview. */
-const positionsCleanUrls = () => (req, _res, next) => {
+const positionsCleanUrls = () => (req, res, next) => {
   const path = req.url.split('?')[0]
   if (path === '/positions' || /^\/positions\/[^.]+$/.test(path)) {
     req.url = '/positions.html'
   } else if (path === '/apply') {
     req.url = '/apply.html'
+  } else if (path === '/pool') {
+    res.writeHead(302, { Location: POOL_REDIRECT_URL })
+    res.end()
+    return
   }
   next()
 }

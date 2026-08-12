@@ -1,4 +1,7 @@
 {
+  "redirects": [
+    { "source": "/pool", "destination": "https://tally.so/r/Y5vkxd?position=Talent%20pool", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/positions", "destination": "/positions.html" },
     { "source": "/positions/:slug", "destination": "/api/position-page?slug=:slug" },

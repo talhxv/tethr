@@ -341,6 +341,10 @@ app.get('/positions/:slug', async (req, res, next) => {
 app.get('/positions', (_req, res) => res.sendFile(path.join(DIST, 'positions.html')))
 app.get('/apply', (_req, res) => res.sendFile(path.join(DIST, 'apply.html')))
 
+// Vanity redirect to the talent-pool Tally form, shareable as tethrhq.com/pool
+// instead of the raw tally.so link. Mirrors the redirect in vercel.json.
+app.get('/pool', (_req, res) => res.redirect(302, 'https://tally.so/r/Y5vkxd?position=Talent%20pool'))
+
 app.use(express.static(DIST, { extensions: ['html'] }))
 
 app.use((_req, res) => {

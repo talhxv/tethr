@@ -2,11 +2,6 @@ import { exciteNavbar } from './navbar.js'
 import { fetchJobs } from '../lib/notion.js'
 import chainBg from '../assets/fullylinkedvectorchainbluephone.svg'
 
-// Talent pool / open-application form — same one linked from the open
-// positions page's "Don't see a fit?" footer note.
-const TALENT_POOL_FORM_ID  = 'Y5vkxd'
-const TALENT_POOL_FORM_URL = `https://tally.so/r/${TALENT_POOL_FORM_ID}`
-
 // Client / "hire talent" lead form. Create it at tally.so (company name,
 // what you need staffed, contact info), then paste the form id here — the
 // part after /r/ in the form URL (e.g. tally.so/r/wAbCdE -> 'wAbCdE').
@@ -112,7 +107,7 @@ function joinHtml() {
       </div>
       ${arrow}
     </a>
-    <a class="apply-choice" href="${TALENT_POOL_FORM_URL}?position=${encodeURIComponent('Talent pool')}" target="_blank" rel="noopener" style="animation-delay:220ms">
+    <a class="apply-choice" href="/pool" target="_blank" rel="noopener" style="animation-delay:220ms">
       ${awaitingGlyph}
       <div class="apply-choice__text">
         <h2 class="apply-choice__title">Join the talent pool</h2>
