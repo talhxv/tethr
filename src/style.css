@@ -322,6 +322,26 @@ code {
   padding: 0 24px;
 }
 
+/* Full-width blur strip behind the pill so content scrolling under the
+   open gutters (left/right of the 1280px pill on wide screens) reads as
+   "behind glass" too, not just the content directly under the pill.
+   Fixed (not sticky) so it spans the true viewport width regardless of
+   the wrap's own padding; the mask fades it out toward the bottom so it
+   drops off rather than hard-cutting. Sits behind .navbar in paint order
+   because it's the first child (generated content) of .navbar-wrap. */
+.navbar-wrap::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  backdrop-filter: blur(20px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  pointer-events: none;
+}
+
 .navbar {
   width: 100%;
   max-width: 1280px;
@@ -2032,9 +2052,9 @@ code {
 }
 
 /* Fact pills — same grammar as the hiring section's milestone tags.
-   Employment rides in the title row beside the dept pill (filled blue, the
-   scan-level fact); compensation sits in the drawer footer as a tinted
-   figure, paired with the apply action across the row. */
+   Employment rides in the title row beside the dept pill (tinted, not
+   filled — the filled CTA blue is reserved for the apply action); comp
+   sits in the drawer footer as the same tinted figure. */
 .op-pill {
   display: inline-flex;
   align-items: center;
@@ -2054,14 +2074,16 @@ code {
   opacity: 0.5;
 }
 
-/* Sized to the dept pill it sits beside */
+/* Sized to the dept pill it sits beside — tinted like .op-pill--comp,
+   not filled, so the apply button stays the only solid-blue pill in view */
 .op-pill--type {
-  background: #0755E9;
-  color: #fff;
+  background: #E7EFFF;
+  border: 1px solid rgba(7, 85, 233, 0.35);
+  color: #0755E9;
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  padding: 5px 12px;
+  padding: 4px 11px;
 }
 
 /* Money reads as a figure, not a tracked-out tag */

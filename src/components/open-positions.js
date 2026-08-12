@@ -328,11 +328,14 @@ export async function init() {
 
   filtered = [...jobs]
 
+  // "All roles" doubles as the open-role count once it's known
+  const allLabel = jobs.length ? `${jobs.length} role${jobs.length === 1 ? '' : 's'} open` : 'All roles'
+
   // Build filter buttons from unique departments
   const depts = [...new Set(jobs.map(j => j.department).filter(Boolean))]
-  if (depts.length && filtersEl) {
+  if (filtersEl) {
     filtersEl.innerHTML =
-      `<button class="op-filter active" data-filter="all">All roles</button>` +
+      `<button class="op-filter active" data-filter="all">${allLabel}</button>` +
       depts.map(d => `<button class="op-filter" data-filter="${d}">${d}</button>`).join('')
   }
 
