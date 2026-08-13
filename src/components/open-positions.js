@@ -106,15 +106,12 @@ function detailHtml(job) {
       All open positions
     </a>
 
-    <div class="op-detail__badges">
-      <span class="op-row__dept" style="background:${d.bg};color:${d.text}">${job.department || 'General'}</span>
-      ${job.type ? `<span class="op-pill op-pill--type"><span class="op-pill__line"></span>${job.type}</span>` : ''}
-    </div>
-
     <h1 class="op-detail__title">${job.title}</h1>
     ${job.tagline ? `<p class="op-detail__tagline">${job.tagline}</p>` : ''}
 
     <div class="op-detail__facts">
+      <span class="op-row__dept" style="background:${d.bg};color:${d.text}">${job.department || 'General'}</span>
+      ${job.type ? `<span class="op-pill op-pill--type"><span class="op-pill__line"></span>${job.type}</span>` : ''}
       ${job.location ? `<span class="op-row__tag">${job.location}</span>` : ''}
       ${job.compensation ? `<span class="op-pill op-pill--comp">${job.compensation}</span>` : ''}
       ${tags.map(t => `<span class="op-row__tag">${t}</span>`).join('')}
@@ -291,6 +288,62 @@ export async function init() {
   // session (→ back link can use history.back) or via a direct link
   let cameFromList = false
 
+  // Floating Apply pill — mirrors the detail view's real CTA so it stays
+  // reachable on short viewports without scrolling through the whole job
+  // description. Visible once the hero has scrolled out of view AND the
+  // real CTA isn't on screen; disappears the moment either isn't true.
+  const stickyApply = document.createElement('div')
+  stickyApply.className = 'op-sticky-apply'
+  stickyApply.innerHTML = `
+    <a href="${TALLY_FORM_URL}" class="op-detail__apply op-sticky-apply__btn" data-apply target="_blank" rel="noopener">Apply for this role
+      <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
+        <path d="M1.5 9.5L9.5 1.5M9.5 1.5H3.5M9.5 1.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>`
+  document.body.appendChild(stickyApply)
+  const stickyBtn = stickyApply.querySelector('a')
+  stickyBtn.addEventListener('mouseenter', () => exciteNavbar(true))
+  stickyBtn.addEventListener('mouseleave', () => exciteNavbar(false))
+
+  let heroObserver = null
+  let ctaObserver = null
+  let heroPastView = false
+  let ctaInView = false
+
+  function updateStickyVisibility() {
+    stickyApply.classList.toggle('is-visible', heroPastView && !ctaInView)
+  }
+
+  function teardownSticky() {
+    heroObserver?.disconnect()
+    ctaObserver?.disconnect()
+    heroObserver = ctaObserver = null
+    heroPastView = false
+    ctaInView = false
+    stickyApply.classList.remove('is-visible')
+  }
+
+  function wireSticky(job) {
+    teardownSticky()
+    const heroAnchor = list.querySelector('.op-detail__rule')
+    const cta = list.querySelector('.op-detail__cta')
+    if (!heroAnchor || !cta) return
+
+    stickyBtn.href = `${TALLY_FORM_URL}?position=${encodeURIComponent(job.title)}`
+
+    heroObserver = new IntersectionObserver(([entry]) => {
+      heroPastView = !entry.isIntersecting
+      updateStickyVisibility()
+    })
+    heroObserver.observe(heroAnchor)
+
+    ctaObserver = new IntersectionObserver(([entry]) => {
+      ctaInView = entry.isIntersecting
+      updateStickyVisibility()
+    })
+    ctaObserver.observe(cta)
+  }
+
   // Filters + pagination + "don't see a fit" only belong to the list view
   function setListChrome(visible) {
     ;[filtersWrap, footerNote].forEach(el => {
@@ -393,6 +446,7 @@ export async function init() {
   function showList() {
     exciteNavbar(false) // a hovered CTA can be removed without its mouseleave
     setListChrome(true)
+    teardownSticky()
     document.title = 'Open Positions – Tethr'
     renderPage(currentPage)
   }
@@ -405,6 +459,8 @@ export async function init() {
     document.title = job ? `${job.title} – Tethr` : 'Position not found – Tethr'
     list.innerHTML = job ? detailHtml(job) : notFoundHtml()
     wireDetail()
+    if (job) wireSticky(job)
+    else teardownSticky()
   }
 
   function wireDetail() {
