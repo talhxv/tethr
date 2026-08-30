@@ -44,6 +44,49 @@ function truncate(s, max = 155) {
   return cut.slice(0, cut.lastIndexOf(' ')) + '…'
 }
 
+// The posting's expiry: 180 days after it went up, but never sooner than a
+// month from now, so Google never sees an already-expired validThrough on a
+// role that's simply been open a while
+function validThrough(iso) {
+  const posted = new Date(iso)
+  if (isNaN(posted)) return undefined
+  const end  = new Date(posted); end.setUTCDate(end.getUTCDate() + 180)
+  const soon = new Date(Date.now() + 30 * 864e5)
+  return (end > soon ? end : soon).toISOString()
+}
+
+// The "Pay:" line (see src/lib/notion.js for the authoring format) -> a
+// schema.org MonetaryAmount. The segment with digits carries the number(s);
+// a range becomes min/max, a single figure becomes value. unitText defaults
+// to MONTH — the ranges on these roles are monthly — unless the text says
+// otherwise.
+function baseSalary(full) {
+  const line = String(full ?? '').split('\n').map(s => s.trim()).find(l => /^pay:/i.test(l))
+  if (!line) return undefined
+  const seg = line.replace(/^pay:\s*/i, '').split('|').map(s => s.trim()).find(s => /\d/.test(s))
+  if (!seg) return undefined
+
+  const nums = (seg.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map(n => Number(n.replace(/,/g, '')))
+  if (!nums.length) return undefined
+
+  const currency =
+    /pkr|rs\.?|₨/i.test(seg) ? 'PKR' :
+    /£|gbp/i.test(seg)       ? 'GBP' :
+    /€|eur/i.test(seg)       ? 'EUR' : 'USD'
+
+  const unitText =
+    /\bhr\b|hour/i.test(seg)                 ? 'HOUR' :
+    /\bday\b|daily/i.test(seg)               ? 'DAY'  :
+    /\bwk\b|week/i.test(seg)                 ? 'WEEK' :
+    /\byr\b|year|annum|p\.?a\.?/i.test(seg)  ? 'YEAR' : 'MONTH'
+
+  const value = { '@type': 'QuantitativeValue', unitText }
+  if (nums.length >= 2) { value.minValue = Math.min(...nums); value.maxValue = Math.max(...nums) }
+  else value.value = nums[0]
+
+  return { '@type': 'MonetaryAmount', currency, value }
+}
+
 // schema.org employmentType from the Notion select's wording
 function employmentType(type) {
   const t = String(type).toLowerCase()
@@ -131,17 +174,24 @@ export default async function handler(req, res) {
       title: job.title,
       description: `<p>${esc(job.description.full).replace(/\n/g, '<br>')}</p>`,
       datePosted: job.created,
+      validThrough: validThrough(job.created),
       employmentType: employmentType(job.type),
       jobLocationType: 'TELECOMMUTE',
+      // Required alongside TELECOMMUTE: where a remote applicant may sit.
+      // Tethr hires and places Pakistani talent.
+      applicantLocationRequirements: { '@type': 'Country', name: 'Pakistan' },
       hiringOrganization: {
         '@type': 'Organization',
         name: 'Tethr',
         sameAs: SITE,
         logo: `${SITE}/og.png`,
       },
+      baseSalary: baseSalary(job.description.full),
       directApply: true,
     }
     if (!jsonLd.employmentType) delete jsonLd.employmentType
+    if (!jsonLd.validThrough)   delete jsonLd.validThrough
+    if (!jsonLd.baseSalary)     delete jsonLd.baseSalary
 
     html = html
       .replace(seoRe, `<!-- seo -->${meta}<!-- /seo -->`)
