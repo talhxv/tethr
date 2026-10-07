@@ -38,11 +38,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const VALIDATORS = {
   name:      v => v ? '' : 'Enter your name.',
-  title:     v => v ? '' : 'Enter your position or title.',
+  title:     v => v ? '' : 'Enter your title.',
   company:   v => v ? '' : 'Enter your company name.',
-  email:     v => !v ? 'Enter your email address.' : EMAIL_RE.test(v) ? '' : 'Enter a valid email, like you@company.com.',
+  email:     v => !v ? 'Enter your email address.' : EMAIL_RE.test(v) ? '' : 'Enter a valid email address.',
   challenge: v => v ? '' : 'Select a challenge.',
-  headcount: v => v ? '' : 'Choose how many people you need.',
+  headcount: v => v ? '' : 'Choose how many to hire.',
   timeline:  v => v ? '' : 'Choose a timeline.',
 }
 
@@ -129,12 +129,13 @@ export const html = `
         ${errorSlot('timeline')}
       </fieldset>
 
-      <p class="book-error book-error--form" id="bookFormError" role="alert"></p>
-
-      <button type="submit" class="book-submit" id="bookSubmit">
-        <span id="bookSubmitText">Book a call</span>
-        <img src="${arrowRight}" class="book-submit__arrow" alt="" aria-hidden="true" />
-      </button>
+      <div class="book-submit-wrap">
+        <p class="book-error book-error--form" id="bookFormError" role="alert"></p>
+        <button type="submit" class="book-submit" id="bookSubmit">
+          <span id="bookSubmitText">Book a call</span>
+          <img src="${arrowRight}" class="book-submit__arrow" alt="" aria-hidden="true" />
+        </button>
+      </div>
     </form>
 
     <div class="book-done" id="bookDone" hidden>
@@ -234,7 +235,7 @@ export function init() {
     try {
       await submitLead(data)
     } catch {
-      formError.textContent = 'Something went wrong and your request wasn\'t sent. Please try again.'
+      formError.textContent = 'Not sent. Please try again.'
       submitBtn.disabled = false
       submitText.textContent = 'Book a call'
       return

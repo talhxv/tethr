@@ -4636,8 +4636,11 @@ body.page-leaving #app {
   margin: 0 0 22px;
 }
 
+/* The 20px under each field is also where its error message sits, so an
+   error never changes the card's height */
 .book-field {
-  margin: 0 0 14px;
+  position: relative;
+  margin: 0 0 20px;
 }
 
 .book-fieldset {
@@ -4698,31 +4701,52 @@ body.page-leaving #app {
   & option { color: #001131; }
 }
 
-/* Inline errors — mono, like the section labels, hung off a short rule */
+/* Inline errors — mono, like the section labels, hung off a short rule.
+   Out of flow, in the gap under their control: one line, never wrapping,
+   so showing one moves nothing. */
 .book-error {
   display: none;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 2px 0 0;
   font-family: 'Consolas', monospace;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 13px;
   letter-spacing: 0.02em;
   color: #C8281E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &::before {
     content: '';
+    display: inline-block;
     width: 14px;
-    flex-shrink: 0;
+    margin-right: 8px;
+    vertical-align: middle;
     border-top: 2px solid currentColor;
   }
 }
 
 .has-error > .book-error,
 .book-error--form:not(:empty) {
-  display: flex;
+  display: block;
 }
 
-.book-error--form { margin: 0 0 14px; }
+/* The submit failure message sits in the same gap, just above the button */
+.book-submit-wrap {
+  position: relative;
+  /* Padding, not margin: a margin would collapse into the last field's */
+  padding-top: 10px;
+}
+
+.book-error--form {
+  top: auto;
+  bottom: calc(100% - 4px);
+  margin: 0;
+}
 
 .has-error .book-input,
 .has-error .book-seg__opt span {
@@ -4875,7 +4899,6 @@ body.page-leaving #app {
   gap: 10px;
   width: 100%;
   height: 50px;
-  margin-top: 22px;
   border: 0;
   border-radius: 12px;
   background: #2B44FF;
