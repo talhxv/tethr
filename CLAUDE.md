@@ -20,7 +20,7 @@ Vanilla JavaScript + Vite, no framework. ES Modules throughout (`"type": "module
 
 **Module pattern:** Components are plain JS modules with named exports (see `src/counter.js`). DOM construction happens in `main.js` using `innerHTML` with template literals; interactive behavior is wired up by querying the rendered DOM.
 
-**Styling:** `src/style.css` uses CSS custom properties (`--text`, `--bg`, `--accent`, etc.) for theming. Dark mode is handled via `prefers-color-scheme: dark` overriding those variables. Modern CSS nesting syntax is used throughout.
+**Styling:** `src/style.css` uses CSS custom properties (`--text`, `--bg`, `--accent`, etc.) for theming. The site is light-only: `:root` sets `color-scheme: only light` and every HTML entry carries the matching meta tags, so there is no dark theme. Modern CSS nesting syntax is used throughout.
 
 **Static assets:** Files in `public/` are served as-is (e.g. `public/icons.svg` for the SVG sprite). Images imported inside `src/` are processed by Vite.
 
