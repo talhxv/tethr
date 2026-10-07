@@ -5,6 +5,7 @@
   "rewrites": [
     { "source": "/positions", "destination": "/positions.html" },
     { "source": "/positions/:slug", "destination": "/api/position-page?slug=:slug" },
-    { "source": "/apply", "destination": "/apply.html" }
+    { "source": "/apply", "destination": "/apply.html" },
+    { "source": "/book", "destination": "/book.html" }
   ]
 }

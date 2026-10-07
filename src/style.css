@@ -4253,18 +4253,6 @@ body.page-leaving #app {
   padding-bottom: 120px;
 }
 
-/* Back link on the join/hire panels — not nested in .op-detail here, so it
-   needs its own entrance animation instead of inheriting that selector's,
-   and its wrapper needs the left align .op-detail normally provides
-   (otherwise it inherits #app's global text-align: center) */
-.apply-section .op-detail__back {
-  animation: op-row-in 0.4s ease both;
-}
-
-.apply-section .apply-choice__back-wrap {
-  text-align: left;
-}
-
 /* Headline left, live roles count right — the op-hero balance, so the page
    reads as the positions page's sibling instead of text floating in a void */
 .apply-hero {
@@ -4387,4 +4375,691 @@ body.page-leaving #app {
   .apply-choice__link svg { width: 40px; }
   .apply-choice__title { letter-spacing: -0.5px; }
   .apply-choice__arrow { width: 38px; height: 38px; }
+}
+
+/* == BOOK A CALL (/book): client lead form == */
+
+/* Intro + funnel on the page, form in a card that runs off the right edge.
+   Three grid items so mobile can drop the card between the intro and the
+   illustration. */
+.book-section {
+  display: grid;
+  grid-template-columns: 53fr 47fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "intro card"
+    "how   card";
+  column-gap: clamp(24px, 4vw, 64px);
+  padding: 28px 0 96px;
+  text-align: left;
+}
+
+.book-intro {
+  grid-area: intro;
+  padding-left: var(--pad);
+  animation: op-row-in 0.45s ease both;
+}
+
+.book-intro .section-label {
+  margin-top: 40px;
+}
+
+.book-headline {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(28px, 2.9vw, 42px);
+  font-weight: 800;
+  color: #001131;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin: 28px 0 12px;
+}
+
+.book-sub {
+  font-family: 'Manrope', sans-serif;
+  font-size: 15.5px;
+  color: rgba(0, 17, 49, 0.55);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Funnel: the hiring section's isometric stack, held open ── */
+.book-how {
+  grid-area: how;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 48px 0 8px var(--pad);
+}
+
+.book-stack {
+  --stack-w: clamp(240px, 26vw, 380px);
+  width: var(--stack-w);
+  height: calc(var(--stack-w) * 0.97);
+  margin: auto 0;
+}
+
+/* Fanned-open offsets, scaled with the stack (hiring.js fans by tween) */
+.book-stack .hiring-layer--mid1 { bottom: calc(var(--stack-w) * 0.16); }
+.book-stack .hiring-layer--mid2 { bottom: calc(var(--stack-w) * 0.32); }
+
+/* 01 / 02 / 03 — numbered nodes strung on one tether line */
+.book-rail {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  max-width: 660px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.book-rail__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.book-rail__step + .book-rail__step::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: calc(-50% + 17px);
+  right: calc(50% + 17px);
+  border-top: 1.5px solid rgba(0, 17, 49, 0.14);
+}
+
+.book-rail__num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f3f5fa;
+  border: 1.5px solid rgba(0, 17, 49, 0.16);
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(0, 17, 49, 0.6);
+}
+
+.book-rail__tag {
+  margin-top: 16px;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #001131;
+}
+
+.book-rail__text {
+  font-family: 'Manrope', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(0, 17, 49, 0.6);
+  max-width: 150px;
+  margin: 8px 0 0;
+}
+
+/* ── The card ── */
+.book-card {
+  grid-area: card;
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+  background: #fff;
+  border: 1px solid rgba(0, 17, 49, 0.1);
+  border-right: 0;
+  border-radius: 28px 0 0 28px;
+  /* Clear of the navbar's sticker, which hangs below the bar */
+  margin-top: 52px;
+  /* border-box so book-call.js can pin min-height to the measured height */
+  box-sizing: border-box;
+  padding: clamp(20px, 1.7vw, 24px) var(--pad) clamp(28px, 3vw, 40px) clamp(24px, 3vw, 44px);
+  box-shadow: 0 24px 64px -40px rgba(0, 17, 49, 0.25);
+  animation: op-row-in 0.5s ease 0.08s both;
+}
+
+/* Outline chain drifting off the top-right corner, clipped by the card */
+.book-card__chain {
+  position: absolute;
+  top: -230px;
+  right: -300px;
+  width: 720px;
+  height: auto;
+  opacity: 0.4;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Clip box for the chain. The card itself can't clip it: on desktop the
+   chain has to leave the card and run up behind the navbar, so the card is
+   overflow: visible there and this box does the clipping instead. It sits
+   over the card surface and under its content, is card-sized by default
+   (mobile), and on desktop reaches up past the page top while still ending
+   at the card's right edge (= the viewport edge), so nothing scrolls
+   sideways. */
+.book-card__chain-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+
+@media (min-width: 901px) {
+  .book-card {
+    overflow: visible;
+    /* Scales with the viewport: the free strip beside the card's text does */
+    --chain-w: clamp(420px, calc(114vw - 1130px), 500px);
+    /* How far above the card the clip box reaches */
+    --chain-bleed: 240px;
+    /* Above 1440 the navbar stops growing and its sticker drifts in from the
+       edge; the chain follows it in so it keeps crossing the gap beside the
+       sticker rather than behind it */
+    --chain-in: clamp(0px, calc((100vw - 1440px) / 2), 230px);
+    /* How far in from the card's right edge the chain reaches at text height */
+    --chain-foot: calc(max(var(--chain-w) * 0.36, 160px) + var(--chain-in));
+    /* Room left for a line of card text: card width (47% of the page less
+       the column gap), less its left padding, less the chain */
+    --chain-text-w: calc((100vw - clamp(24px, 4vw, 64px)) * 0.47 - clamp(24px, 3vw, 44px) - var(--chain-foot));
+  }
+
+  .book-card__chain-clip {
+    top: calc(-1 * var(--chain-bleed));
+  }
+
+  /* Smaller than the in-card version and set higher, so more links are in
+     view: down from behind the navbar, across the gap, into the card.
+     Offsets are fractions of the width so it moves as one piece; opacity is
+     up from 0.4 to make up for the strokes thinning as the art scales down. */
+  .book-card__chain {
+    top: calc(var(--chain-bleed) - var(--chain-w) * 0.3);
+    right: calc(var(--chain-in) - var(--chain-w) * 0.285);
+    width: var(--chain-w);
+    opacity: 0.5;
+    transform: rotate(6deg);
+  }
+
+  /* Card text stops short of the chain instead of running under it */
+  .book-card .book-card__title,
+  .book-card .book-card__sub {
+    max-width: var(--chain-text-w);
+  }
+
+  .book-card .book-done .book-card__title,
+  .book-card .book-done .book-card__sub {
+    max-width: min(480px, var(--chain-text-w));
+  }
+}
+
+/* Past here the sticker is further in than the chain can follow without
+   running into the card text, so the chain goes back to the edge and
+   crosses the gap on the sticker's other side */
+@media (min-width: 1960px) {
+  .book-card { --chain-in: 0px; }
+}
+
+/* The card keeps running off the right edge; its content doesn't */
+.book-form,
+.book-done {
+  max-width: 640px;
+}
+
+.book-card__title {
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(28px, 2.6vw, 36px);
+  font-weight: 800;
+  color: #001131;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+
+.book-card__title:focus { outline: none; }
+
+
+
+.book-card__sub {
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  color: rgba(0, 17, 49, 0.55);
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+
+.book-field {
+  margin: 0 0 14px;
+}
+
+.book-fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.book-label {
+  display: block;
+  padding: 0;
+  margin: 0 0 6px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #001131;
+}
+
+.book-input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border: 1px solid rgba(0, 17, 49, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.86);
+  font-family: 'Manrope', sans-serif;
+  font-size: 14.5px;
+  color: #001131;
+  /* Clears the sticky navbar when a failed submit focuses the field */
+  scroll-margin-top: 140px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &::placeholder { color: rgba(0, 17, 49, 0.35); }
+
+  &:hover { border-color: rgba(0, 17, 49, 0.3); }
+
+  &:focus-visible {
+    outline: none;
+    border-color: #2B44FF;
+    box-shadow: 0 0 0 3px rgba(43, 68, 255, 0.16);
+  }
+}
+
+.book-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23001131' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+
+  /* Unchosen (the disabled placeholder option) reads as placeholder text */
+  &:invalid { color: rgba(0, 17, 49, 0.35); }
+  & option { color: #001131; }
+}
+
+/* Inline errors — mono, like the section labels, hung off a short rule */
+.book-error {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #C8281E;
+
+  &::before {
+    content: '';
+    width: 14px;
+    flex-shrink: 0;
+    border-top: 2px solid currentColor;
+  }
+}
+
+.has-error > .book-error,
+.book-error--form:not(:empty) {
+  display: flex;
+}
+
+.book-error--form { margin: 0 0 14px; }
+
+.has-error .book-input,
+.has-error .book-seg__opt span {
+  border-color: #C8281E;
+}
+
+.has-error .book-time__node {
+  border-color: #C8281E;
+}
+
+/* Native radios stay in the tree (arrow keys, form data) but unseen */
+.book-seg__opt input,
+.book-time__opt input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Headcount — four equal segments */
+.book-seg {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.book-seg__opt {
+  position: relative;
+  cursor: pointer;
+
+  & span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    border: 1px solid rgba(0, 17, 49, 0.14);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.86);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #001131;
+    transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+  }
+
+  &:hover span { border-color: rgba(0, 17, 49, 0.3); }
+
+  & input:checked + span {
+    border-color: #2B44FF;
+    background: rgba(43, 68, 255, 0.08);
+    color: #2B44FF;
+    box-shadow: inset 0 0 0 0.5px #2B44FF;
+  }
+
+  & input:focus-visible + span {
+    box-shadow: 0 0 0 3px rgba(43, 68, 255, 0.22);
+    border-color: #2B44FF;
+  }
+}
+
+/* Timeline — three eyelets on a dashed tether, the same leader-line
+   grammar as the hiring diagram's callouts. Runs the full field width:
+   outer options hug the edges, the middle one sits on the centre line,
+   tether segments take up the slack. */
+.book-time {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  padding-top: 4px;
+}
+
+.book-time__side {
+  display: flex;
+  align-items: flex-start;
+}
+
+.book-time__opt {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.book-time__tether {
+  flex: 1;
+  min-width: 12px;
+  margin: 10px 12px 0;
+  border-top: 1.5px dashed rgba(7, 85, 233, 0.35);
+}
+
+.book-time__node {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 17, 49, 0.22);
+  background: #fff;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    background: rgba(0, 17, 49, 0.18);
+    transition: background 0.18s ease;
+  }
+}
+
+.book-time__label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(0, 17, 49, 0.6);
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+
+.book-time__opt:hover .book-time__node { border-color: #2B44FF; }
+
+.book-time__opt input:checked ~ .book-time__node {
+  border-color: #2B44FF;
+  background: #2B44FF;
+  box-shadow: 0 0 0 4px rgba(43, 68, 255, 0.16);
+
+  &::after { background: #fff; }
+}
+
+.book-time__opt input:checked ~ .book-time__label {
+  color: #2B44FF;
+  font-weight: 600;
+}
+
+.book-time__opt input:focus-visible ~ .book-time__node {
+  outline: 2px solid #2B44FF;
+  outline-offset: 4px;
+}
+
+/* The page's one filled button */
+.book-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 50px;
+  margin-top: 22px;
+  border: 0;
+  border-radius: 12px;
+  background: #2B44FF;
+  color: #fff;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(43, 68, 255, 0.28);
+  transition: background 0.2s ease, transform 0.2s ease;
+
+  &:hover { background: #1f35d9; transform: translateY(-1px); }
+
+  &:focus-visible {
+    outline: 2px solid #2B44FF;
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
+    transform: none;
+  }
+}
+
+.book-submit__arrow {
+  width: 13px;
+  height: 13px;
+  filter: brightness(0) invert(1);
+  transition: transform 0.2s ease;
+}
+
+.book-submit:hover:not(:disabled) .book-submit__arrow { transform: translateX(3px); }
+
+/* Confirmation — replaces the form inside the card */
+.book-done {
+  /* Scrolled to after submit — land it clear of the sticky navbar */
+  scroll-margin-top: 110px;
+  padding: 28px 0 60px;
+  animation: op-row-in 0.45s ease both;
+}
+
+.book-done .book-card__sub { margin-bottom: 0; overflow-wrap: anywhere; }
+
+/* Short measure keeps the confirmation clear of the corner chain art */
+.book-done .book-card__title,
+.book-done .book-card__sub { max-width: 480px; }
+
+.book-done__link {
+  display: block;
+  color: #2B44FF;
+  margin-bottom: 28px;
+
+  & svg { display: block; width: 64px; height: auto; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Layers lift apart from a closed deck as the page lands */
+  .book-stack .hiring-layer--mid1 { animation: book-fan 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; --fan-from: calc(var(--stack-w) * 0.08); }
+  .book-stack .hiring-layer--mid2 { animation: book-fan 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; --fan-from: calc(var(--stack-w) * 0.16); }
+  .book-how { animation: op-row-in 0.5s ease 0.12s both; }
+}
+
+@keyframes book-fan {
+  from { transform: translateY(var(--fan-from)); }
+  to   { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-intro,
+  .book-card,
+  .book-done { animation: none; }
+
+  .book-input,
+  .book-seg__opt span,
+  .book-time__node,
+  .book-time__node::after,
+  .book-time__label,
+  .book-submit,
+  .book-submit__arrow { transition: none; }
+}
+
+/* Wide screens: the left column would otherwise pin the headline to the
+   page edge with the funnel adrift mid-column — hold both to one centred
+   measure so they read as a single block */
+@media (min-width: 1600px) {
+  .book-stack { --stack-w: 440px; }
+}
+
+@media (min-width: 2200px) {
+  .book-intro,
+  .book-how {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 780px;
+    justify-self: center;
+  }
+}
+
+/* One column: intro, the form, then the funnel */
+@media (max-width: 900px) {
+  .book-section {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      "intro"
+      "card"
+      "how";
+    padding-bottom: 72px;
+  }
+
+  .book-intro {
+    padding-right: var(--pad);
+  }
+
+  .book-intro .section-label { margin-top: 24px; }
+
+  .book-card {
+    margin: 32px var(--pad) 0;
+    border-right: 1px solid rgba(0, 17, 49, 0.1);
+    border-radius: 22px;
+    padding: 32px 20px 28px;
+  }
+
+  .book-form,
+  .book-done { max-width: none; }
+
+  .book-card__chain {
+    width: 460px;
+    top: -150px;
+    right: -210px;
+  }
+
+  .book-how {
+    padding: 56px var(--pad) 0;
+    gap: 36px;
+  }
+
+  .book-stack { --stack-w: min(300px, 72vw); }
+
+  /* 16px keeps iOS from zooming the page on focus */
+  .book-input { font-size: 16px; }
+}
+
+@media (max-width: 480px) {
+  /* Rail turns vertical: nodes down the left on one tether, copy beside */
+  .book-rail {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 320px;
+    text-align: left;
+  }
+
+  .book-rail__step {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: start;
+    padding: 0 0 26px;
+  }
+
+  .book-rail__step:last-child { padding-bottom: 0; }
+
+  .book-rail__step + .book-rail__step::before { display: none; }
+
+  .book-rail__step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 34px;
+    bottom: 0;
+    left: 16px;
+    border-left: 1.5px solid rgba(0, 17, 49, 0.14);
+  }
+
+  .book-rail__num { grid-row: 1 / span 2; }
+
+  .book-rail__tag { margin-top: 9px; }
+
+  .book-rail__text {
+    font-size: 13.5px;
+    max-width: none;
+    margin-top: 6px;
+  }
+
+  .book-seg { gap: 6px; }
+  .book-time__label { font-size: 12.5px; }
+  .book-time__tether { margin-left: 8px; margin-right: 8px; }
 }

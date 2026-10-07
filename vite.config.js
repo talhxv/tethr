@@ -4,7 +4,7 @@ import { defineConfig, loadEnv } from 'vite'
 // instead of the raw tally.so link. Mirrors the redirect in vercel.json.
 const POOL_REDIRECT_URL = 'https://tally.so/r/Y5vkxd?position=Talent%20pool'
 
-/* /positions, /positions/<job-slug>, and /apply are clean URLs onto their
+/* /positions, /positions/<job-slug>, /apply, and /book are clean URLs onto their
    .html entries (the positions page routes the slug client-side). Prod is
    handled by the same rewrites in vercel.json; this middleware mirrors
    them for dev/preview. */
@@ -14,6 +14,8 @@ const positionsCleanUrls = () => (req, res, next) => {
     req.url = '/positions.html'
   } else if (path === '/apply') {
     req.url = '/apply.html'
+  } else if (path === '/book') {
+    req.url = '/book.html'
   } else if (path === '/pool') {
     res.writeHead(302, { Location: POOL_REDIRECT_URL })
     res.end()
@@ -44,6 +46,7 @@ export default defineConfig(({ mode }) => {
           main:      'index.html',
           positions: 'positions.html',
           apply:     'apply.html',
+          book:      'book.html',
           notFound:  '404.html',
         },
       },

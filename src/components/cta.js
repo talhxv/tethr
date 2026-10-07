@@ -63,7 +63,7 @@ export const html = `
     </h2>
     <div class="cta__btns">
       <a href="/apply#join" data-transition class="cta__btn cta__btn--primary">Apply <img src="${arrowRight}" class="cta__arrow" alt="" /></a>
-      <a href="/apply#hire" data-transition class="cta__btn cta__btn--secondary">Hire Talent</a>
+      <a href="/book" data-transition class="cta__btn cta__btn--secondary">Hire Talent</a>
     </div>
   </div>
 </section>
