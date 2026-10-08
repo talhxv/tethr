@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import { respond as respondBooking, BOOKING_PATHS } from './lib/booking/handlers.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(__dirname, 'dist')
@@ -45,6 +46,13 @@ app.post('/api/notion', async (req, res) => {
     res.status(500).json({ error: 'Failed to reach Notion API' })
   }
 })
+
+// ---- /api/lead, /api/availability, /api/book ------------------------------
+// The Book a Call flow. All of it lives in lib/booking; api/*.js (Vercel) and
+// the Vite dev middleware call the same handlers.
+for (const route of BOOKING_PATHS) {
+  app.all(route, (req, res) => respondBooking(req, res, route))
+}
 
 // ---- /api/applications/webhook ---------------------------------------------
 // Fired by a Tally webhook (configured separately from the native Notion

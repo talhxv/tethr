@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
+import { handle as handleBooking, BOOKING_PATHS } from './lib/booking/handlers.js'
 
 // Vanity redirect to the talent-pool Tally form, shareable as tethrhq.com/pool
 // instead of the raw tally.so link. Mirrors the redirect in vercel.json.
@@ -24,8 +25,29 @@ const positionsCleanUrls = () => (req, res, next) => {
   next()
 }
 
+/* The booking API (/api/lead, /api/availability, /api/book) for dev and
+   preview. Same handlers as api/*.js on Vercel and server.js in Docker. */
+const bookingApi = () => (req, res, next) => {
+  const path = req.url.split('?')[0]
+  if (!BOOKING_PATHS.includes(path)) return next()
+
+  const chunks = []
+  req.on('data', (c) => chunks.push(c))
+  req.on('end', async () => {
+    const { status, body } = await handleBooking(req.method, path, Buffer.concat(chunks).toString('utf8') || null)
+    res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify(body))
+  })
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+
+  // The booking handlers read process.env, as they do in production; give
+  // them what's in .env without overriding the real environment
+  for (const [key, value] of Object.entries(env)) {
+    if (/^(NOTION_|GOOGLE_|BOOKING_|VITE_NOTION_TOKEN$)/.test(key) && process.env[key] === undefined) process.env[key] = value
+  }
 
   return {
     plugins: [
@@ -33,6 +55,11 @@ export default defineConfig(({ mode }) => {
         name: 'positions-clean-urls',
         configureServer(server) { server.middlewares.use(positionsCleanUrls()) },
         configurePreviewServer(server) { server.middlewares.use(positionsCleanUrls()) },
+      },
+      {
+        name: 'booking-api',
+        configureServer(server) { server.middlewares.use(bookingApi()) },
+        configurePreviewServer(server) { server.middlewares.use(bookingApi()) },
       },
     ],
     build: {

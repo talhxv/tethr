@@ -23,6 +23,7 @@ RUN pnpm fetch --prod
 RUN pnpm install --offline --prod --frozen-lockfile
 
 COPY server.js ./
+COPY lib ./lib
 COPY --from=build /app/dist ./dist
 
 EXPOSE 3000
