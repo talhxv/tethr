@@ -4610,6 +4610,7 @@ body.page-leaving #app {
 
 /* The card keeps running off the right edge; its content doesn't */
 .book-form,
+.book-pick,
 .book-done {
   max-width: 640px;
 }
@@ -4933,6 +4934,102 @@ body.page-leaving #app {
 
 .book-submit:hover:not(:disabled) .book-submit__arrow { transform: translateX(3px); }
 
+/* Bot trap: in the form, out of sight and out of the tab order */
+.book-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Pick a time — replaces the form inside the card once the lead is saved */
+.book-pick {
+  scroll-margin-top: 110px;
+  animation: op-row-in 0.45s ease both;
+}
+
+/* Loading text, then the visitor's timezone: mono, hung off a short tether */
+.book-pick__status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 17, 49, 0.6);
+
+  &::before {
+    content: '';
+    flex: 0 0 22px;
+    border-top: 1.5px dashed rgba(7, 85, 233, 0.5);
+  }
+}
+
+/* Days and times are the headcount segments again, as many as will fit */
+.book-days,
+.book-slots {
+  display: grid;
+  gap: 8px;
+}
+
+.book-days  { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+.book-slots { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
+
+.book-day span {
+  flex-direction: column;
+  gap: 1px;
+  height: 54px;
+}
+
+.book-day__dow {
+  font-family: 'Consolas', monospace;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.book-day__date {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.book-slots .book-seg__opt span {
+  height: 40px;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The one other action in the view: a quiet mono link under the button */
+.book-quiet {
+  display: block;
+  margin: 18px auto 0;
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 1.5px dashed rgba(0, 17, 49, 0.25);
+  background: none;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0, 17, 49, 0.6);
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease;
+
+  &:hover { color: #2B44FF; border-color: #2B44FF; }
+
+  &:focus-visible {
+    outline: 2px solid #2B44FF;
+    outline-offset: 4px;
+  }
+}
+
 /* Confirmation — replaces the form inside the card */
 .book-done {
   /* Scrolled to after submit — land it clear of the sticky navbar */
@@ -4970,7 +5067,11 @@ body.page-leaving #app {
 @media (prefers-reduced-motion: reduce) {
   .book-intro,
   .book-card,
+  .book-pick,
   .book-done { animation: none; }
+
+  .book-day span,
+  .book-quiet { transition: none; }
 
   .book-input,
   .book-seg__opt span,
@@ -5024,6 +5125,7 @@ body.page-leaving #app {
   }
 
   .book-form,
+  .book-pick,
   .book-done { max-width: none; }
 
   .book-card__chain {
@@ -5084,5 +5186,7 @@ body.page-leaving #app {
 
   .book-seg { gap: 6px; }
   .book-time__label { font-size: 12.5px; }
+  /* Three times to a row down to 320, so a full day stays a short list */
+  .book-slots { grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); }
   .book-time__tether { margin-left: 8px; margin-right: 8px; }
 }
