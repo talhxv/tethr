@@ -8,9 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm dev        # Start Vite dev server with HMR
 pnpm build      # Production build to dist/
 pnpm preview    # Serve production build locally
+pnpm test       # node --test: the booking logic in lib/booking/
 ```
 
-No test runner, linter, or type checker is configured.
+Tests use Node's built-in runner and cover only `lib/booking/` (slot rules, lead validation, the API against in-memory stand-ins). No linter or type checker is configured.
 
 ## Architecture
 
@@ -26,4 +27,4 @@ Vanilla JavaScript + Vite, no framework. ES Modules throughout (`"type": "module
 
 **Vite config:** `vite.config.js` declares five HTML entries (`index.html`, `positions.html`, `apply.html`, `book.html`, `404.html`), a dev proxy for the Notion API (`/notion-api`, auth injected from `VITE_NOTION_TOKEN`), and a middleware serving the right `.html` for the clean URLs `/positions`, `/positions/<job-slug>`, `/apply`, and `/book`. In production, `vercel.json` rewrites `/positions`, `/apply`, and `/book` to their static files and `/positions/:slug` to `api/position-page.js`, which injects per-job SEO meta (swapping the `<!-- seo -->…<!-- /seo -->` block in `positions.html`) plus JobPosting JSON-LD before returning the same shell. `server.js` (the Docker deployment) mirrors the same routes, so a new clean URL or redirect has to be added in all three places.
 
-**Book a Call:** `/book` (`book.html` → `src/book.js` → `src/components/book-call.js`) is the client lead form that replaced the Tally hand-off for "Hire talent". `submitLead()` in that component is a stub that sends nothing until a lead destination is chosen.
+**Book a Call:** `/book` (`book.html` → `src/book.js` → `src/components/book-call.js`) is the client lead form that replaced the Tally hand-off for "Hire talent". On submit it POSTs to `/api/lead`, which writes a row to the Notion leads database; the card then shows open times from `GET /api/availability` and books one with `POST /api/book` (a Google Calendar event with a Meet link and invite). All server logic lives in `lib/booking/`; `api/lead.js`, `api/availability.js`, `api/book.js`, the booking routes in `server.js` and the `booking-api` middleware in `vite.config.js` are thin wrappers around it, and the Dockerfile copies `lib/` into the runtime image. `lib/booking/lead.js` is also imported by the form, so keep it free of secrets and I/O. Env vars, the Notion schema and the Google setup are in `booking-setup.md`. `pnpm dev` writes real rows to Notion when `.env` holds the leads database id; run with `BOOKING_MOCK=1` to use in-memory stand-ins instead.
