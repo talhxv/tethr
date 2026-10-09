@@ -1,11 +1,8 @@
-import { toBlue } from '../lib/svg-tint.js'
-import _base from '../assets/talentcardone.svg?raw'
-import _mid  from '../assets/midlayer.svg?raw'
+import stackSource    from '../assets/hiringsource.svg'
+import stackScreen    from '../assets/hiringscreen.svg'
+import stackShortlist from '../assets/hiringshortlist.svg'
 import chainOutline from '../assets/chainoutlinevector.svg'
 import arrowRight from '../assets/arrowright.svg'
-
-const BASE = toBlue(_base)
-const MID  = toBlue(_mid)
 
 // Same funnel as the homepage hiring section's step 02 diagram
 const STEPS = [
@@ -151,10 +148,12 @@ export const html = `
   </div>
 
   <div class="book-how">
-    <div class="hiring-stack book-stack" aria-hidden="true">
-      <div class="hiring-layer hiring-layer--base">${BASE}</div>
-      <div class="hiring-layer hiring-layer--mid1">${MID}</div>
-      <div class="hiring-layer hiring-layer--mid2">${MID}</div>
+    <div class="book-stack-fit">
+      <div class="hiring-stack book-stack" aria-hidden="true">
+        <div class="hiring-layer hiring-layer--base"><img src="${stackSource}" alt="" /></div>
+        <div class="hiring-layer hiring-layer--mid1"><img src="${stackScreen}" alt="" /></div>
+        <div class="hiring-layer hiring-layer--mid2"><img src="${stackShortlist}" alt="" /></div>
+      </div>
     </div>
 
     <ol class="book-rail">

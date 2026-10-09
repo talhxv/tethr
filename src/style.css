@@ -1571,13 +1571,18 @@ code {
 
 /* Stack container — sized to hold the fanned-open state within the panel */
 .hiring-stack {
+  /* --stack-gap: how far apart the planes sit when open, as a share of the
+     stack's width. 0.6444 is one plane's height over its width (145 / 225). */
+  --stack-w: clamp(160px, 12vw, 178px);
+  --stack-gap: 0.46;
   position: relative;
   flex-shrink: 0;
-  width: clamp(190px, 15vw, 225px);
-  height: clamp(195px, 15.5vw, 230px);
+  width: var(--stack-w);
+  height: calc(var(--stack-w) * (0.6444 + 2 * var(--stack-gap)));
 }
 
-/* Isometric card layers — flush at rest, fanned apart by GSAP when open */
+/* Isometric planes (source, screen, shortlist) — placed fanned open; GSAP
+   holds them flush while the panel is closed */
 .hiring-layer {
   position: absolute;
   left: 0;
@@ -1592,8 +1597,8 @@ code {
 }
 
 .hiring-layer--base { bottom: 0; }
-.hiring-layer--mid1 { bottom: 30px; }
-.hiring-layer--mid2 { bottom: 60px; }
+.hiring-layer--mid1 { bottom: calc(var(--stack-w) * var(--stack-gap)); }
+.hiring-layer--mid2 { bottom: calc(var(--stack-w) * var(--stack-gap) * 2); }
 
 .hiring-callouts-svg {
   position: absolute;
@@ -1616,7 +1621,7 @@ code {
 .hiring-callouts {
   display: flex;
   flex-direction: column;
-  gap: clamp(14px, 2vh, 22px);
+  gap: 22px; /* keeps each callout level with its plane */
   width: clamp(190px, 17vw, 230px);
   text-align: left;
   pointer-events: none;
@@ -2746,11 +2751,7 @@ a.op-row {
 
   .hiring-step[data-idx="2"] { order: 5; }
 
-  .hiring-stack {
-    width: 38vw;
-    max-width: 160px;
-    height: 150px;
-  }
+  .hiring-stack { --stack-w: min(38vw, 160px); }
 
   .hiring-callouts {
     width: auto;
@@ -2759,9 +2760,6 @@ a.op-row {
   }
 
   .hiring-callout__text { font-size: 11.5px; }
-
-  .hiring-layer--mid1 { bottom: 22px; }
-  .hiring-layer--mid2 { bottom: 44px; }
 }
 
 /* ── SERVICES ── */
@@ -4434,16 +4432,23 @@ body.page-leaving #app {
   padding: 48px 0 8px var(--pad);
 }
 
-.book-stack {
-  --stack-w: clamp(240px, 26vw, 380px);
-  width: var(--stack-w);
-  height: calc(var(--stack-w) * 0.97);
-  margin: auto 0;
+/* The stack takes whatever height the column has left and scales to fit
+   it, so it can never push the rail below the foot of the card. A size
+   container has no height of its own, which is what keeps it from pushing. */
+.book-stack-fit {
+  flex: 1 1 0;
+  min-height: 0;
+  align-self: stretch;
+  container-type: size;
+  display: grid;
+  place-items: center;
 }
 
-/* Fanned-open offsets, scaled with the stack (hiring.js fans by tween) */
-.book-stack .hiring-layer--mid1 { bottom: calc(var(--stack-w) * 0.16); }
-.book-stack .hiring-layer--mid2 { bottom: calc(var(--stack-w) * 0.32); }
+.book-stack {
+  --stack-max: clamp(240px, 26vw, 380px);
+  --stack-gap: 0.45;
+  --stack-w: min(var(--stack-max), 100cqw, calc(100cqh / (0.6444 + 2 * var(--stack-gap))));
+}
 
 /* 01 / 02 / 03 — numbered nodes strung on one tether line */
 .book-rail {
@@ -4957,8 +4962,8 @@ body.page-leaving #app {
 
 @media (prefers-reduced-motion: no-preference) {
   /* Layers lift apart from a closed deck as the page lands */
-  .book-stack .hiring-layer--mid1 { animation: book-fan 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; --fan-from: calc(var(--stack-w) * 0.08); }
-  .book-stack .hiring-layer--mid2 { animation: book-fan 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; --fan-from: calc(var(--stack-w) * 0.16); }
+  .book-stack .hiring-layer--mid1 { animation: book-fan 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; --fan-from: calc(var(--stack-w) * var(--stack-gap) * 0.5); }
+  .book-stack .hiring-layer--mid2 { animation: book-fan 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; --fan-from: calc(var(--stack-w) * var(--stack-gap)); }
   .book-how { animation: op-row-in 0.5s ease 0.12s both; }
 }
 
@@ -4985,7 +4990,7 @@ body.page-leaving #app {
    page edge with the funnel adrift mid-column — hold both to one centred
    measure so they read as a single block */
 @media (min-width: 1600px) {
-  .book-stack { --stack-w: 440px; }
+  .book-stack { --stack-max: 440px; }
 }
 
 @media (min-width: 2200px) {
@@ -5035,6 +5040,12 @@ body.page-leaving #app {
   .book-how {
     padding: 56px var(--pad) 0;
     gap: 36px;
+  }
+
+  /* No card beside it to fit against here, so the stack sets its own size */
+  .book-stack-fit {
+    flex: none;
+    container-type: normal;
   }
 
   .book-stack { --stack-w: min(300px, 72vw); }

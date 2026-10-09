@@ -1,10 +1,7 @@
 import gsap from 'gsap'
-import _base from '../assets/talentcardone.svg?raw'
-import _mid  from '../assets/midlayer.svg?raw'
-import { toBlue } from '../lib/svg-tint.js'
-
-const BASE = toBlue(_base)
-const MID  = toBlue(_mid)
+import stackSource    from '../assets/hiringsource.svg'
+import stackScreen    from '../assets/hiringscreen.svg'
+import stackShortlist from '../assets/hiringshortlist.svg'
 
 const STEPS = [
   { num: '01', tag: 'Brief',    headline: 'Tell us what <strong>you\'re building</strong>',  desc: 'Share your role, team context, and timeline. One call is enough.' },
@@ -60,9 +57,9 @@ export const html = `
            (desktop), always-open inline card after step 02 (mobile) -->
       <div class="hiring-annot-panel" id="hiringPanel">
         <div class="hiring-stack" id="hiringStack">
-          <div class="hiring-layer hiring-layer--base" id="hL1">${BASE}</div>
-          <div class="hiring-layer hiring-layer--mid1" id="hL2">${MID}</div>
-          <div class="hiring-layer hiring-layer--mid2" id="hL3">${MID}</div>
+          <div class="hiring-layer hiring-layer--base" id="hL1"><img src="${stackSource}" alt="" /></div>
+          <div class="hiring-layer hiring-layer--mid1" id="hL2"><img src="${stackScreen}" alt="" /></div>
+          <div class="hiring-layer hiring-layer--mid2" id="hL3"><img src="${stackShortlist}" alt="" /></div>
         </div>
         <svg class="hiring-callouts-svg" id="hiringCalloutsSvg" aria-hidden="true"></svg>
         <div class="hiring-callouts" id="hiringCallouts">
@@ -104,11 +101,12 @@ export function init() {
   const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)')
   if (!section || !panel || !stack) return
 
-  /* Layers rest flush (closed deck) inside the hidden panel and fan open as
-     it appears. Flush = cancelling the CSS bottom offsets, which differ per
-     breakpoint. */
-  const REST_Y = mobileMq.matches ? [0, 22, 44] : [0, 30, 60]
-  const FAN    = [0, -14, -28]
+  /* Layers rest flush (closed deck) inside the hidden panel and fan open to
+     their CSS positions as it appears. Flush = cancelling the CSS bottom
+     offsets, which scale with the stack, so it is a share of a layer's own
+     height (0.6444 of the stack's width — see .hiring-stack). */
+  const gap  = parseFloat(getComputedStyle(stack).getPropertyValue('--stack-gap')) || 0
+  const REST = [0, 1, 2].map(i => i * gap / 0.6444 * 100)
 
   const PANEL_GAP = 32 // must match .hiring-annot-panel's bottom offset
   const animate = !reduceMq.matches
@@ -119,8 +117,8 @@ export function init() {
     scale: !mobileMq.matches && animate ? 0.97 : 1,
     transformOrigin: '50% 100%',
   })
-  gsap.set(l2, { y: REST_Y[1] })
-  gsap.set(l3, { y: REST_Y[2] })
+  gsap.set(l2, { yPercent: REST[1] })
+  gsap.set(l3, { yPercent: REST[2] })
   gsap.set(headline, { opacity: 0, y: 12 })
   gsap.set(steps, { opacity: 0, y: 16 })
   gsap.set(line, { clipPath: 'inset(0 100% 0 0)' })
@@ -186,9 +184,9 @@ export function init() {
       const lR = layers[li].getBoundingClientRect()
       const cR = c.getBoundingClientRect()
       // Anchor to where the layer will be once the fan-open tween lands
-      const curY = Number(gsap.getProperty(layers[li], 'y'))
+      const lift = Number(gsap.getProperty(layers[li], 'yPercent')) / 100 * layers[li].offsetHeight
       const x1 = (lR.left - pR.left + lR.width * 0.8) / s
-      const y1 = (lR.top - pR.top + lR.height * 0.45) / s + (FAN[li] - curY)
+      const y1 = (lR.top - pR.top + lR.height * 0.45) / s - lift
       const x2 = (cR.left - pR.left) / s - 10
       const y2 = (cR.top - pR.top + cR.height / 2) / s
       const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line')
@@ -219,8 +217,8 @@ export function init() {
       gsap.fromTo(tether, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25, delay: 0.04, overwrite: 'auto' })
     }
     gsap.to(panel, { autoAlpha: 1, y: 0, duration: 0.22, ease: 'power3.out', overwrite: 'auto' })
-    gsap.to(l2, { y: FAN[1], duration: 0.5, ease: 'power3.out', delay: 0.06, overwrite: 'auto' })
-    gsap.to(l3, { y: FAN[2], duration: 0.5, ease: 'power3.out', delay: 0.06, overwrite: 'auto' })
+    gsap.to(l2, { yPercent: 0, duration: 0.5, ease: 'power3.out', delay: 0.06, overwrite: 'auto' })
+    gsap.to(l3, { yPercent: 0, duration: 0.5, ease: 'power3.out', delay: 0.06, overwrite: 'auto' })
     gsap.to(callouts, { autoAlpha: 1, x: 0, duration: 0.3, stagger: 0.08, delay: 0.16, overwrite: 'auto' })
     drawCalloutLines(true)
   }
@@ -234,16 +232,16 @@ export function init() {
       gsap.set(panel, { autoAlpha: 0, y: 8, scale: resetScale })
       gsap.set(callouts, { autoAlpha: 0, x: 8 })
       gsap.set(tether, { autoAlpha: 0 })
-      gsap.set(l2, { y: REST_Y[1] })
-      gsap.set(l3, { y: REST_Y[2] })
+      gsap.set(l2, { yPercent: REST[1] })
+      gsap.set(l3, { yPercent: REST[2] })
       calloutsSvg.innerHTML = ''
       return
     }
     gsap.to(headline, { opacity: 1, duration: 0.3, overwrite: 'auto' })
     gsap.to(panel, { autoAlpha: 0, y: 8, scale: resetScale, duration: 0.2, ease: 'power2.in', overwrite: 'auto' })
     gsap.to(tether, { autoAlpha: 0, duration: 0.16, overwrite: 'auto' })
-    gsap.to(l2, { y: REST_Y[1], duration: 0.25, delay: 0.18, overwrite: 'auto' })
-    gsap.to(l3, { y: REST_Y[2], duration: 0.25, delay: 0.18, overwrite: 'auto' })
+    gsap.to(l2, { yPercent: REST[1], duration: 0.25, delay: 0.18, overwrite: 'auto' })
+    gsap.to(l3, { yPercent: REST[2], duration: 0.25, delay: 0.18, overwrite: 'auto' })
     gsap.to(callouts, { autoAlpha: 0, x: 8, duration: 0.18, overwrite: 'auto' })
     gsap.to(calloutsSvg, {
       autoAlpha: 0, duration: 0.18,
