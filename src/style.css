@@ -4432,22 +4432,35 @@ body.page-leaving #app {
   padding: 48px 0 8px var(--pad);
 }
 
-/* The stack takes whatever height the column has left and scales to fit
-   it, so it can never push the rail below the foot of the card. A size
-   container has no height of its own, which is what keeps it from pushing. */
 .book-stack-fit {
-  flex: 1 1 0;
-  min-height: 0;
-  align-self: stretch;
-  container-type: size;
   display: grid;
   place-items: center;
+  margin: auto 0;
 }
 
 .book-stack {
   --stack-max: clamp(240px, 26vw, 380px);
   --stack-gap: 0.45;
-  --stack-w: min(var(--stack-max), 100cqw, calc(100cqh / (0.6444 + 2 * var(--stack-gap))));
+  --stack-w: var(--stack-max);
+}
+
+/* The stack takes whatever height the column has left and scales to fit
+   it, so it can never push the rail below the foot of the card. A size
+   container has no height of its own, which is what keeps it from pushing.
+   Without container query units the stack keeps its capped size above and
+   the column grows if it has to. */
+@supports (width: 1cqw) {
+  .book-stack-fit {
+    flex: 1 1 0;
+    min-height: 0;
+    align-self: stretch;
+    margin: 0;
+    container-type: size;
+  }
+
+  .book-stack {
+    --stack-w: min(var(--stack-max), 100cqw, calc(100cqh / (0.6444 + 2 * var(--stack-gap))));
+  }
 }
 
 /* 01 / 02 / 03 — numbered nodes strung on one tether line */
