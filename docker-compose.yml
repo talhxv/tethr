@@ -16,6 +16,8 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN:-}
       - BOOKING_CALENDAR_ID=${BOOKING_CALENDAR_ID:-}
+      # Cloudflare Turnstile secret. Empty = the captcha is not enforced.
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
       - BOOKING_TIMEZONE=${BOOKING_TIMEZONE:-Asia/Karachi}
       - BOOKING_DAYS=${BOOKING_DAYS:-1,2,3,4,5}
       - BOOKING_START=${BOOKING_START:-09:00}

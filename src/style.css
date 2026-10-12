@@ -4754,6 +4754,51 @@ body.page-leaving #app {
   display: block;
 }
 
+/* The captcha. Out of flow, so it never changes the card's height, and out
+   of sight unless Cloudflare needs the visitor to do something; then it sits
+   just above the button, over the foot of the form, for as long as it takes. */
+.book-captcha {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 2px);
+  z-index: 3;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(7, 85, 233, 0.22);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 44px -22px rgba(0, 17, 49, 0.4);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+
+  &.is-active {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.book-captcha__label {
+  margin: 0 0 8px;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0, 17, 49, 0.6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .book-captcha.is-active { transition: opacity 0.18s ease; }
+}
+
+/* Leaves the 300px widget room inside a phone-width card */
+@media (max-width: 480px) {
+  .book-captcha { padding: 8px 8px 6px; }
+}
+
 /* The submit failure message sits in the same gap, just above the button */
 .book-submit-wrap {
   position: relative;

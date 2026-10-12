@@ -8,6 +8,18 @@ import { VALIDATORS, CHALLENGES, HEADCOUNTS, TIMELINES, HONEYPOT_FIELD } from '.
 // Zone naming and slot grouping, tested in test/zones.test.js
 import { friendlyZone, zoneAbbreviation, offsetMinutes, standardOffsetMinutes, groupByZoneDay, groupByPartOfDay, railFor, listZones } from '../../lib/booking/zones.js'
 import { landDots, COLS, ROWS, lonToCol, latToRow } from '../lib/dot-world.js'
+import { TURNSTILE_SITE_KEY, TURNSTILE_TEST_SITE_KEY, CAPTCHA_FIELD } from '../../lib/booking/captcha.js'
+
+/* The captcha's site key for this page. Empty means no widget and no token.
+   On the dev server's in-memory mock (vite.config.js sets __BOOKING_MOCK__)
+   it is Cloudflare's always-pass test key, and ?turnstile=<key> swaps in
+   another test key, or none, to try the other paths. */
+/* global __BOOKING_MOCK__ */
+const ON_MOCK = typeof __BOOKING_MOCK__ !== 'undefined' && __BOOKING_MOCK__
+const SITE_KEY = ON_MOCK
+  ? new URLSearchParams(window.location.search).get('turnstile') ?? TURNSTILE_TEST_SITE_KEY
+  : TURNSTILE_SITE_KEY
+const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 
 // Same funnel as the homepage hiring section's step 02 diagram
 const STEPS = [
@@ -62,13 +74,15 @@ const api = (path, body) => fetch(path, body ? {
 } : { headers: { Accept: 'application/json' } })
 
 /* Saves the lead. Takes { name, title, company, email, challenge, headcount,
-   timeline } plus the anti-spam fields, resolves with the lead's id, and
-   rejects on any failure. A rejection carries `fields` ({ name: message })
-   when the server turned the input down. */
+   timeline } plus the anti-spam fields and the captcha token, resolves with
+   { id, verified }, and rejects on any failure. verified is false when the
+   lead was saved but didn't pass the captcha, so it can't go on to book. A
+   rejection carries `fields` ({ name: message }) when the server turned the
+   input down. */
 export async function submitLead(data) {
   const res = await api('/api/lead', data)
   const body = await res.json().catch(() => ({}))
-  if (res.status === 201 && body.leadId) return body.leadId
+  if (res.status === 201 && body.leadId) return { id: body.leadId, verified: body.verified !== false }
   throw Object.assign(new Error('Lead not saved'), { fields: res.status === 400 ? body.fields : undefined })
 }
 
@@ -207,6 +221,12 @@ export const html = `
       </fieldset>
 
       <div class="book-submit-wrap">
+        <!-- Cloudflare Turnstile. Out of sight unless it needs the visitor to
+             do something; then it sits just above the button, over the form -->
+        <div class="book-captcha" id="bookCaptcha">
+          <p class="book-captcha__label" id="bookCaptchaLabel" role="status"></p>
+          <div id="bookCaptchaWidget"></div>
+        </div>
         <p class="book-error book-error--form" id="bookFormError" role="alert"></p>
         <button type="submit" class="book-submit" id="bookSubmit">
           <span id="bookSubmitText">Book a call</span>
@@ -418,14 +438,17 @@ export function init() {
 
     formError.textContent = ''
     submitBtn.disabled = true
+    if (SITE_KEY) submitText.textContent = 'Checking…'
+    const token = await captchaToken()
     submitText.textContent = 'Sending…'
-    let id
+    let id, verified
     try {
-      id = await submitLead({
+      ({ id, verified } = await submitLead({
         ...data,
         [HONEYPOT_FIELD]: form.elements[HONEYPOT_FIELD].value,
         elapsedMs: Math.round(performance.now() - loadedAt),
-      })
+        [CAPTCHA_FIELD]: token,
+      }))
     } catch (err) {
       // The server's own verdict on a field goes on that field
       const rejected = names.filter(n => err.fields?.[n])
@@ -438,9 +461,86 @@ export function init() {
     }
 
     lead = { id, name: data.name.split(/\s+/)[0], email: data.email }
+    // Saved, but the captcha didn't pass (blocked, failed, or unreachable):
+    // no picker. A person at Tethr follows up instead.
+    if (!verified) return emailInstead()
     show(pick, document.getElementById('bookPickTitle'))
     refreshTimes()
   })
+
+  // ── Captcha ──
+  const captchaBox   = document.getElementById('bookCaptcha')
+  const captchaLabel = document.getElementById('bookCaptchaLabel')
+  let turnstile = null   // promise of window.turnstile, or of null when it can't load
+  let widgetId = null
+  let settle = null      // ends the token request in flight
+  let interactive = false
+
+  // Not on first paint: the script loads when the visitor first touches the form
+  function loadCaptcha() {
+    if (!SITE_KEY) return Promise.resolve(null)
+    turnstile ??= new Promise((resolve) => {
+      const script = document.createElement('script')
+      script.src = TURNSTILE_SCRIPT
+      script.async = true
+      script.onload = () => resolve(window.turnstile ?? null)
+      script.onerror = () => resolve(null) // blocked, or Cloudflare is down
+      document.head.appendChild(script)
+      setTimeout(() => resolve(null), 8000)
+    })
+    return turnstile
+  }
+  form.addEventListener('focusin', loadCaptcha, { once: true })
+  form.addEventListener('pointerdown', loadCaptcha, { once: true })
+
+  function showChallenge(on) {
+    interactive = on
+    captchaBox.classList.toggle('is-active', on)
+    captchaLabel.textContent = on ? 'One quick check, then we\'ll send your details.' : ''
+  }
+
+  /* Asks Turnstile for a fresh token: they are single-use and short-lived, so
+     one per submit. Resolves with '' whenever there is none to be had — the
+     server then saves the lead as unverified rather than losing it. */
+  async function captchaToken() {
+    const ts = await loadCaptcha()
+    if (!ts) return ''
+    return new Promise((resolve) => {
+      // Give up quietly if nothing comes back, unless the visitor has been
+      // handed a challenge: then Turnstile's own timeout ends the wait
+      const timer = setTimeout(() => { if (!interactive) settle?.() }, 12000)
+      settle = (token = '') => {
+        clearTimeout(timer)
+        settle = null
+        showChallenge(false)
+        resolve(typeof token === 'string' ? token : '')
+      }
+      try {
+        if (widgetId === null) {
+          widgetId = ts.render('#bookCaptchaWidget', {
+            sitekey: SITE_KEY,
+            appearance: 'interaction-only',
+            execution: 'execute',
+            // The standard widget is 300px wide; the card is narrower than that on small phones
+            size: window.matchMedia('(max-width: 370px)').matches ? 'compact' : 'normal',
+            callback: (token) => settle?.(token),
+            // true = handled here; Turnstile then doesn't log an error of its own
+            'error-callback': () => { settle?.(); return true },
+            'expired-callback': () => settle?.(),
+            'timeout-callback': () => settle?.(),
+            'unsupported-callback': () => settle?.(),
+            'before-interactive-callback': () => showChallenge(true),
+            'after-interactive-callback': () => showChallenge(false),
+          })
+        } else {
+          ts.reset(widgetId)
+        }
+        ts.execute(widgetId)
+      } catch {
+        settle()
+      }
+    })
+  }
 
   // ── Pick a time ──
   const pick        = document.getElementById('bookPick')

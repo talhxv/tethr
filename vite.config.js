@@ -40,16 +40,19 @@ const bookingApi = () => (req, res, next) => {
   })
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   // The booking handlers read process.env, as they do in production; give
   // them what's in .env without overriding the real environment
   for (const [key, value] of Object.entries(env)) {
-    if (/^(NOTION_|GOOGLE_|BOOKING_|VITE_NOTION_TOKEN$)/.test(key) && process.env[key] === undefined) process.env[key] = value
+    if (/^(NOTION_|GOOGLE_|BOOKING_|TURNSTILE_|VITE_NOTION_TOKEN$)/.test(key) && process.env[key] === undefined) process.env[key] = value
   }
 
   return {
+    // Tells the /book form the dev server is on the in-memory mock, so it uses
+    // Cloudflare's test captcha key. Never true in a build.
+    define: { __BOOKING_MOCK__: JSON.stringify(command === 'serve' && process.env.BOOKING_MOCK === '1') },
     plugins: [
       {
         name: 'positions-clean-urls',

@@ -36,7 +36,7 @@ const res = await fetch('https://api.notion.com/v1/databases', {
       'Challenge':         { select: {} },
       'Headcount':         options('1', '2-5', '6-10', '10+'),
       'Timeline':          options('ASAP', '<1 month', 'Not Defined'),
-      'Status':            options('New', 'Call booked'),
+      'Status':            options('New', 'Call booked', 'Unverified'),
       'Call time':         { date: {} },
       'Meeting link':      { url: {} },
       'Calendar event ID': { rich_text: {} },

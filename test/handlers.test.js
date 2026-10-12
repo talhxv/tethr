@@ -4,12 +4,29 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 process.env.BOOKING_MOCK = '1'
-for (const k of ['NOTION_TOKEN', 'VITE_NOTION_TOKEN', 'NOTION_LEADS_DB_ID', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'BOOKING_CALENDAR_ID', 'VERCEL_ENV', 'NODE_ENV']) delete process.env[k]
+for (const k of ['NOTION_TOKEN', 'VITE_NOTION_TOKEN', 'NOTION_LEADS_DB_ID', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'BOOKING_CALENDAR_ID', 'TURNSTILE_SECRET_KEY', 'VERCEL_ENV', 'NODE_ENV']) delete process.env[k]
 const { handle } = await import('../lib/booking/handlers.js')
+
+// Cloudflare's siteverify, stood in for: the token says what it answers.
+// Mock mode checks tokens against Cloudflare's test secret, so without this
+// the tests would need the network.
+const realFetch = globalThis.fetch
+let verifyCalls = 0
+globalThis.fetch = async (url, init) => {
+  if (!String(url).includes('/turnstile/v0/siteverify')) return realFetch(url, init)
+  verifyCalls++
+  const token = new URLSearchParams(init.body).get('response')
+  if (token === 'cloudflare-down') throw new TypeError('fetch failed')
+  const body = token === 'pass' ? { success: true }
+    : token === 'spent' ? { success: false, 'error-codes': ['timeout-or-duplicate'] }
+    : { success: false, 'error-codes': ['invalid-input-response'] }
+  return new Response(JSON.stringify(body), { status: 200 })
+}
 
 const GOOD = {
   name: 'Ada Lovelace', title: 'VP Engineering', company: 'TechCorp LLC', email: 'ada@techcorp.com',
   challenge: 'Hiring takes too long', headcount: '2-5', timeline: 'ASAP', elapsedMs: 30_000, book_ref: '',
+  captchaToken: 'pass',
 }
 const mock = (body) => handle('POST', '/api/booking-mock', body)
 const newLead = async () => (await handle('POST', '/api/lead', GOOD)).body.leadId
@@ -18,9 +35,12 @@ const firstSlot = async () => (await handle('GET', '/api/availability')).body.da
 test('POST /api/lead stores the lead and returns its id', async () => {
   const res = await handle('POST', '/api/lead', GOOD)
   assert.equal(res.status, 201)
+  assert.equal(res.body.verified, true)
   const stored = (await mock({})).body.leads.find((l) => l.id === res.body.leadId)
   assert.equal(stored.email, 'ada@techcorp.com')
   assert.equal(stored.booked, false)
+  assert.equal(stored.unverified, false)
+  assert.equal(stored.captchaToken, undefined) // the token is never stored
 })
 
 test('POST /api/lead accepts a JSON string body', async () => {
@@ -180,4 +200,87 @@ test('POST /api/book retries the lead update once; a second failure is still a 2
   }
   assert.equal((await mock({})).body.leads.find((l) => l.id === leadId).booked, false)
   assert.match(logged[0], /created but the Notion row was not updated/)
+})
+
+// ── Captcha ──
+const quietly = async (fn) => {
+  const quiet = console.error
+  console.error = () => {}
+  try { return await fn() } finally { console.error = quiet }
+}
+
+test('POST /api/lead: a lead that fails the captcha is still saved, as unverified', async () => {
+  for (const [why, captchaToken] of [['no token', undefined], ['empty token', ''], ['rejected', 'nonsense'], ['already spent', 'spent'], ['Cloudflare unreachable', 'cloudflare-down']]) {
+    const res = await quietly(() => handle('POST', '/api/lead', { ...GOOD, captchaToken }))
+    assert.equal(res.status, 201, why)
+    assert.equal(res.body.verified, false, why)
+    const stored = (await mock({})).body.leads.find((l) => l.id === res.body.leadId)
+    assert.equal(stored.email, 'ada@techcorp.com', why)
+    assert.equal(stored.unverified, true, why)
+  }
+})
+
+test('POST /api/lead: bad input and bots are decided before the captcha is asked', async () => {
+  const before = verifyCalls
+  assert.equal((await handle('POST', '/api/lead', { ...GOOD, email: 'nope' })).status, 400)
+  const bot = await handle('POST', '/api/lead', { ...GOOD, book_ref: 'x' })
+  assert.deepEqual(Object.keys(bot.body).sort(), ['leadId', 'verified'])
+  assert.equal(bot.body.verified, true) // a bot can't tell it was dropped
+  assert.equal(verifyCalls, before)
+})
+
+test('POST /api/book refuses an unverified lead: 403 unverified, no event, no slot taken', async () => {
+  const { leadId } = (await quietly(() => handle('POST', '/api/lead', { ...GOOD, captchaToken: undefined }))).body
+  const start = await firstSlot()
+  const res = await handle('POST', '/api/book', { leadId, start })
+  assert.equal(res.status, 403)
+  assert.deepEqual(res.body, { reason: 'unverified' })
+  const stored = (await mock({})).body.leads.find((l) => l.id === leadId)
+  assert.equal(stored.booked, false)
+  assert.equal(await firstSlot(), start) // still on offer
+})
+
+test('with no captcha secret on the server nothing is enforced: no token needed, the lead can book', async (t) => {
+  t.mock.method(console, 'warn', () => {})
+  await mock({ captcha: 'off' })
+  try {
+    const before = verifyCalls
+    const res = await handle('POST', '/api/lead', { ...GOOD, captchaToken: undefined })
+    assert.equal(res.status, 201)
+    assert.equal(res.body.verified, true)
+    assert.equal(verifyCalls, before)
+    assert.equal((await handle('POST', '/api/book', { leadId: res.body.leadId, start: await firstSlot() })).status, 200)
+  } finally {
+    await mock({ captcha: 'on' })
+  }
+})
+
+test('POST /api/lead: a secret Cloudflare refuses does not stop bookings', async (t) => {
+  const error = t.mock.method(console, 'error', () => {})
+  const stub = globalThis.fetch
+  globalThis.fetch = async (url, init) => String(url).includes('/turnstile/v0/siteverify')
+    ? new Response(JSON.stringify({ success: false, 'error-codes': ['invalid-input-secret'] }), { status: 200 })
+    : stub(url, init)
+  try {
+    const res = await handle('POST', '/api/lead', GOOD)
+    assert.equal(res.body.verified, true)
+    assert.equal((await handle('POST', '/api/book', { leadId: res.body.leadId, start: await firstSlot() })).status, 200)
+    assert.match(error.mock.calls[0].arguments[0], /Cloudflare refused TURNSTILE_SECRET_KEY/)
+  } finally {
+    globalThis.fetch = stub
+  }
+})
+
+test('on the mock, a real TURNSTILE_SECRET_KEY in the environment is not the one sent to Cloudflare', async () => {
+  let sent
+  const stub = globalThis.fetch
+  globalThis.fetch = async (url, init) => { sent = new URLSearchParams(init.body).get('secret'); return stub(url, init) }
+  process.env.TURNSTILE_SECRET_KEY = 'configured-secret'
+  try {
+    assert.equal((await handle('POST', '/api/lead', GOOD)).body.verified, true)
+    assert.equal(sent, '1x0000000000000000000000000000000AA')
+  } finally {
+    delete process.env.TURNSTILE_SECRET_KEY
+    globalThis.fetch = stub
+  }
 })
