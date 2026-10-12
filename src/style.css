@@ -5048,26 +5048,218 @@ body.page-leaving #app {
   }
 }
 
-/* Confirmation — replaces the form inside the card */
+/* ── End state — replaces the form inside the card ──
+   Composed for the whole card: centred in the height the card held when the
+   form was submitted. data-state says which ending it is, and the two must
+   read apart at a glance: "booked" locks the links and carries the green
+   sent badge and a receipt; "pending" holds the links apart on a dashed
+   tether, because nothing has been sent. */
 .book-done {
   /* Scrolled to after submit — land it clear of the sticky navbar */
   scroll-margin-top: 110px;
-  padding: 28px 0 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 0 32px;
+  text-align: center;
   animation: op-row-in 0.45s ease both;
+
+  &[hidden] { display: none; }
 }
 
-.book-done .book-card__sub { margin-bottom: 0; overflow-wrap: anywhere; }
+.book-done .book-card__title { margin-bottom: 10px; }
+.book-done .book-card__sub   { margin-bottom: 0; overflow-wrap: anywhere; }
 
 /* Short measure keeps the confirmation clear of the corner chain art */
 .book-done .book-card__title,
 .book-done .book-card__sub { max-width: 480px; }
 
-.book-done__link {
+/* The complete chain link (navbarchainlink.svg), large enough to be the
+   first thing read */
+.book-mark {
+  position: relative;
   display: block;
-  color: #2B44FF;
-  margin-bottom: 28px;
+  width: clamp(120px, 34%, 152px);
+  margin-bottom: 26px;
+  color: #0755E9;
+}
 
-  & svg { display: block; width: 64px; height: auto; }
+.book-mark__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.book-mark__link,
+.book-mark__bar,
+.book-mark__tether {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.book-mark__tether {
+  stroke: currentColor;
+  stroke-width: 0.42;
+  stroke-linecap: round;
+  stroke-dasharray: 0.5 0.9;
+  opacity: 0;
+}
+
+/* Flat and opaque — the one green on the card */
+.book-mark__badge {
+  position: absolute;
+  right: 2%;
+  bottom: -18%;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #1F8F5C;
+  color: #fff;
+  box-shadow: 0 0 0 3px #fff;
+
+  & svg { width: 16px; height: 16px; display: block; }
+}
+
+/* Pending: links apart, joined only by the tether; no bar, no badge */
+.book-done[data-state="pending"] {
+  & .book-mark__link--l { transform: translateX(-1.6px); }
+  & .book-mark__link--r { transform: translateX(1.6px); }
+  & .book-mark__bar,
+  & .book-mark__badge { display: none; }
+  & .book-mark__tether { opacity: 0.7; }
+}
+
+/* Mono status line under the mark */
+.book-done__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.book-done[data-state="booked"] .book-done__state {
+  background: #A6F2CC;
+  color: #0B4F33;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1F8F5C;
+  }
+}
+
+.book-done[data-state="pending"] .book-done__state {
+  border: 1.5px dashed rgba(7, 85, 233, 0.45);
+  color: #0755E9;
+}
+
+/* What was booked, as a receipt: mono labels, dashed rules */
+.book-receipt {
+  width: 100%;
+  max-width: 420px;
+  margin: 26px 0 0;
+  border-bottom: 1.5px dashed rgba(0, 17, 49, 0.16);
+  text-align: left;
+}
+
+.book-receipt__row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 12px 2px;
+  border-top: 1.5px dashed rgba(0, 17, 49, 0.16);
+
+  & dt {
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(0, 17, 49, 0.5);
+  }
+
+  & dd {
+    margin: 0;
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.45;
+    color: #001131;
+    overflow-wrap: anywhere;
+  }
+}
+
+.book-receipt__note {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(0, 17, 49, 0.55);
+}
+
+.book-done__next {
+  max-width: 420px;
+  margin: 18px 0 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(0, 17, 49, 0.55);
+}
+
+.book-done .book-quiet {
+  margin-top: 26px;
+  text-decoration: none;
+}
+
+/* On desktop the card holds the form's height (book-call.js pins it), so the
+   end state fills that height and centres in it */
+@media (min-width: 901px) {
+  .book-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .book-done { flex: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Booked: the two links close, the bar locks them, the badge lands */
+  .book-done[data-state="booked"] {
+    & .book-mark__link--l { animation: book-mark-close 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) 0.15s both; --from: -2.4px; }
+    & .book-mark__link--r { animation: book-mark-close 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) 0.15s both; --from: 2.4px; }
+    & .book-mark__bar     { animation: book-mark-lock 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.6s both; }
+    & .book-mark__badge   { animation: book-mark-badge 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.85s both; }
+  }
+
+  /* Pending: the tether draws in once and holds still — nothing is in
+     progress until someone at Tethr writes back */
+  .book-done[data-state="pending"] .book-mark__tether { animation: book-mark-lock 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+}
+
+@keyframes book-mark-close {
+  from { transform: translateX(var(--from)); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes book-mark-lock {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes book-mark-badge {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: no-preference) {

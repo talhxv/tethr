@@ -22,6 +22,23 @@ const TEXT_FIELDS = [
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
+/* The end-state mark: the complete chain link from navbarchainlink.svg, its
+   two links and connector bar split into separate paths so they can close
+   and lock. Booked = locked, with the sent badge. Not booked = the links
+   held apart on a dashed tether, no badge. */
+const MARK = `
+      <span class="book-mark" aria-hidden="true">
+        <svg class="book-mark__svg" viewBox="-2.2 -1 18.3 6.4" fill="currentColor">
+          <line class="book-mark__tether" x1="4.4" y1="2.21" x2="9.5" y2="2.21" />
+          <path class="book-mark__link book-mark__link--l" d="M4.75195 0C5.67337 0.000126237 6.46188 0.565786 6.79199 1.36816H5.59766C5.39561 1.17821 5.12443 1.06055 4.8252 1.06055H2.13281C1.50968 1.06055 1.00433 1.56545 1.00391 2.18848C1.00393 2.81185 1.50943 3.31738 2.13281 3.31738H4.8252C5.08614 3.31738 5.3254 3.22783 5.5166 3.0791H6.77734C6.43908 3.86349 5.66021 4.41296 4.75195 4.41309H2.20605C0.987671 4.41292 2.22361e-05 3.42447 0 2.20605C0.00032914 0.987899 0.98786 0.000160668 2.20605 0H4.75195Z"/>
+          <path class="book-mark__link book-mark__link--r" d="M11.7109 0C12.9289 0.000371713 13.9166 0.98805 13.917 2.20605C13.9169 3.42426 12.9291 4.41271 11.7109 4.41309H9.16504C8.25683 4.41296 7.47794 3.86347 7.13965 3.0791H8.39941C8.59073 3.22806 8.83054 3.31738 9.0918 3.31738H11.7852C12.408 3.31695 12.9128 2.81231 12.9131 2.18945C12.9129 1.56649 12.4081 1.06098 11.7852 1.06055H9.0918C8.79262 1.06055 8.52137 1.17815 8.31934 1.36816H7.125C7.45512 0.56579 8.24364 0.000123454 9.16504 0H11.7109Z"/>
+          <path class="book-mark__bar" d="M4.46582 2.2063C4.46582 1.9626 4.66338 1.76505 4.90708 1.76505H9.31967C9.56337 1.76505 9.76093 1.9626 9.76093 2.2063C9.76093 2.45 9.56337 2.64756 9.31967 2.64756H4.90708C4.66338 2.64756 4.46582 2.45 4.46582 2.2063Z"/>
+        </svg>
+        <span class="book-mark__badge">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 8.4l2.7 2.7L12 5.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </span>`
+
 const errorSlot = (name) => `<p class="book-error" id="book-${name}-error" aria-live="polite"></p>`
 
 // Timeline rail pieces: the outer options sit in equal side cells with a
@@ -188,15 +205,13 @@ export const html = `
       <button type="button" class="book-quiet" id="bookEmailInstead">Email me instead</button>
     </form>
 
-    <div class="book-done" id="bookDone" hidden>
-      <span class="book-done__link" aria-hidden="true">
-        <svg viewBox="0 0 56 26" fill="none">
-          <rect x="1.25" y="1.25" width="32" height="23.5" rx="11.75" stroke="currentColor" stroke-width="2.5"/>
-          <rect x="22.75" y="1.25" width="32" height="23.5" rx="11.75" stroke="currentColor" stroke-width="2.5"/>
-        </svg>
-      </span>
+    <div class="book-done" id="bookDone" hidden>${MARK}
+      <p class="book-done__state" id="bookDoneState"></p>
       <h2 class="book-card__title" id="bookDoneTitle" tabindex="-1">Thanks.</h2>
       <p class="book-card__sub" id="bookDoneSub"></p>
+      <dl class="book-receipt" id="bookReceipt" hidden></dl>
+      <p class="book-done__next" id="bookDoneNext" hidden></p>
+      <a class="book-quiet" href="/" data-transition>Back to homepage</a>
     </div>
   </div>
 
@@ -290,16 +305,34 @@ export function init() {
 
   let lead = null // { id, name, email } once saved
 
-  function showDone(heading, text) {
-    const title = document.getElementById('bookDoneTitle')
+  /* state: 'booked' (an invite really has gone out) or 'pending' (details
+     saved, nothing sent). rows: [label, value, note?] for the receipt. */
+  function showDone({ state, label, heading, text, rows = [], next = '' }) {
+    const title   = document.getElementById('bookDoneTitle')
+    const receipt = document.getElementById('bookReceipt')
+    const nextEl  = document.getElementById('bookDoneNext')
+    done.dataset.state = state
+    document.getElementById('bookDoneState').textContent = label
     title.textContent = heading
     document.getElementById('bookDoneSub').textContent = text
+    receipt.innerHTML = rows.map(([k, v, note]) => `
+      <div class="book-receipt__row">
+        <dt>${esc(k)}</dt>
+        <dd>${esc(v)}${note ? `<span class="book-receipt__note">${esc(note)}</span>` : ''}</dd>
+      </div>`).join('')
+    receipt.hidden = !rows.length
+    nextEl.textContent = next
+    nextEl.hidden = !next
     show(done, title)
   }
 
   // Every way out of the picker that isn't a booking ends here
-  const emailInstead = (why = 'We have your details.') =>
-    showDone(`Thanks, ${lead.name}.`, `${why} We'll reach you at ${lead.email} to set up the call.`)
+  const emailInstead = (why = 'We have your details.') => showDone({
+    state: 'pending',
+    label: 'Details received · no call booked yet',
+    heading: `Thanks, ${lead.name}.`,
+    text: `${why} We'll reach you at ${lead.email} to set up the call.`,
+  })
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -414,8 +447,21 @@ export function init() {
 
     if (res?.ok) {
       const at = new Date(body.start)
-      return showDone(`You're booked, ${lead.name}.`,
-        `${FMT_FULL.format(at)} at ${FMT_TIME.format(at)}, ${zoneName()}. The calendar invite is on its way to ${lead.email}.`)
+      const minutes = Math.round((new Date(body.end) - at) / 60000)
+      return showDone({
+        state: 'booked',
+        label: 'Invite sent',
+        heading: `You're booked, ${lead.name}.`,
+        text: 'Your intro call with Tethr is on the calendar.',
+        rows: [
+          ['When', `${FMT_FULL.format(at)} at ${FMT_TIME.format(at)}`, zoneName()],
+          ...(minutes > 0 ? [['Length', `${minutes} minutes`]] : []),
+          // Only name Google Meet when the booking came back with a link
+          body.meetLink ? ['Where', 'Google Meet', 'The link is in your invite'] : ['Where', 'Video call', 'Details are in your invite'],
+          ['Invite', `Sent to ${lead.email}`],
+        ],
+        next: 'Accept the calendar invite to confirm. Need to reschedule? Reply to the invite and we\'ll find a new time.',
+      })
     }
     if (res?.status === 409 && body.reason === 'slot_taken') {
       await refreshTimes()
@@ -424,7 +470,17 @@ export function init() {
       return slotList.querySelector('input')?.focus()
     }
     if (res?.status === 409 && body.reason === 'already_booked') {
-      return showDone(`You're booked, ${lead.name}.`, `You already have a call with us. The calendar invite is in your inbox at ${lead.email}.`)
+      return showDone({
+        state: 'booked',
+        label: 'Already booked',
+        heading: `You're booked, ${lead.name}.`,
+        text: 'You already have a call with us.',
+        rows: [
+          ['Where', 'Video call', 'Details are in your invite'],
+          ['Invite', `In your inbox at ${lead.email}`],
+        ],
+        next: 'Need to reschedule? Reply to the invite and we\'ll find a new time.',
+      })
     }
     emailInstead('We have your details, but we couldn\'t book that time.')
   })
