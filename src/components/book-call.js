@@ -5,6 +5,9 @@ import chainOutline from '../assets/chainoutlinevector.svg'
 import arrowRight from '../assets/arrowright.svg'
 // The same rules POST /api/lead applies
 import { VALIDATORS, CHALLENGES, HEADCOUNTS, TIMELINES, HONEYPOT_FIELD } from '../../lib/booking/lead.js'
+// Zone naming and slot grouping, tested in test/zones.test.js
+import { friendlyZone, zoneAbbreviation, offsetMinutes, standardOffsetMinutes, groupByZoneDay, groupByPartOfDay, railFor, listZones } from '../../lib/booking/zones.js'
+import { landDots, COLS, ROWS, lonToCol, latToRow } from '../lib/dot-world.js'
 
 // Same funnel as the homepage hiring section's step 02 diagram
 const STEPS = [
@@ -69,38 +72,74 @@ export async function submitLead(data) {
   throw Object.assign(new Error('Lead not saved'), { fields: res.status === 400 ? body.fields : undefined })
 }
 
-// -> [{ key, date, slots: [Date] }] grouped by the visitor's own calendar
-// days; throws when the calendar can't be read
-async function loadDays() {
+// -> { slots: [ms], hostZone }: every open slot as an instant, plus the zone
+// Tethr's calendar runs in; throws when the calendar can't be read
+async function loadSlots() {
   const res = await api('/api/availability')
   if (!res.ok) throw new Error('Calendar unavailable')
-  const { days = [] } = await res.json()
-  const byDay = new Map()
-  for (const iso of days.flatMap(d => d.slots).sort()) {
-    const date = new Date(iso)
-    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
-    if (!byDay.has(key)) byDay.set(key, { key, date, slots: [] })
-    byDay.get(key).slots.push(date)
-  }
-  return [...byDay.values()]
+  const { days = [], timezone } = await res.json()
+  const slots = days.flatMap(d => d.slots).map(iso => Date.parse(iso)).filter(Number.isFinite).sort((a, b) => a - b)
+  return { slots, hostZone: timezone }
 }
+
+// The zone the browser reports; the visitor can change it in the picker
+const DETECTED_ZONE = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { return 'UTC' }
+})()
 
 // 12- or 24-hour to suit the visitor; the words stay English like the page
 const HOUR12 = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hour12
-const fmt = (opts) => new Intl.DateTimeFormat('en-US', opts)
-const FMT_TIME = fmt({ hour: 'numeric', minute: '2-digit', hour12: HOUR12 })
-const FMT_DOW  = fmt({ weekday: 'short' })
-const FMT_DAY  = fmt({ month: 'short', day: 'numeric' })
-const FMT_FULL = fmt({ weekday: 'long', month: 'long', day: 'numeric' })
 
-// "Asia/Karachi (GMT+5)"
-function zoneName() {
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? ''
-  let offset = ''
-  try {
-    offset = fmt({ timeZoneName: 'shortOffset' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value ?? ''
-  } catch { /* older engines: the zone name alone */ }
-  return [zone.replace(/_/g, ' '), offset && `(${offset})`].filter(Boolean).join(' ') || 'your local time'
+// Formatters for one zone: { time, dow, day, full }
+const zoneFormats = new Map()
+function fmtIn(zone) {
+  if (!zoneFormats.has(zone)) {
+    const fmt = (opts) => new Intl.DateTimeFormat('en-US', { ...opts, timeZone: zone })
+    zoneFormats.set(zone, {
+      time: fmt({ hour: 'numeric', minute: '2-digit', hour12: HOUR12 }),
+      dow:  fmt({ weekday: 'short' }),
+      day:  fmt({ month: 'short', day: 'numeric' }),
+      full: fmt({ weekday: 'long', month: 'long', day: 'numeric' }),
+    })
+  }
+  return zoneFormats.get(zone)
+}
+
+/* The zone chooser's picture: the world as dots, the visitor's band and
+   Tethr's band lit, a tether arc between them. It only confirms the choice
+   made on the rail; it is not a control. */
+const DOTS = landDots()
+const CELL = 10
+
+function worldMap(zone, hostZone) {
+  // 4 minutes of clock per degree; the standard offset, because daylight
+  // saving would shift a zone 15° east of where it is
+  const bandCol = (tz) => lonToCol(standardOffsetMinutes(tz) / 4)
+  const you = bandCol(zone)
+  const host = bandCol(hostZone)
+  const apart = Math.abs(you - host) >= 1
+  const x = (col) => (col + 0.5) * CELL
+  // Sit each marker on land in its band where it can, near 35°N
+  const home = latToRow(35)
+  const rowFor = (col) => {
+    const rows = DOTS.filter(([c]) => c === Math.round(col)).map(([, r]) => r)
+    return rows.length ? rows.reduce((a, b) => Math.abs(b - home) < Math.abs(a - home) ? b : a) : Math.round(home)
+  }
+  const y = (col) => (rowFor(col) + 0.5) * CELL
+  const dots = DOTS.map(([c, r]) => {
+    const cls = Math.abs(c - you) < 1 ? ' class="is-you"' : Math.abs(c - host) < 1 ? ' class="is-host"' : ''
+    return `<circle${cls} cx="${x(c)}" cy="${(r + 0.5) * CELL}" r="2.6"/>`
+  }).join('')
+  const lift = Math.max(8, Math.min(y(you), y(host)) - 22 - Math.abs(you - host) * 1.4)
+  const label = (col, text, anchorY) => `<text x="${Math.max(18, Math.min(COLS * CELL - 18, x(col)))}" y="${anchorY}" text-anchor="middle">${text}</text>`
+  return `
+    <svg viewBox="0 0 ${COLS * CELL} ${ROWS * CELL}" role="presentation">
+      <g class="book-zmap__dots">${dots}</g>
+      ${apart ? `<path class="book-zmap__arc" d="M${x(you)} ${y(you)} Q${(x(you) + x(host)) / 2} ${lift} ${x(host)} ${y(host)}"/>` : ''}
+      ${apart ? `<circle class="book-zmap__host" cx="${x(host)}" cy="${y(host)}" r="5"/>${label(host, 'TETHR', y(host) + 17)}` : ''}
+      <circle class="book-zmap__you" cx="${x(you)}" cy="${y(you)}" r="5"/>
+      ${label(you, apart ? 'YOU' : 'YOU · TETHR', y(you) + 17)}
+    </svg>`
 }
 
 export const html = `
@@ -180,23 +219,52 @@ export const html = `
       <h2 class="book-card__title" id="bookPickTitle" tabindex="-1">Pick a time</h2>
       <p class="book-card__sub">Your details are in. Choose a slot for the call.</p>
 
-      <p class="book-pick__status" id="bookPickStatus" role="status"></p>
+      <div class="book-zone">
+        <p class="book-pick__status" id="bookPickStatus" role="status"></p>
+        <button type="button" class="book-quiet" id="bookZoneChange" aria-expanded="false" aria-controls="bookZonePanel" hidden>Change</button>
+      </div>
 
-      <div id="bookPickBody" hidden>
-        <fieldset class="book-field book-fieldset">
-          <legend class="book-label">Day</legend>
-          <div class="book-days" id="bookDays"></div>
-        </fieldset>
+      <div class="book-pick__body" id="bookPickBody" hidden>
+        <div class="book-pick__times" id="bookPickTimes">
+          <fieldset class="book-field book-fieldset">
+            <legend class="book-label">Day</legend>
+            <div class="book-days" id="bookDays"></div>
+          </fieldset>
 
-        <fieldset class="book-field book-fieldset">
-          <legend class="book-label" id="bookSlotsLabel">Time</legend>
-          <div class="book-slots" id="bookSlots"></div>
-        </fieldset>
+          <div class="book-field book-slots-field" role="radiogroup" aria-labelledby="bookSlotsLabel">
+            <p class="book-label" id="bookSlotsLabel">Time</p>
+            <div class="book-slots-scroll" id="bookSlots"></div>
+          </div>
+        </div>
+
+        <!-- Takes the place of the days and times while it is open -->
+        <div class="book-zone-panel" id="bookZonePanel" hidden>
+          <div class="book-zone-common" id="bookZoneCommon">
+            <div class="book-zmap" id="bookZoneMap" aria-hidden="true"></div>
+            <fieldset class="book-field book-fieldset">
+              <legend class="book-label">Your time zone</legend>
+              <div class="book-zrail" id="bookZoneRail"></div>
+            </fieldset>
+          </div>
+
+          <div class="book-zsearch" id="bookZoneSearch" hidden>
+            <label class="book-label" for="bookZoneInput">Search every time zone</label>
+            <input class="book-input" id="bookZoneInput" type="search" placeholder="City or zone, like Toronto or EST" autocomplete="off" spellcheck="false" />
+            <p class="book-sr" id="bookZoneCount" role="status"></p>
+            <ul class="book-zlist" id="bookZoneList"></ul>
+          </div>
+
+          <button type="button" class="book-quiet" id="bookZoneOther" aria-expanded="false" aria-controls="bookZoneSearch">Other time zone</button>
+        </div>
 
         <div class="book-submit-wrap">
           <p class="book-error book-error--form" id="bookPickError" role="alert"></p>
           <button type="submit" class="book-submit" id="bookConfirm">
             <span id="bookConfirmText">Confirm time</span>
+            <img src="${arrowRight}" class="book-submit__arrow" alt="" aria-hidden="true" />
+          </button>
+          <button type="button" class="book-submit" id="bookZoneDone" hidden>
+            <span>Show times</span>
             <img src="${arrowRight}" class="book-submit__arrow" alt="" aria-hidden="true" />
           </button>
         </div>
@@ -295,7 +363,11 @@ export function init() {
     // Hold the card's height across the swap on desktop so the left column
     // (laid out against it) doesn't jump
     if (!card.style.minHeight && window.matchMedia('(min-width: 901px)').matches) {
-      card.style.minHeight = `${card.getBoundingClientRect().height}px`
+      const height = `${card.getBoundingClientRect().height}px`
+      card.style.minHeight = height
+      // The picker's times scroll inside this height rather than stretch it
+      card.style.setProperty('--card-pin', height)
+      card.classList.add('is-pinned')
     }
     for (const el of [form, pick, done]) el.hidden = el !== view
     title.focus({ preventScroll: true })
@@ -373,59 +445,250 @@ export function init() {
   // ── Pick a time ──
   const pick        = document.getElementById('bookPick')
   const pickBody    = document.getElementById('bookPickBody')
+  const pickTimes   = document.getElementById('bookPickTimes')
   const pickStatus  = document.getElementById('bookPickStatus')
   const pickError   = document.getElementById('bookPickError')
   const dayList     = document.getElementById('bookDays')
   const slotList    = document.getElementById('bookSlots')
   const confirmBtn  = document.getElementById('bookConfirm')
   const confirmText = document.getElementById('bookConfirmText')
-  let days = []
+  const zoneChange  = document.getElementById('bookZoneChange')
+  const zonePanel   = document.getElementById('bookZonePanel')
+  const zoneCommon  = document.getElementById('bookZoneCommon')
+  const zoneMap     = document.getElementById('bookZoneMap')
+  const zoneRail    = document.getElementById('bookZoneRail')
+  const zoneOther   = document.getElementById('bookZoneOther')
+  const zoneSearch  = document.getElementById('bookZoneSearch')
+  const zoneInput   = document.getElementById('bookZoneInput')
+  const zoneList    = document.getElementById('bookZoneList')
+  const zoneCount   = document.getElementById('bookZoneCount')
+  const zoneDone    = document.getElementById('bookZoneDone')
+
+  let zone = DETECTED_ZONE   // every day, time and the receipt is shown in this
+  let hostZone = 'Asia/Karachi'
+  let slots = []             // open slots, ms instants
+  let days = []              // slots grouped by `zone`'s calendar days
+  let nightOpen = false
 
   const chosen = (name) => pick.querySelector(`[name="${name}"]:checked`)?.value
+  const chosenSlot = () => Date.parse(chosen('slot') ?? '')
 
-  function renderSlots() {
+  // One day's times in clock order. The early-morning and late-evening hours
+  // (before 07:00 and from 22:00 in the chosen zone) wait behind a link,
+  // unless they are all the day has or one of them is the chosen time
+  function renderSlots(keep = chosenSlot()) {
     const day = days.find(d => d.key === chosen('day'))
-    document.getElementById('bookSlotsLabel').textContent = `Time on ${FMT_FULL.format(day.date)}`
-    slotList.innerHTML = day.slots.map(t => `
-      <label class="book-seg__opt">
-        <input type="radio" name="slot" value="${t.toISOString()}" required />
-        <span>${esc(FMT_TIME.format(t))}</span>
-      </label>`).join('')
+    const f = fmtIn(zone)
+    document.getElementById('bookSlotsLabel').textContent = `Time on ${f.full.format(day.slots[0])}`
+    const parts = groupByPartOfDay(day.slots, zone)
+    const daytime = parts.filter(p => !p.folded)
+    const folded = parts.filter(p => p.folded)
+    const showFolded = !daytime.length || nightOpen || folded.some(p => p.slots.includes(keep))
+    const chip = (t) => `
+        <label class="book-seg__opt">
+          <input type="radio" name="slot" value="${new Date(t).toISOString()}"${t === keep ? ' checked' : ''} required />
+          <span>${esc(f.time.format(t))}</span>
+        </label>`
+    const group = (p) => `
+      <div class="book-part${p.folded ? ' book-part--folded' : ''}" role="group" aria-label="${p.label}">
+        <p class="book-part__label" aria-hidden="true">${p.label}</p>
+        <div class="book-slots">${p.slots.map(chip).join('')}</div>
+      </div>`
+    const count = folded.reduce((n, p) => n + p.slots.length, 0)
+    slotList.innerHTML = parts.filter(p => !p.folded || showFolded).map(group).join('') + (folded.length && daytime.length ? `
+      <button type="button" class="book-quiet book-part__more" id="bookNightToggle" aria-expanded="${showFolded}">${showFolded ? 'Hide early and late times' : `Show ${count} early and late ${count === 1 ? 'time' : 'times'}`}</button>` : '')
   }
 
-  // Loads (or reloads) the open times, keeping the chosen day if it survives
+  // Regroups the slots by the chosen zone's days and redraws, holding on to
+  // the chosen time (the same instant) and otherwise the chosen day
+  function renderTimes() {
+    const keepSlot = chosenSlot()
+    const keepDay = chosen('day')
+    days = groupByZoneDay(slots, zone)
+    const f = fmtIn(zone)
+    const current = days.find(d => d.slots.includes(keepSlot)) ?? days.find(d => d.key === keepDay) ?? days[0]
+    dayList.innerHTML = days.map(d => `
+      <label class="book-seg__opt book-day">
+        <input type="radio" name="day" value="${d.key}" aria-label="${esc(f.full.format(d.slots[0]))}"${d === current ? ' checked' : ''} />
+        <span><i class="book-day__dow">${esc(f.dow.format(d.slots[0]))}</i><b class="book-day__date">${esc(f.day.format(d.slots[0]))}</b></span>
+      </label>`).join('')
+    renderSlots(keepSlot)
+    // One span, so the line wraps as text; the offset never splits at its sign
+    const z = friendlyZone(zone)
+    pickStatus.innerHTML = `<span>Times in ${esc(z.label.slice(0, -z.offset.length))}<span class="book-nowrap">${esc(z.offset)}</span></span>`
+  }
+
+  // Loads (or reloads) the open times
   async function refreshTimes() {
-    const keep = chosen('day')
     confirmBtn.disabled = true
-    if (!days.length) pickStatus.textContent = 'Finding open times…'
+    if (!slots.length) pickStatus.textContent = 'Finding open times…'
     try {
-      days = await loadDays()
+      const loaded = await loadSlots()
+      slots = loaded.slots
+      if (loaded.hostZone) hostZone = loaded.hostZone
     } catch {
       return emailInstead('We have your details, but our calendar isn\'t loading right now.')
     }
-    if (!days.length) return emailInstead('We have your details, but there are no open times in the next two weeks.')
+    if (!slots.length) return emailInstead('We have your details, but there are no open times in the next two weeks.')
 
-    const current = days.find(d => d.key === keep) ?? days[0]
-    dayList.innerHTML = days.map(d => `
-      <label class="book-seg__opt book-day">
-        <input type="radio" name="day" value="${d.key}" aria-label="${esc(FMT_FULL.format(d.date))}"${d === current ? ' checked' : ''} />
-        <span><i class="book-day__dow">${esc(FMT_DOW.format(d.date))}</i><b class="book-day__date">${esc(FMT_DAY.format(d.date))}</b></span>
-      </label>`).join('')
-    renderSlots()
-    pickStatus.textContent = `Times in ${zoneName()}`
+    renderTimes()
+    zoneChange.hidden = false
     pickBody.hidden = false
     confirmBtn.disabled = false
   }
 
   pick.addEventListener('change', (e) => {
     pickError.textContent = ''
-    if (e.target.name === 'day') renderSlots()
+    if (e.target.name === 'day') { nightOpen = false; renderSlots() }
+    if (e.target.name === 'zone') setZone(e.target.value)
+  })
+
+  // The radios are 1px and hidden, so the browser won't scroll a chip or a
+  // rail node into view when the keyboard reaches it; do it for the label
+  pick.addEventListener('focusin', (e) => {
+    if (e.target.type === 'radio') e.target.closest('label').scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  })
+
+  slotList.addEventListener('click', (e) => {
+    if (e.target.id !== 'bookNightToggle') return
+    nightOpen = e.target.getAttribute('aria-expanded') !== 'true'
+    renderSlots()
+    // Opening lands on the first of the revealed times; closing stays on the link
+    const first = nightOpen && slotList.querySelector('.book-part--folded input')
+    ;(first || document.getElementById('bookNightToggle'))?.focus()
+  })
+
+  // ── Time zone ──
+  const horizon = () => [Date.now(), slots.at(-1) ?? Date.now()]
+
+  function renderRail() {
+    const { zones, selected } = railFor(zone, ...horizon())
+    const now = Date.now()
+    zoneRail.innerHTML = zones.map((z, i) => `
+      <label class="book-time__opt book-zrail__opt">
+        <input type="radio" name="zone" value="${esc(z.id)}"${i === selected ? ' checked' : ''} />
+        <span class="book-time__node" aria-hidden="true"></span>
+        <span class="book-zrail__name">${esc(z.short)}</span>
+        <span class="book-zrail__now">${esc(fmtIn(z.id).time.format(now))}</span>
+      </label>`).join('')
+    zoneRail.querySelector(':checked')?.closest('label').scrollIntoView({ block: 'nearest', inline: 'center' })
+  }
+
+  function setZone(next) {
+    zone = next
+    nightOpen = false
+    renderTimes()
+    zoneMap.innerHTML = worldMap(zone, hostZone)
+  }
+
+  // Every zone, named once, for the search: [{ id, city, name, offset, hay }]
+  let allZones = null
+  function zoneIndex() {
+    if (allZones) return allZones
+    const now = Date.now()
+    const year = new Date(now).getUTCFullYear()
+    allZones = listZones().map(id => {
+      const z = friendlyZone(id, now)
+      // Both halves of the year, so "EST" finds New York in July too
+      const abbr = `${zoneAbbreviation(id, Date.UTC(year, 0, 15))} ${zoneAbbreviation(id, Date.UTC(year, 6, 15))}`
+      return { id, ...z, minutes: offsetMinutes(id, now), hay: `${id} ${z.city} ${z.name} ${abbr} ${z.offset}`.toLowerCase().replace(/_/g, ' ') }
+    }).sort((a, b) => a.minutes - b.minutes || a.city.localeCompare(b.city))
+    return allZones
+  }
+
+  const SEARCH_LIMIT = 60
+  function renderSearch() {
+    const words = zoneInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    const now = Date.now()
+    let hits = zoneIndex().filter(z => words.every(w => z.hay.includes(w)))
+    if (!words.length) {
+      // Nothing typed yet: start at the visitor's own zone and run east, wrapping round
+      const here = offsetMinutes(zone, now)
+      const east = (z) => (z.minutes - here + 1440) % 1440
+      hits = [...hits].sort((a, b) => (b.id === zone) - (a.id === zone) || east(a) - east(b) || a.city.localeCompare(b.city))
+    }
+    zoneList.innerHTML = hits.slice(0, SEARCH_LIMIT).map(z => `
+      <li>
+        <button type="button" class="book-zlist__opt" data-zone="${esc(z.id)}"${z.id === zone ? ' aria-current="true"' : ''}>
+          <span class="book-zlist__city">${esc(z.city)}</span>
+          <span class="book-zlist__name">${esc([z.name, z.offset].filter(Boolean).join(', '))}</span>
+          <span class="book-zlist__now">${esc(fmtIn(z.id).time.format(now))}</span>
+        </button>
+      </li>`).join('')
+    zoneCount.textContent = !hits.length ? 'No time zones match.'
+      : hits.length > SEARCH_LIMIT ? `${hits.length} time zones. Showing the first ${SEARCH_LIMIT}; keep typing to narrow them.`
+      : `${hits.length} time ${hits.length === 1 ? 'zone' : 'zones'}.`
+    zoneCount.classList.toggle('book-sr', hits.length > 0 && hits.length <= SEARCH_LIMIT)
+  }
+
+  function showSearch(open) {
+    zoneSearch.hidden = !open
+    zoneCommon.hidden = open
+    zoneOther.setAttribute('aria-expanded', String(open))
+    zoneOther.textContent = open ? 'Back to common zones' : 'Other time zone'
+    if (open) {
+      zoneInput.value = ''
+      renderSearch()
+      zoneInput.focus()
+    } else {
+      renderRail()
+    }
+  }
+
+  // The chooser takes the place of the days and times, so the card keeps its height
+  function showChooser(open) {
+    zonePanel.hidden = !open
+    pickTimes.hidden = open
+    confirmBtn.hidden = open
+    zoneDone.hidden = !open
+    zoneChange.setAttribute('aria-expanded', String(open))
+    pickError.textContent = ''
+    if (open) {
+      showSearch(false)
+      zoneMap.innerHTML = worldMap(zone, hostZone)
+      zoneRail.querySelector(':checked')?.focus()
+    } else {
+      zoneChange.focus()
+    }
+  }
+
+  zoneChange.addEventListener('click', () => showChooser(zonePanel.hidden))
+  zoneDone.addEventListener('click', () => showChooser(false))
+  zoneOther.addEventListener('click', () => showSearch(zoneSearch.hidden))
+  zoneInput.addEventListener('input', renderSearch)
+
+  zoneList.addEventListener('click', (e) => {
+    const id = e.target.closest('[data-zone]')?.dataset.zone
+    if (!id) return
+    setZone(id)
+    showSearch(false)
+    zoneRail.querySelector(':checked')?.focus()
+  })
+
+  zonePanel.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      if (zoneSearch.hidden) showChooser(false)
+      else { showSearch(false); zoneOther.focus() }
+    }
+    // Up and down walk the results, from the search box and back to it
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !zoneSearch.hidden && (e.target === zoneInput || e.target.dataset.zone)) {
+      const stops = [zoneInput, ...zoneList.querySelectorAll('[data-zone]')]
+      const next = stops[stops.indexOf(e.target) + (e.key === 'ArrowDown' ? 1 : -1)]
+      if (next) { e.preventDefault(); next.focus() }
+    }
+    // Enter in the search takes the first match rather than submitting the form
+    if (e.key === 'Enter' && e.target === zoneInput) {
+      e.preventDefault()
+      zoneList.querySelector('[data-zone]')?.click()
+    }
   })
 
   document.getElementById('bookEmailInstead').addEventListener('click', () => emailInstead())
 
   pick.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (!zonePanel.hidden) return showChooser(false)
     const start = chosen('slot')
     if (!start) {
       pickError.textContent = 'Choose a time.'
@@ -448,13 +711,14 @@ export function init() {
     if (res?.ok) {
       const at = new Date(body.start)
       const minutes = Math.round((new Date(body.end) - at) / 60000)
+      const f = fmtIn(zone)
       return showDone({
         state: 'booked',
         label: 'Invite sent',
         heading: `You're booked, ${lead.name}.`,
         text: 'Your intro call with Tethr is on the calendar.',
         rows: [
-          ['When', `${FMT_FULL.format(at)} at ${FMT_TIME.format(at)}`, zoneName()],
+          ['When', `${f.full.format(at)} at ${f.time.format(at)}`, friendlyZone(zone, at.getTime()).label],
           ...(minutes > 0 ? [['Length', `${minutes} minutes`]] : []),
           // Only name Google Meet when the booking came back with a link
           body.meetLink ? ['Where', 'Google Meet', 'The link is in your invite'] : ['Where', 'Video call', 'Details are in your invite'],

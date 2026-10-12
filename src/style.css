@@ -4967,12 +4967,23 @@ body.page-leaving #app {
   animation: op-row-in 0.45s ease both;
 }
 
-/* Loading text, then the visitor's timezone: mono, hung off a short tether */
+/* Whose time this is, with the way to change it beside it */
+.book-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin: 0 0 22px;
+
+  & .book-quiet { margin: 0; }
+}
+
+/* Loading text, then the chosen time zone: mono, hung off a short tether */
 .book-pick__status {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 22px;
+  margin: 0;
   font-family: 'Consolas', monospace;
   font-size: 12px;
   line-height: 1.5;
@@ -5022,6 +5033,244 @@ body.page-leaving #app {
   height: 40px;
   font-size: 13.5px;
   font-variant-numeric: tabular-nums;
+}
+
+/* A day's times by part of the day; the night hours fold away */
+.book-part + .book-part { margin-top: 12px; }
+
+.book-part__label {
+  margin: 0 0 6px;
+  font-family: 'Consolas', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0, 17, 49, 0.5);
+}
+
+.book-slots-scroll .book-part__more {
+  display: block;
+  margin: 12px 0 2px;
+}
+
+/* ── Time zone chooser — stands in for the days and times while open ── */
+.book-zone-panel .book-quiet { margin: 4px 0 0; }
+
+/* The world as dots: the chosen zone's band and Tethr's lit, a tether
+   between them. A picture of the choice, not a control. */
+.book-zmap {
+  max-width: 520px;
+  margin: 0 auto 14px;
+
+  & svg { display: block; width: 100%; height: auto; overflow: visible; }
+  & circle { fill: rgba(0, 17, 49, 0.16); }
+  & .is-host { fill: rgba(7, 85, 233, 0.4); }
+  & .is-you { fill: #0755E9; }
+
+  & .book-zmap__you { fill: #0755E9; stroke: #fff; stroke-width: 2; }
+  & .book-zmap__host { fill: #fff; stroke: #0755E9; stroke-width: 2; }
+
+  & .book-zmap__arc {
+    fill: none;
+    stroke: rgba(7, 85, 233, 0.6);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 5;
+    stroke-linecap: round;
+  }
+
+  & text {
+    font-family: 'Consolas', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    fill: #0755E9;
+    paint-order: stroke;
+    stroke: #fff;
+    stroke-width: 3px;
+  }
+}
+
+/* West to east on one tether, in the "How soon" control's rail-and-node
+   grammar. Each node carries the zone's name and the time there now. Scrolls
+   sideways within itself when the card is narrower than the rail. */
+.book-zrail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(64px, 1fr);
+  overflow-x: auto;
+  padding: 6px 2px 8px;
+  scrollbar-width: thin;
+}
+
+.book-zrail__opt {
+  gap: 5px;
+
+  /* The tether, drawn cell by cell behind the nodes */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    border-top: 1.5px dashed rgba(7, 85, 233, 0.35);
+  }
+
+  &:first-child::before { left: 50%; }
+  &:last-child::before  { right: 50%; }
+
+  & .book-time__node { z-index: 1; }
+}
+
+.book-zrail__name {
+  margin-top: 3px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(0, 17, 49, 0.75);
+  white-space: nowrap;
+}
+
+.book-zrail__now {
+  font-family: 'Consolas', monospace;
+  font-size: 11px;
+  color: rgba(0, 17, 49, 0.55);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.book-zrail__opt input:checked ~ .book-zrail__name,
+.book-zrail__opt input:checked ~ .book-zrail__now { color: #2B44FF; }
+
+/* Every other zone: a search over a plain list */
+.book-zsearch { margin-bottom: 12px; }
+
+.book-zsearch #bookZoneCount:not(.book-sr) {
+  margin: 8px 0 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  color: rgba(0, 17, 49, 0.6);
+}
+
+.book-zlist {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 212px;
+  overflow-y: auto;
+  border-top: 1.5px dashed rgba(0, 17, 49, 0.16);
+  scrollbar-width: thin;
+}
+
+.book-zlist__opt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 12px;
+  width: 100%;
+  padding: 9px 6px;
+  border: 0;
+  border-bottom: 1.5px dashed rgba(0, 17, 49, 0.16);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &[aria-current="true"] { background: rgba(43, 68, 255, 0.06); }
+
+  &:focus-visible {
+    outline: 2px solid #2B44FF;
+    outline-offset: -2px;
+  }
+}
+
+.book-zlist__city {
+  font-family: 'Manrope', sans-serif;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #001131;
+}
+
+.book-zlist__name {
+  grid-column: 1;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12.5px;
+  color: rgba(0, 17, 49, 0.55);
+}
+
+.book-zlist__now {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+  color: rgba(0, 17, 49, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.book-nowrap { white-space: nowrap; }
+
+/* Too small to read on a phone: the markers and the arc stay, the zone line
+   and the rail say the rest */
+@media (max-width: 480px) {
+  .book-zmap text { display: none; }
+}
+
+/* Read out, not shown */
+.book-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.book-pick .book-submit[hidden] { display: none; }
+
+/* On desktop the card is held at the form's height (book-call.js sets
+   --card-pin), so the picker fills it and the one region that can outgrow
+   it — a full day of times, or the zone chooser — scrolls inside the card. */
+@media (min-width: 901px) {
+  .book-card.is-pinned { max-height: var(--card-pin); }
+
+  .book-pick:not([hidden]),
+  .book-pick__body:not([hidden]),
+  .book-pick__times:not([hidden]),
+  .book-slots-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Padding keeps the chips' focus rings inside the scroll box */
+  .book-slots-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin: -3px;
+    padding: 3px;
+    scrollbar-width: thin;
+  }
+
+  .book-zone-panel:not([hidden]) {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    margin: -3px;
+    padding: 3px;
+    scrollbar-width: thin;
+  }
+
+  .book-pick > *,
+  .book-pick__body > .book-submit-wrap,
+  .book-pick__times > .book-fieldset { flex-shrink: 0; }
+
+  /* Tightened so a full day of times (three parts, five rows) fits the held
+     height without scrolling; touch layouts keep the taller chips */
+  .book-pick .book-day span { height: 50px; }
+  .book-pick .book-slots .book-seg__opt span { height: 36px; }
+  .book-pick .book-part + .book-part { margin-top: 8px; }
+  .book-pick .book-part__label { margin-bottom: 4px; }
+  .book-slots-scroll .book-part__more { margin-top: 8px; }
 }
 
 /* The one other action in the view: a quiet mono link under the button */
