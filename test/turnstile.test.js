@@ -3,7 +3,10 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { verifyCaptcha } from '../lib/booking/turnstile.js'
 import { captchaSecret, captchaSiteKey } from '../lib/booking/config.js'
-import { TURNSTILE_SITE_KEY } from '../lib/booking/captcha.js'
+import {
+  TURNSTILE_SITE_KEY, CAPTCHA_MAX_ERRORS, CAPTCHA_RETRY_INTERVAL_MS, CAPTCHA_WAIT_MS,
+  captchaErrorIsFinal, captchaGivesUp,
+} from '../lib/booking/captcha.js'
 
 const SECRET = 'test-secret-not-real'
 // A server that enforces: it has a secret, and its build has a site key
@@ -147,4 +150,25 @@ test('the site key is the constant in captcha.js; mock mode always uses the test
   assert.equal(captchaSiteKey({}), TURNSTILE_SITE_KEY)
   assert.equal(captchaSiteKey({ BOOKING_MOCK: '1' }), '1x00000000000000000000AA')
   assert.equal(captchaSiteKey({ BOOKING_MOCK: '1', NODE_ENV: 'production' }), TURNSTILE_SITE_KEY)
+})
+
+test('the form retries a widget error unless the code is one a retry cannot fix', () => {
+  // Cloudflare's "Retry: No" rows: site key, hostname, clock, browser
+  for (const code of ['110100', '110110', '110200', '110500', '110510', '200100', '400020', '400021', '400070', 400020]) {
+    assert.equal(captchaErrorIsFinal(code), true, String(code))
+    assert.equal(captchaGivesUp(code, 1), true, String(code))
+  }
+  // Challenge failures, timeouts, a frame that didn't load, and codes nobody has listed
+  for (const code of ['300010', '600010', '110600', '110620', '200500', '999999', '', undefined, null]) {
+    assert.equal(captchaErrorIsFinal(code), false, String(code))
+    assert.equal(captchaGivesUp(code, 1), false, String(code))
+    assert.equal(captchaGivesUp(code, CAPTCHA_MAX_ERRORS - 1), false, String(code))
+    assert.equal(captchaGivesUp(code, CAPTCHA_MAX_ERRORS), true, String(code))
+  }
+})
+
+test('the retries fit inside the wait, and the wait is one a visitor will sit through', () => {
+  assert.equal(CAPTCHA_MAX_ERRORS, 3)
+  assert.ok((CAPTCHA_MAX_ERRORS - 1) * CAPTCHA_RETRY_INTERVAL_MS < CAPTCHA_WAIT_MS)
+  assert.ok(CAPTCHA_WAIT_MS <= 12000)
 })

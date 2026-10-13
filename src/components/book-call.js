@@ -8,7 +8,10 @@ import { VALIDATORS, CHALLENGES, HEADCOUNTS, TIMELINES, HONEYPOT_FIELD } from '.
 // Zone naming and slot grouping, tested in test/zones.test.js
 import { friendlyZone, zoneAbbreviation, offsetMinutes, standardOffsetMinutes, groupByZoneDay, groupByPartOfDay, railFor, listZones } from '../../lib/booking/zones.js'
 import { landDots, COLS, ROWS, lonToCol, latToRow } from '../lib/dot-world.js'
-import { TURNSTILE_SITE_KEY, TURNSTILE_TEST_SITE_KEY, CAPTCHA_FIELD } from '../../lib/booking/captcha.js'
+import {
+  TURNSTILE_SITE_KEY, TURNSTILE_TEST_SITE_KEY, CAPTCHA_FIELD,
+  CAPTCHA_RETRY_INTERVAL_MS, CAPTCHA_WAIT_MS, captchaGivesUp,
+} from '../../lib/booking/captcha.js'
 
 /* The captcha's site key for this page. Empty means no widget and no token.
    On the dev server's in-memory mock (vite.config.js sets __BOOKING_MOCK__)
@@ -474,6 +477,8 @@ export function init() {
   let turnstile = null   // promise of window.turnstile, or of null when it can't load
   let widgetId = null
   let settle = null      // ends the token request in flight
+  let giveUp = null      // ends it with no token, and says why in the console
+  let onCaptchaError = null
   let interactive = false
 
   // Not on first paint: the script loads when the visitor first touches the form
@@ -504,16 +509,28 @@ export function init() {
      server then saves the lead as unverified rather than losing it. */
   async function captchaToken() {
     const ts = await loadCaptcha()
-    if (!ts) return ''
+    if (!ts) return noToken('the Turnstile script did not load')
     return new Promise((resolve) => {
-      // Give up quietly if nothing comes back, unless the visitor has been
+      let errors = 0
+      let lastCode = ''
+      // Give up if nothing comes back in time, unless the visitor has been
       // handed a challenge: then Turnstile's own timeout ends the wait
-      const timer = setTimeout(() => { if (!interactive) settle?.() }, 12000)
+      const timer = setTimeout(() => {
+        if (!interactive) giveUp?.(lastCode ? `timed out after error ${lastCode}` : 'timed out')
+      }, CAPTCHA_WAIT_MS)
+      let retryTimer = 0
       settle = (token = '') => {
         clearTimeout(timer)
-        settle = null
+        clearTimeout(retryTimer)
+        settle = giveUp = null
         showChallenge(false)
         resolve(typeof token === 'string' ? token : '')
+      }
+      giveUp = (why) => {
+        settle()
+        noToken(why)
+        // Stop the widget retrying behind a form that has moved on
+        try { ts.reset(widgetId) } catch { /* nothing to stop */ }
       }
       try {
         if (widgetId === null) {
@@ -523,23 +540,45 @@ export function init() {
             execution: 'execute',
             // The standard widget is 300px wide; the card is narrower than that on small phones
             size: window.matchMedia('(max-width: 370px)').matches ? 'compact' : 'normal',
+            // Retries are run from here: with execution 'execute' the
+            // widget's own retry doesn't start a new attempt by itself
+            retry: 'never',
             callback: (token) => settle?.(token),
             // true = handled here; Turnstile then doesn't log an error of its own
-            'error-callback': () => { settle?.(); return true },
-            'expired-callback': () => settle?.(),
-            'timeout-callback': () => settle?.(),
-            'unsupported-callback': () => settle?.(),
+            'error-callback': (code) => { onCaptchaError?.(code); return true },
+            'expired-callback': () => giveUp?.('token expired'),
+            'timeout-callback': () => giveUp?.('challenge not solved in time'),
+            'unsupported-callback': () => giveUp?.('unsupported browser'),
             'before-interactive-callback': () => showChallenge(true),
             'after-interactive-callback': () => showChallenge(false),
           })
         } else {
           ts.reset(widgetId)
         }
+        // After the reset, so an error from the last submit's widget isn't counted
+        onCaptchaError = (code) => {
+          if (!giveUp) return
+          errors++
+          lastCode = String(code ?? 'unknown')
+          if (captchaGivesUp(code, errors)) return giveUp(`error ${lastCode}${errors > 1 ? ` after ${errors} attempts` : ''}`)
+          // One error is often a blip, so try again unless the code is one a
+          // retry can't fix
+          retryTimer = setTimeout(() => {
+            try { ts.reset(widgetId); ts.execute(widgetId) } catch { giveUp?.(`could not retry after error ${lastCode}`) }
+          }, CAPTCHA_RETRY_INTERVAL_MS)
+        }
         ts.execute(widgetId)
       } catch {
-        settle()
+        giveUp?.('the widget could not start')
       }
     })
+  }
+
+  // Why a lead went in unverified, for whoever reads the visitor's console.
+  // Never the token: there isn't one.
+  function noToken(why) {
+    console.warn(`[book] captcha: no token, so this lead is saved as unverified (${why})`)
+    return ''
   }
 
   // ── Pick a time ──
