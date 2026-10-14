@@ -1,6 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { validateLead, isSpam, HONEYPOT_FIELD, MIN_FILL_MS, MAX_LENGTH, CHALLENGES } from '../lib/booking/lead.js'
+import {
+  validateLead, isSpam, HONEYPOT_FIELD, MIN_FILL_MS, MAX_LENGTH, CHALLENGES,
+  VALIDATORS, isCompanyEmail, emailKey, EMAIL_EXCEPTION_KEYS,
+} from '../lib/booking/lead.js'
 
 const GOOD = {
   name: 'Ada Lovelace', title: 'VP Engineering', company: 'TechCorp LLC', email: 'ada@techcorp.com',
@@ -31,6 +34,34 @@ test('email format', () => {
     assert.equal(validateLead({ ...GOOD, email: bad }).errors.email, 'Enter a valid email address.', bad)
   }
   assert.equal(validateLead({ ...GOOD, email: 'first.last+tag@sub.example.co' }).errors.email, undefined)
+})
+
+test('only work email addresses: personal and throwaway providers are turned down', () => {
+  for (const ok of ['ada@techcorp.com', 'someone@tethrhq.com']) assert.equal(isCompanyEmail(ok), true, ok)
+  for (const bad of ['a@gmail.com', 'A@GMAIL.COM', 'b@yahoo.co.uk', 'c@proton.me', 'd@mailinator.com']) assert.equal(isCompanyEmail(bad), false, bad)
+
+  assert.equal(VALIDATORS.email('someone@gmail.com'), 'Use your work email address.')
+  assert.equal(validateLead({ ...GOOD, email: 'someone@gmail.com' }).errors.email, 'Use your work email address.')
+  assert.equal(validateLead({ ...GOOD, email: 'someone@tethrhq.com' }).errors.email, undefined)
+})
+
+test('emailKey is a number that ignores case and surrounding spaces', () => {
+  assert.equal(typeof emailKey('tester@gmail.com'), 'number')
+  assert.equal(emailKey(' Tester@Gmail.com '), emailKey('tester@gmail.com'))
+  assert.notEqual(emailKey('tester@gmail.com'), emailKey('testers@gmail.com'))
+})
+
+test('an address whose key is in the exception set passes although its provider is personal', () => {
+  assert.equal(EMAIL_EXCEPTION_KEYS.size, 2)
+  const key = emailKey('tester@gmail.com')
+  EMAIL_EXCEPTION_KEYS.add(key)
+  try {
+    assert.equal(isCompanyEmail(' Tester@Gmail.com '), true)
+    assert.equal(VALIDATORS.email('tester@gmail.com'), '')
+  } finally {
+    EMAIL_EXCEPTION_KEYS.delete(key)
+  }
+  assert.equal(isCompanyEmail(' Tester@Gmail.com '), false)
 })
 
 test('challenge, headcount and timeline must come from their fixed sets', () => {

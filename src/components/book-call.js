@@ -35,7 +35,7 @@ const TEXT_FIELDS = [
   { name: 'name',    label: 'Name',             type: 'text',  placeholder: 'First and last name', autocomplete: 'name' },
   { name: 'title',   label: 'Position / Title', type: 'text',  placeholder: 'e.g. VP Engineering', autocomplete: 'organization-title' },
   { name: 'company', label: 'Company Name',     type: 'text',  placeholder: 'e.g. TechCorp LLC',   autocomplete: 'organization' },
-  { name: 'email',   label: 'Email Address',    type: 'email', placeholder: 'you@company.com',     autocomplete: 'email' },
+  { name: 'email',   label: 'Work Email',       type: 'email', placeholder: 'you@company.com',     autocomplete: 'email' },
 ]
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
