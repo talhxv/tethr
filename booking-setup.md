@@ -3,7 +3,9 @@
 `/book` form → **`POST /api/lead`** writes the lead to Notion → the card shows
 open times from **Google Calendar** → client picks one → **`POST /api/book`**
 creates the event (Google emails the invite, with a Meet link) and attaches the
-slot to the same Notion row.
+slot to the same Notion row. The client also gets a branded confirmation
+email, sent through the Gmail API as the calendar owner, in addition to
+Google's own invite.
 
 No third-party form or scheduler. No new npm packages: plain `fetch`.
 
@@ -36,7 +38,8 @@ GET /api/availability ──► Google free/busy + the rules     ✗ 503 → "we
    │ client picks a slot
    ▼
 POST /api/book ──► Google: event + Meet + invite email     ✗ 409 slot_taken → pick another
-               └─► Notion: Status = "Call booked", Call time, Meeting link, Calendar event ID
+               ├─► Notion: Status = "Call booked", Call time, Meeting link, Calendar event ID
+               └─► Gmail: branded confirmation email to the client   ✗ not sent → logged, still booked
    ▼
 "You're booked"
 ```
@@ -52,6 +55,8 @@ All logic is in `lib/booking/`. The three entry points only forward to it:
 | `lib/booking/slots.js` | Slot generation — pure, tested |
 | `lib/booking/notion.js` | Leads database reads/writes |
 | `lib/booking/google.js` | `getAccessToken()`, free/busy, event creation |
+| `lib/booking/email.js` | The confirmation email template — pure, tested |
+| `lib/booking/mail.js` | Builds the MIME message and sends it through the Gmail API |
 | `lib/booking/captcha.js` | The captcha's public site key (also imported by the form) |
 | `lib/booking/turnstile.js` | Checks a captcha token with Cloudflare |
 | `lib/booking/mock.js` | In-memory stand-ins for `BOOKING_MOCK=1` |
@@ -71,6 +76,8 @@ Server-side only. None start with `VITE_`, so none reach the browser bundle.
 | `GOOGLE_CLIENT_SECRET` | for booking | OAuth client secret. |
 | `GOOGLE_REFRESH_TOKEN` | for booking | Calendar owner's refresh token (step 3). |
 | `BOOKING_CALENDAR_ID` | for booking | Calendar to read and book on. The owner's email address for their main calendar. |
+| `BOOKING_EMAIL_FROM` | no | Sender of the confirmation email. Default `Tethr <BOOKING_CALENDAR_ID>`. |
+| `SITE_URL` | no | Where the confirmation email's images and links point. Default `https://tethrhq.com`. |
 | `BOOKING_TIMEZONE` | no | Host timezone. Default `Asia/Karachi`. |
 | `BOOKING_DAYS` | no | Working days, `0` = Sunday. Default `1,2,3,4,5`. |
 | `BOOKING_START` / `BOOKING_END` | no | Working hours in host time. Default `09:00` / `23:00`. |
@@ -128,7 +135,7 @@ the names and types above match.
 ## 3. Google Calendar
 
 1. In [Google Cloud Console], create (or pick) a project and enable the
-   **Google Calendar API**.
+   **Google Calendar API** and the **Gmail API**.
 2. **OAuth consent screen**: user type **Internal** if the calendar owner is
    in your Google Workspace. If it has to be **External**, publish it to
    production — refresh tokens for an app left in "Testing" expire after 7 days.
@@ -154,7 +161,13 @@ the names and types above match.
 5. Set `BOOKING_CALENDAR_ID` to the owner's email address (or the id of a
    secondary calendar from its settings page). Here: `hr@tethrhq.com`.
 
-Scopes requested: `calendar.events` and `calendar.freebusy`.
+Scopes requested: `calendar.events`, `calendar.freebusy` and `gmail.send`.
+
+A deployment set up before the confirmation email existed has a refresh
+token without `gmail.send`. Enable the Gmail API in the same Cloud project,
+run the token script again (step 4) and replace `GOOGLE_REFRESH_TOKEN` in all
+three places. Until then bookings work as before and the server logs
+`confirmation email not sent`.
 
 **Service account instead?** With domain-wide delegation, only
 `getAccessToken()` in `lib/booking/google.js` changes: sign a JWT with the
@@ -238,7 +251,11 @@ only; there is no Vercel function for it) for forcing the failure paths:
 `{ "take": "<slot ISO start>" }` to have someone else book a slot, and
 `{ "markFails": 2 }` to fail the Notion update after a booking, and
 `{ "captcha": "off" }` (`"on"` to restore) to behave like a server with no
-`TURNSTILE_SECRET_KEY`.
+`TURNSTILE_SECRET_KEY`, and `{ "mail": "down" }` (`"up"` to recover) to fail
+the confirmation email.
+
+Mock mode never sends mail. It records each message instead, and the answer
+of `/api/booking-mock` lists them under `emails`.
 
 In mock mode the dev server checks tokens against Cloudflare's always-pass
 test secret and the form uses the matching test site key, so the whole path
@@ -254,7 +271,7 @@ sends no token.
 |---|---|---|
 | `POST /api/lead` `{ name, title, company, email, challenge, headcount, timeline, book_ref, elapsedMs, captchaToken }` | `201 { leadId, verified }` | `400 { error: 'invalid', fields }` · `502 { error: 'lead_not_saved' }` |
 | `GET /api/availability` | `200 { timezone, slotMinutes, days: [{ date, slots: [ISO] }] }` | `503 { reason: 'calendar_unavailable' }` |
-| `POST /api/book` `{ leadId, start }` | `200 { start, end, meetLink }` | `400` · `404 { reason: 'lead_not_found' }` · `403 { reason: 'unverified' }` · `409 { reason: 'already_booked' \| 'slot_taken' }` · `502 { error: 'lead_unavailable' }` · `503 { reason: 'calendar_unavailable' }` |
+| `POST /api/book` `{ leadId, start, zone, hour12 }` | `200 { start, end, meetLink }` | `400` · `404 { reason: 'lead_not_found' }` · `403 { reason: 'unverified' }` · `409 { reason: 'already_booked' \| 'slot_taken' }` · `502 { error: 'lead_unavailable' }` · `503 { reason: 'calendar_unavailable' }` |
 
 - **Spam.** `book_ref` is a hidden field that must stay empty, and
   `elapsedMs` (page load to submit) must be at least 2.5 seconds. A submission
@@ -264,14 +281,23 @@ sends no token.
   time picker, and `/api/book` answers `403 unverified` for that lead. Bad
   input and bots are decided first, so Cloudflare is only asked about leads
   that would otherwise be saved.
-- **Attendee.** The invite goes to the email on the Notion row; `/api/book`
-  ignores any email in the request.
+- **Zone and clock.** `zone` is the IANA zone the client picked and `hour12`
+  their clock style. Both are optional and default to the host zone and a
+  12-hour clock. They only decide how the confirmation email shows the time.
+- **Attendee.** The invite and the confirmation email go to the email on the
+  Notion row; `/api/book` ignores any email in the request.
 - **One event per lead.** The Google event id is the Notion page id, so a
   repeated request cannot create a second event.
 - **The invite.** The event is titled "Intro call: <company> and Tethr" and
   its description is written to the client. The lead's name, title, company
   and a link to the Notion row are in the event's `source`, which Google
   shows only to the calendar owner.
+- **The confirmation email.** It holds the booked time in the client's zone,
+  the call's length, the Meet link and what the call covers. Its images are
+  the PNGs in `public/email/`, loaded from `SITE_URL`, so they must be
+  deployed for them to show. `node scripts/preview-booking-email.mjs > preview.html`
+  renders a sample. A failure to send never fails the booking: the client is
+  still booked and the server logs `confirmation email not sent`.
 - **If the Notion update fails after the event is created**, it is retried
   once. If that fails too, the client is
   still told they are booked (they are) and the server logs
@@ -285,5 +311,6 @@ pnpm test
 
 Node's built-in runner, no dependencies: slot generation (notice, horizon,
 buffers, weekends, day boundaries, Asia/Karachi, America/New_York across both
-clock changes), lead validation and anti-spam, and the three endpoints against
-the mock.
+clock changes), lead validation and anti-spam, the three endpoints against
+the mock, and the confirmation email: its template, the MIME builder and the
+send path.

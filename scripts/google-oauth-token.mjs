@@ -12,8 +12,10 @@ import { randomBytes } from 'node:crypto'
 const { GOOGLE_CLIENT_ID: clientId, GOOGLE_CLIENT_SECRET: clientSecret } = process.env
 const PORT = Number(process.env.OAUTH_PORT ?? 53682)
 const REDIRECT = `http://localhost:${PORT}/callback`
-// Read free/busy, and create events on calendars the account can write to
-const SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.freebusy']
+// Read free/busy, and create events on calendars the account can write to.
+// The third scope lets the booking API send the confirmation email as this
+// account.
+const SCOPES = ['https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.freebusy', 'https://www.googleapis.com/auth/gmail.send']
 
 if (!clientId || !clientSecret) {
   console.error('Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET first.')

@@ -840,7 +840,7 @@ export function init() {
     confirmText.textContent = 'Booking…'
     let res, body
     try {
-      res = await api('/api/book', { leadId: lead.id, start })
+      res = await api('/api/book', { leadId: lead.id, start, zone, hour12: HOUR12 })
       body = await res.json().catch(() => ({}))
     } catch {
       res = null

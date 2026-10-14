@@ -284,3 +284,81 @@ test('on the mock, a real TURNSTILE_SECRET_KEY in the environment is not the one
     globalThis.fetch = stub
   }
 })
+
+// ── Confirmation email ──
+const emails = async () => (await mock({})).body.emails
+
+test('POST /api/book emails the confirmation once, to the lead\'s own address, with the time in the zone the client picked', async () => {
+  const leadId = await newLead()
+  const start = await firstSlot()
+  const before = (await emails()).length
+  const res = await handle('POST', '/api/book', { leadId, start, email: 'attacker@example.com', zone: 'America/New_York', hour12: true })
+  assert.equal(res.status, 200)
+  assert.deepEqual(Object.keys(res.body).sort(), ['end', 'meetLink', 'start'])
+
+  const sent = (await emails()).slice(before)
+  assert.equal(sent.length, 1)
+  assert.equal(sent[0].to, 'ada@techcorp.com')
+  assert.ok(sent[0].subject.startsWith("You're booked, Ada."), sent[0].subject)
+  // Newer ICU puts a narrow no-break space before AM/PM; the email uses a plain one
+  const time = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date(start)).replace(/[  ]/g, ' ')
+  assert.ok(sent[0].subject.includes(time), sent[0].subject + ' should contain ' + time)
+  assert.ok(sent[0].text.includes(time))
+  assert.ok(sent[0].htmlBytes > 0)
+})
+
+test('POST /api/book: hour12 false gives a 24-hour time in the subject', async () => {
+  const leadId = await newLead()
+  const start = await firstSlot()
+  assert.equal((await handle('POST', '/api/book', { leadId, start, zone: 'America/New_York', hour12: false })).status, 200)
+  const { subject } = (await emails()).at(-1)
+  const time = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).format(new Date(start))
+  assert.ok(subject.endsWith(' at ' + time), subject)
+  assert.doesNotMatch(subject, /AM|PM/)
+})
+
+test('POST /api/book: a missing or invalid zone falls back to the host zone', async () => {
+  for (const zone of [undefined, 'Not/AZone', 42]) {
+    const leadId = await newLead()
+    assert.equal((await handle('POST', '/api/book', { leadId, start: await firstSlot(), zone })).status, 200, String(zone))
+    assert.match((await emails()).at(-1).text, /Karachi/, String(zone))
+  }
+})
+
+test('POST /api/book: a confirmation email that fails to send is logged and the booking still stands', async (t) => {
+  const error = t.mock.method(console, 'error', () => {})
+  const leadId = await newLead()
+  const before = (await emails()).length
+  await mock({ mail: 'down' })
+  let res
+  try {
+    res = await handle('POST', '/api/book', { leadId, start: await firstSlot() })
+  } finally {
+    await mock({ mail: 'up' })
+  }
+  assert.equal(res.status, 200)
+  assert.ok(res.body.meetLink)
+  assert.equal((await mock({})).body.leads.find((l) => l.id === leadId).booked, true)
+  assert.match(error.mock.calls[0].arguments[0], /confirmation email not sent/)
+  assert.equal((await emails()).length, before)
+})
+
+test('POST /api/book: no confirmation email for a booking that was refused', async () => {
+  const booked = await newLead()
+  assert.equal((await handle('POST', '/api/book', { leadId: booked, start: await firstSlot() })).status, 200)
+  const before = (await emails()).length
+
+  const again = await handle('POST', '/api/book', { leadId: booked, start: await firstSlot() })
+  assert.equal(again.body.reason, 'already_booked')
+
+  const start = await firstSlot()
+  await mock({ take: start })
+  const taken = await handle('POST', '/api/book', { leadId: await newLead(), start })
+  assert.equal(taken.body.reason, 'slot_taken')
+
+  const { leadId } = (await quietly(() => handle('POST', '/api/lead', { ...GOOD, captchaToken: undefined }))).body
+  const refused = await handle('POST', '/api/book', { leadId, start: await firstSlot() })
+  assert.equal(refused.body.reason, 'unverified')
+
+  assert.equal((await emails()).length, before)
+})
