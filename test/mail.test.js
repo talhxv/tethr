@@ -188,3 +188,140 @@ test('send: a refusal carries the status and reason, never the token', async () 
   gmail = { status: 500, body: {} }
   await assert.rejects(send(MESSAGE), (err) => err.message === 'Gmail send failed (500): ' && err.reason === '')
 })
+
+// Two small "images": any bytes do, the second long enough to wrap
+const LOGO = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 1, 2, 3, 250, 251, 252, 253, 254, 255])
+const ART = Buffer.from(Array.from({ length: 400 }, (_, i) => (i * 37) % 256))
+const INLINE = [
+  { cid: 'logo@email.tethrhq.com', filename: 'logo.png', contentType: 'image/png', base64: LOGO.toString('base64') },
+  // Given already wrapped, as a file read from disk might be
+  { cid: 'art@email.tethrhq.com', filename: 'wordmark-art.png', contentType: 'image/png', base64: ART.toString('base64').match(/.{1,60}/g).join('\n') },
+]
+const boundaryOf = (contentType) => /boundary="([^"]+)"/.exec(contentType)[1]
+
+// -> [{ head: { name: value }, names, body }] for the parts between `boundary`
+function split(body, boundary) {
+  const pieces = body.split(`--${boundary}`)
+  assert.match(pieces.at(-1), /^--(\r\n)?$/)
+  return pieces.slice(1, -1).map((piece) => {
+    const trimmed = piece.replace(/^\r\n/, '').replace(/\r\n$/, '')
+    const at = trimmed.indexOf('\r\n\r\n')
+    const lines = trimmed.slice(0, at).split('\r\n').map((line) => [line.slice(0, line.indexOf(':')), line.slice(line.indexOf(':') + 1).trim()])
+    return { head: Object.fromEntries(lines), names: lines.map(([n]) => n), body: trimmed.slice(at + 4) }
+  })
+}
+const decode = (body) => Buffer.from(body.replace(/\r\n/g, ''), 'base64')
+
+test('buildMime: without inline images there is no multipart/related', () => {
+  for (const message of [MESSAGE, { ...MESSAGE, inline: [] }, { ...MESSAGE, inline: undefined }]) {
+    const mime = buildMime(message)
+    assert.equal(mime.includes('multipart/related'), false)
+    assert.equal(mime.includes('Content-ID'), false)
+    assert.deepEqual(parts(mime).map((p) => p.type), ['text/plain; charset=UTF-8', 'text/html; charset=UTF-8'])
+  }
+})
+
+test('buildMime: inline images go in a multipart/related with the html', () => {
+  const mime = buildMime({ ...MESSAGE, inline: INLINE })
+  assert.match(header(mime, 'Content-Type'), /^multipart\/alternative; boundary="[^"]+"$/)
+  const outer = boundaryOf(header(mime, 'Content-Type'))
+
+  const top = split(parse(mime).body, outer)
+  assert.equal(top.length, 2)
+  assert.equal(top[0].head['Content-Type'], 'text/plain; charset=UTF-8')
+  assert.equal(decode(top[0].body).toString(), MESSAGE.text)
+  assert.match(top[1].head['Content-Type'], /^multipart\/related; type="text\/html"; boundary="[^"]+"$/)
+  assert.deepEqual(top[1].names, ['Content-Type'])
+
+  const inner = boundaryOf(top[1].head['Content-Type'])
+  assert.notEqual(inner, outer)
+
+  const [html, ...images] = split(top[1].body, inner)
+  assert.equal(html.head['Content-Type'], 'text/html; charset=UTF-8')
+  assert.equal(decode(html.body).toString(), MESSAGE.html)
+
+  assert.equal(images.length, 2)
+  for (const [i, bytes] of [LOGO, ART].entries()) {
+    const { cid, filename } = INLINE[i]
+    assert.deepEqual(images[i].names, ['Content-Type', 'Content-Transfer-Encoding', 'Content-ID', 'Content-Disposition'])
+    assert.equal(images[i].head['Content-Type'], `image/png; name="${filename}"`)
+    assert.equal(images[i].head['Content-Transfer-Encoding'], 'base64')
+    assert.equal(images[i].head['Content-ID'], `<${cid}>`)
+    assert.equal(images[i].head['Content-Disposition'], `inline; filename="${filename}"`)
+    assert.deepEqual(decode(images[i].body), bytes)
+  }
+  assert.ok(images[1].body.split('\r\n').length > 1)
+
+  for (const line of parse(mime).body.split('\r\n')) {
+    if (/^[A-Za-z0-9+/=]+$/.test(line)) assert.ok(line.length <= 76, `${line.length} characters`)
+  }
+  assert.equal(mime.replace(/\r\n/g, '').includes('\n'), false)
+})
+
+test('buildMime: an inline image that could break its headers throws', () => {
+  const [logo] = INLINE
+  for (const field of ['cid', 'filename', 'contentType']) {
+    for (const bad of ['a\r\nBcc: x@y.z', 'a\nb', 'a\rb', 'a"b', 'a<b', 'a>b']) {
+      assert.throws(() => buildMime({ ...MESSAGE, inline: [{ ...logo, [field]: bad }] }), /must not contain/, `${field}: ${JSON.stringify(bad)}`)
+    }
+  }
+  for (const base64 of ['', ' \r\n ', undefined]) {
+    assert.throws(() => buildMime({ ...MESSAGE, inline: [{ ...logo, base64 }] }), /no data/)
+  }
+  assert.throws(() => buildMime({ ...MESSAGE, inline: [{ ...logo, base64: 'not base64!' }] }), /not base64/)
+})
+
+test('send: inline images are passed through to the message', async () => {
+  sent.length = 0
+  gmail = { status: 200, body: { id: 'msg-2' } }
+  assert.deepEqual(await send({ ...MESSAGE, inline: INLINE }), { id: 'msg-2' })
+
+  const mime = Buffer.from(JSON.parse(sent[0].init.body).raw, 'base64url').toString()
+  assert.ok(mime.includes('multipart/related; type="text/html"'))
+  assert.ok(mime.includes('Content-ID: <logo@email.tethrhq.com>'))
+  assert.ok(mime.includes('Content-ID: <art@email.tethrhq.com>'))
+})
+
+// The template, the generated images and the MIME builder together, joined
+// the way lib/booking/handlers.js joins them
+const { readFileSync } = await import('node:fs')
+const { bookingConfirmationEmail } = await import('../lib/booking/email.js')
+const { EMAIL_IMAGES } = await import('../lib/booking/email-images.js')
+
+test('the real confirmation email builds into one message with its eight images', (t) => {
+  const start = '2026-10-22T14:30:00.000Z'
+  const { subject, html, text, inline } = bookingConfirmationEmail({
+    lead: { name: 'Sarah Chen', headcount: '2-5' },
+    start,
+    end: new Date(Date.parse(start) + 30 * 60_000).toISOString(),
+    zone: 'America/New_York',
+    hour12: true,
+    meetLink: 'https://meet.google.com/qkz-wvhd-ntp',
+    replyTo: 'hr@tethrhq.com',
+    inlineImages: true,
+  })
+  const mime = buildMime({
+    from: MESSAGE.from, to: MESSAGE.to, subject, html, text,
+    inline: inline.map(({ cid, file }) => ({ cid, filename: file, contentType: 'image/png', base64: EMAIL_IMAGES[file] })),
+  })
+  assert.equal(mime.match(/^Content-ID:/gm).length, 8)
+
+  const [, related] = split(parse(mime).body, boundaryOf(header(mime, 'Content-Type')))
+  const [htmlPart, ...images] = split(related.body, boundaryOf(related.head['Content-Type']))
+  assert.equal(decode(htmlPart.body).toString(), html)
+  assert.equal(images.length, 8)
+
+  for (const [i, { cid, file }] of inline.entries()) {
+    assert.equal(images[i].head['Content-ID'], `<${cid}>`)
+    assert.deepEqual(decode(images[i].body), readFileSync(new URL(`../public/email/${file}`, import.meta.url)), file)
+  }
+
+  const referenced = [...html.matchAll(/src="cid:([^"]+)"/g)].map((m) => m[1])
+  assert.ok(referenced.length > 0)
+  const attached = new Set(images.map((p) => p.head['Content-ID']))
+  for (const cid of referenced) assert.ok(attached.has(`<${cid}>`), `no part for cid:${cid}`)
+
+  const bytes = Buffer.byteLength(mime)
+  t.diagnostic(`message size: ${bytes} bytes`)
+  assert.ok(bytes < 150_000, `${bytes} bytes`)
+})

@@ -362,3 +362,20 @@ test('POST /api/book: no confirmation email for a booking that was refused', asy
 
   assert.equal((await emails()).length, before)
 })
+
+test('POST /api/book: the confirmation email carries its eight images inside the message', async () => {
+  const leadId = await newLead()
+  assert.equal((await handle('POST', '/api/book', { leadId, start: await firstSlot() })).status, 200)
+  const { inline } = (await emails()).at(-1)
+  assert.equal(inline.length, 8)
+  assert.equal(new Set(inline).size, 8)
+  for (const cid of inline) assert.ok(cid.endsWith('@email.tethrhq.com'), cid)
+})
+
+test('POST /api/lead: a personal email address is a 400 and nothing is stored', async () => {
+  const before = (await mock({})).body.leads.length
+  const res = await handle('POST', '/api/lead', { ...GOOD, email: 'someone@gmail.com' })
+  assert.equal(res.status, 400)
+  assert.equal(res.body.fields.email, 'Use your work email address.')
+  assert.equal((await mock({})).body.leads.length, before)
+})

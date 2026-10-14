@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { bookingConfirmationEmail } from '../lib/booking/email.js'
+import { readFileSync } from 'node:fs'
+import { bookingConfirmationEmail, INLINE_IMAGE_FILES } from '../lib/booking/email.js'
+import { EMAIL_IMAGES } from '../lib/booking/email-images.js'
 
 const MEET = 'https://meet.google.com/qkz-wvhd-ntp'
 
@@ -137,10 +139,47 @@ test('every image has its size and an absolute address', () => {
       assert.ok(tag.includes('display:block;border:0'), tag)
     }
   }
+  assert.deepEqual(email().inline, [])
   const staging = email({ siteUrl: 'https://staging.tethrhq.com/' }).html
   assert.ok(staging.includes('src="https://staging.tethrhq.com/email/logo.png"'))
   assert.ok(staging.includes('url(https://staging.tethrhq.com/email/chain-corner.png)'))
   assert.ok(staging.includes('href="https://staging.tethrhq.com/book"'))
+})
+
+test('with inline images every <img> points at an embedded image', () => {
+  const siteUrl = 'https://staging.tethrhq.com'
+  for (const meetLink of [MEET, '']) {
+    const { html, inline } = email({ inlineImages: true, siteUrl, meetLink })
+    assert.equal(inline.length, 8)
+    assert.deepEqual(inline.map(i => i.file), INLINE_IMAGE_FILES) // document order, no duplicates
+    assert.deepEqual(inline[0], { cid: 'logo@email.tethrhq.com', file: 'logo.png' })
+    for (const { cid, file } of inline) assert.equal(cid, `${file.slice(0, -4)}@email.tethrhq.com`)
+    const imgs = html.match(/<img\b[^>]*>/g)
+    assert.equal(imgs.length, 8)
+    for (const tag of imgs) {
+      const src = tag.match(/\ssrc="([^"]*)"/)[1]
+      assert.ok(src.startsWith('cid:'), src)
+      assert.ok(!src.includes('http'), src)
+      assert.ok(inline.some(i => src === `cid:${i.cid}`), src)
+      assert.match(tag, /\swidth="\d+"/, tag)
+      assert.match(tag, /\sheight="\d+"/, tag)
+    }
+    // Backgrounds cannot be embedded, so they stay on the site
+    assert.ok(html.includes(`${siteUrl}/email/chain-corner.png`))
+    assert.ok(html.includes(`${siteUrl}/email/tether.png`))
+  }
+  // Nothing else moves: the two renders differ only in the eight src values
+  const cidToUrl = (html) => html.replace(/cid:([a-z-]+)@email\.tethrhq\.com/g, 'https://tethrhq.com/email/$1.png')
+  assert.equal(cidToUrl(email({ inlineImages: true }).html), email().html)
+})
+
+test('the generated image module matches the PNGs on disk', () => {
+  assert.deepEqual(Object.keys(EMAIL_IMAGES), INLINE_IMAGE_FILES)
+  for (const file of INLINE_IMAGE_FILES) {
+    const bytes = Buffer.from(EMAIL_IMAGES[file], 'base64')
+    assert.deepEqual([...bytes.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47], file)
+    assert.ok(bytes.equals(readFileSync(new URL(`../public/email/${file}`, import.meta.url))), `${file} is stale: run node scripts/build-email-images.mjs`)
+  }
 })
 
 test('apostrophes are straight everywhere, as on the site', () => {
