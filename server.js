@@ -47,9 +47,10 @@ app.post('/api/notion', async (req, res) => {
   }
 })
 
-// ---- /api/lead, /api/availability, /api/book ------------------------------
-// The Book a Call flow. All of it lives in lib/booking; api/*.js (Vercel) and
-// the Vite dev middleware call the same handlers.
+// ---- /api/lead, /api/availability, /api/book, /api/reminders --------------
+// The Book a Call flow and its reminder sweep. All of it lives in
+// lib/booking; api/*.js (Vercel) and the Vite dev middleware call the same
+// handlers.
 for (const route of BOOKING_PATHS) {
   app.all(route, (req, res) => respondBooking(req, res, route))
 }

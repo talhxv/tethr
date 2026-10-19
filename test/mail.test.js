@@ -12,7 +12,7 @@ const { buildMime, send } = await import('../lib/booking/mail.js')
 // next send is answered with; `sent` collects what was asked.
 const realFetch = globalThis.fetch
 const sent = []
-let gmail = { status: 200, body: { id: 'msg-1' } }
+let gmail = { status: 200, body: { id: 'msg-1', threadId: 'thread-1' } }
 globalThis.fetch = async (url, init) => {
   if (String(url) === 'https://oauth2.googleapis.com/token') {
     return new Response(JSON.stringify({ access_token: 'test-token', expires_in: 3600 }), { status: 200 })
@@ -147,11 +147,11 @@ test('buildMime: the boundary is new for every message', () => {
   assert.notEqual(boundary(buildMime(MESSAGE)), boundary(buildMime(MESSAGE)))
 })
 
-test('send: posts the message to Gmail as base64url and returns its id', async () => {
+test('send: posts the message to Gmail as base64url and returns its id and thread', async () => {
   sent.length = 0
-  gmail = { status: 200, body: { id: 'msg-1' } }
+  gmail = { status: 200, body: { id: 'msg-1', threadId: 'thread-1' } }
   const subject = "You're booked, Zoë. Thursday"
-  assert.deepEqual(await send({ ...MESSAGE, subject }), { id: 'msg-1' })
+  assert.deepEqual(await send({ ...MESSAGE, subject }), { id: 'msg-1', threadId: 'thread-1' })
 
   assert.equal(sent.length, 1)
   const [{ url, init }] = sent
@@ -273,8 +273,8 @@ test('buildMime: an inline image that could break its headers throws', () => {
 
 test('send: inline images are passed through to the message', async () => {
   sent.length = 0
-  gmail = { status: 200, body: { id: 'msg-2' } }
-  assert.deepEqual(await send({ ...MESSAGE, inline: INLINE }), { id: 'msg-2' })
+  gmail = { status: 200, body: { id: 'msg-2', threadId: 'thread-2' } }
+  assert.deepEqual(await send({ ...MESSAGE, inline: INLINE }), { id: 'msg-2', threadId: 'thread-2' })
 
   const mime = Buffer.from(JSON.parse(sent[0].init.body).raw, 'base64url').toString()
   assert.ok(mime.includes('multipart/related; type="text/html"'))
@@ -324,4 +324,214 @@ test('the real confirmation email builds into one message with its eight images'
   const bytes = Buffer.byteLength(mime)
   t.diagnostic(`message size: ${bytes} bytes`)
   assert.ok(bytes < 150_000, `${bytes} bytes`)
+})
+
+// ── The calendar invite ──
+const { buildInvite } = await import('../lib/booking/ics.js')
+const INVITE = buildInvite({
+  uid: 'abc123@google.com', start: '2026-10-21T10:00:00Z', end: '2026-10-21T10:30:00Z', now: '2026-10-20T00:00:00Z',
+  summary: 'Intro call: Acme and Tethr', description: 'Hi Jane — see you then, café at 3.', meetUrl: 'https://meet.google.com/abc-defg-hij',
+  organizer: { email: 'hr@tethrhq.com', name: 'Tethr' },
+  attendees: [{ email: 'hr@tethrhq.com', name: 'Tethr', partstat: 'ACCEPTED' }, { email: 'jane@acme-example.com', name: 'Jane Doe', partstat: 'NEEDS-ACTION' }],
+})
+
+/* The message as a tree, every multipart split on its own boundary:
+   -> { type, head: { name: value }, names, children } for a multipart,
+      { type, head, names, body } for a leaf */
+function tree(headText, bodyText) {
+  const lines = headText.replace(/\r\n[ \t]/g, ' ').split('\r\n')
+  const pairs = lines.map((line) => [line.slice(0, line.indexOf(':')), line.slice(line.indexOf(':') + 1).trim()])
+  const head = Object.fromEntries(pairs)
+  const type = head['Content-Type'].split(';')[0].trim()
+  if (!type.startsWith('multipart/')) return { type, head, names: pairs.map(([n]) => n), body: bodyText }
+  const boundary = boundaryOf(head['Content-Type'])
+  const pieces = bodyText.split(`--${boundary}`)
+  assert.match(pieces.at(-1), /^--(\r\n)?$/, `${type} is closed`)
+  const children = pieces.slice(1, -1).map((piece) => {
+    const trimmed = piece.replace(/^\r\n/, '').replace(/\r\n$/, '')
+    const at = trimmed.indexOf('\r\n\r\n')
+    return tree(trimmed.slice(0, at), trimmed.slice(at + 4))
+  })
+  return { type, head, names: pairs.map(([n]) => n), children }
+}
+const messageTree = (mime) => {
+  const at = mime.indexOf('\r\n\r\n')
+  const top = mime.slice(0, at).replace(/\r\n[ \t]/g, ' ').split('\r\n').filter((l) => l.startsWith('Content-Type:')).join('\r\n')
+  return tree(top, mime.slice(at + 4))
+}
+// -> 'multipart/mixed(multipart/alternative(text/plain,…),application/ics)'
+const shape = (node) => node.children ? `${node.type}(${node.children.map(shape).join(',')})` : node.type
+
+test('buildMime: with an invite the message is the tree Google Calendar\'s own invites use', () => {
+  const mime = buildMime({ ...MESSAGE, inline: INLINE, invite: INVITE })
+  assert.deepEqual(parse(mime).headers.map(([n]) => n), ['From', 'To', 'Reply-To', 'Subject', 'MIME-Version', 'Content-Type'])
+  const root = messageTree(mime)
+  assert.equal(shape(root), 'multipart/mixed(multipart/alternative(text/plain,multipart/related(text/html,image/png,image/png),text/calendar),application/ics)')
+
+  const [alternative, attachment] = root.children
+  const [plain, related, calendar] = alternative.children
+  assert.equal(decode(plain.body).toString(), MESSAGE.text)
+  assert.equal(decode(related.children[0].body).toString(), MESSAGE.html)
+  assert.deepEqual(related.children.slice(1).map((p) => p.head['Content-ID']), ['<logo@email.tethrhq.com>', '<art@email.tethrhq.com>'])
+  assert.deepEqual(decode(related.children[2].body), ART)
+
+  assert.equal(calendar.head['Content-Type'], 'text/calendar; charset="UTF-8"; method=REQUEST')
+  assert.equal(calendar.head['Content-Transfer-Encoding'], 'base64')
+  assert.equal(decode(calendar.body).toString(), INVITE)
+
+  assert.equal(attachment.head['Content-Type'], 'application/ics; name="invite.ics"')
+  assert.equal(attachment.head['Content-Disposition'], 'attachment; filename="invite.ics"')
+  assert.equal(attachment.head['Content-Transfer-Encoding'], 'base64')
+  assert.equal(decode(attachment.body).toString(), INVITE)
+
+  // Three boundaries, none the same
+  assert.equal(new Set([root, alternative, related].map((n) => boundaryOf(n.head['Content-Type']))).size, 3)
+  for (const line of parse(mime).body.split('\r\n')) {
+    if (/^[A-Za-z0-9+/=]+$/.test(line)) assert.ok(line.length <= 76, `${line.length} characters`)
+  }
+  assert.equal(mime.replace(/\r\n/g, '').includes('\n'), false)
+})
+
+test('buildMime: an invite without inline images keeps the plain html part', () => {
+  const root = messageTree(buildMime({ ...MESSAGE, invite: INVITE }))
+  assert.equal(shape(root), 'multipart/mixed(multipart/alternative(text/plain,text/html,text/calendar),application/ics)')
+})
+
+test('buildMime: no invite, no calendar parts: the message is as it was', () => {
+  const mime = buildMime({ ...MESSAGE, inline: INLINE })
+  assert.equal(shape(messageTree(mime)), 'multipart/alternative(text/plain,multipart/related(text/html,image/png,image/png))')
+  assert.equal(mime.includes('text/calendar'), false)
+  assert.equal(mime.includes('invite.ics'), false)
+})
+
+test('send: the invite is passed through to the message', async () => {
+  // Registered after a top-level await, so this can run after the after() above has put the environment back
+  const saved = { ...process.env }
+  const stub = globalThis.fetch
+  Object.assign(process.env, ENV)
+  globalThis.fetch = async (url, init) => {
+    if (String(url) === 'https://oauth2.googleapis.com/token') return new Response(JSON.stringify({ access_token: 'test-token', expires_in: 3600 }), { status: 200 })
+    if (String(url).startsWith('https://gmail.googleapis.com/')) {
+      sent.push({ url: String(url), init })
+      return new Response(JSON.stringify({ id: 'msg-3', threadId: 'thread-3' }), { status: 200 })
+    }
+    throw new Error(`Unexpected request to ${url}`)
+  }
+  sent.length = 0
+  try {
+    assert.deepEqual(await send({ ...MESSAGE, inline: INLINE, invite: INVITE }), { id: 'msg-3', threadId: 'thread-3' })
+  } finally {
+    globalThis.fetch = stub
+    for (const k of Object.keys(ENV)) {
+      if (saved[k] === undefined) delete process.env[k]
+      else process.env[k] = saved[k]
+    }
+  }
+  const mime = Buffer.from(JSON.parse(sent[0].init.body).raw, 'base64url').toString()
+  const calendar = messageTree(mime).children[0].children[2]
+  assert.equal(decode(calendar.body).toString(), INVITE)
+})
+
+test('the real confirmation email with its invite: eight images, the html, and the calendar parts', () => {
+  const start = '2026-10-22T14:30:00.000Z'
+  const { subject, html, text, inline } = bookingConfirmationEmail({
+    lead: { name: 'Sarah Chen', headcount: '2-5' }, start, end: new Date(Date.parse(start) + 30 * 60_000).toISOString(),
+    zone: 'America/New_York', hour12: true, meetLink: 'https://meet.google.com/qkz-wvhd-ntp', replyTo: 'hr@tethrhq.com', inlineImages: true,
+  })
+  const mime = buildMime({
+    from: MESSAGE.from, to: MESSAGE.to, subject, html, text, invite: INVITE,
+    inline: inline.map(({ cid, file }) => ({ cid, filename: file, contentType: 'image/png', base64: EMAIL_IMAGES[file] })),
+  })
+  const root = messageTree(mime)
+  assert.equal(shape(root), `multipart/mixed(multipart/alternative(text/plain,multipart/related(text/html${',image/png'.repeat(8)}),text/calendar),application/ics)`)
+  const [htmlPart, ...images] = root.children[0].children[1].children
+  assert.equal(decode(htmlPart.body).toString(), html)
+  assert.deepEqual(images.map((p) => p.head['Content-ID']), inline.map(({ cid }) => `<${cid}>`))
+  assert.equal(decode(root.children[0].children[2].body).toString(), INVITE)
+  assert.equal(decode(root.children[1].body).toString(), INVITE)
+})
+
+// ── Threading: the confirmation's own Message-ID, the reminder's reply ──
+const { newMessageId } = await import('../lib/booking/mail.js')
+const { bookingReminderEmail } = await import('../lib/booking/email.js')
+
+test('newMessageId: <kind.eventId.base36 time@domain of From>', () => {
+  const now = Date.parse('2026-10-20T08:00:00Z')
+  assert.equal(newMessageId('confirm', 'abcd1234', 'Tethr <hr@tethrhq.com>', now), `<confirm.abcd1234.${now.toString(36)}@tethrhq.com>`)
+  assert.equal(newMessageId('confirm', 'abcd1234', 'hr@example.org', now), `<confirm.abcd1234.${now.toString(36)}@example.org>`)
+  // No address to take a domain from
+  assert.equal(newMessageId('confirm', 'abcd1234', '', now), `<confirm.abcd1234.${now.toString(36)}@tethrhq.com>`)
+  // Nothing in the event id can break out of the brackets
+  assert.match(newMessageId('confirm', 'ab<cd>@x y', 'hr@tethrhq.com', now), /^<confirm\.abcdxy\.[0-9a-z]+@tethrhq\.com>$/)
+})
+
+test('buildMime: Message-ID, In-Reply-To and References after the subject, only when given', () => {
+  const id = '<confirm.abcd1234.mgz1@tethrhq.com>'
+  const mime = buildMime({ ...MESSAGE, messageId: '<reminder.1@tethrhq.com>', inReplyTo: id, references: id })
+  assert.deepEqual(parse(mime).headers.map(([n]) => n), ['From', 'To', 'Reply-To', 'Subject', 'Message-ID', 'In-Reply-To', 'References', 'MIME-Version', 'Content-Type'])
+  assert.equal(header(mime, 'Message-ID'), '<reminder.1@tethrhq.com>')
+  assert.equal(header(mime, 'In-Reply-To'), id)
+  assert.equal(header(mime, 'References'), id)
+  assert.deepEqual(parse(buildMime({ ...MESSAGE, messageId: id })).headers.map(([n]) => n), ['From', 'To', 'Reply-To', 'Subject', 'Message-ID', 'MIME-Version', 'Content-Type'])
+})
+
+test('buildMime: a message id that is not one throws, so it cannot add a header', () => {
+  for (const bad of ['no-brackets@x.com', '<a@b.com>\r\nBcc: x@y.com', '<two words@x.com>', '<nodomain>']) {
+    assert.throws(() => buildMime({ ...MESSAGE, messageId: bad }), /Message-ID/, JSON.stringify(bad))
+    assert.throws(() => buildMime({ ...MESSAGE, inReplyTo: bad }), /In-Reply-To/, JSON.stringify(bad))
+  }
+  assert.throws(() => buildMime({ ...MESSAGE, references: '<a@b.com> <c@d.com>\r\nBcc: x@y.com' }), /References/)
+  assert.equal(header(buildMime({ ...MESSAGE, references: '<a@b.com> <c@d.com>' }), 'References'), '<a@b.com> <c@d.com>')
+})
+
+test('send: a threadId goes in Gmail\'s request beside the raw message; none, no field', async () => {
+  // Registered after a top-level await, so it sets up its own stand-in (see the invite test above)
+  const saved = { ...process.env }
+  const stub = globalThis.fetch
+  Object.assign(process.env, ENV)
+  const bodies = []
+  globalThis.fetch = async (url, init) => {
+    if (String(url) === 'https://oauth2.googleapis.com/token') return new Response(JSON.stringify({ access_token: 'test-token', expires_in: 3600 }), { status: 200 })
+    if (String(url).startsWith('https://gmail.googleapis.com/')) {
+      const body = JSON.parse(init.body)
+      bodies.push(body)
+      return new Response(JSON.stringify({ id: 'msg-4', threadId: body.threadId ?? 'thread-new' }), { status: 200 })
+    }
+    throw new Error(`Unexpected request to ${url}`)
+  }
+  try {
+    assert.deepEqual(await send({ ...MESSAGE, threadId: 'thread-9', inReplyTo: '<c.1@tethrhq.com>', references: '<c.1@tethrhq.com>' }), { id: 'msg-4', threadId: 'thread-9' })
+    assert.deepEqual(await send(MESSAGE), { id: 'msg-4', threadId: 'thread-new' })
+  } finally {
+    globalThis.fetch = stub
+    for (const k of Object.keys(ENV)) {
+      if (saved[k] === undefined) delete process.env[k]
+      else process.env[k] = saved[k]
+    }
+  }
+  assert.deepEqual(Object.keys(bodies[0]).sort(), ['raw', 'threadId'])
+  assert.equal(bodies[0].threadId, 'thread-9')
+  assert.equal(header(Buffer.from(bodies[0].raw, 'base64url').toString(), 'In-Reply-To'), '<c.1@tethrhq.com>')
+  assert.deepEqual(Object.keys(bodies[1]), ['raw'])
+})
+
+test('the real reminder builds into a reply with no calendar parts and only the images it shows', () => {
+  const start = '2026-10-20T10:00:00.000Z'
+  const { html, text, inline } = bookingReminderEmail({
+    name: 'Jane Doe', start, end: '2026-10-20T10:30:00.000Z', zone: 'Asia/Karachi', hour12: true,
+    meetLink: 'https://meet.google.com/abc-defg-hij', now: '2026-10-20T08:00:00.000Z', inlineImages: true,
+  })
+  const id = '<confirm.abcd1234.mgz1@tethrhq.com>'
+  const mime = buildMime({
+    from: MESSAGE.from, to: 'jane@acme-example.com', replyTo: 'hr@tethrhq.com', subject: "Re: You're booked, Jane. Tuesday, October 20 at 3:00 PM",
+    html, text, inReplyTo: id, references: id,
+    inline: inline.map(({ cid, file }) => ({ cid, filename: file, contentType: 'image/png', base64: EMAIL_IMAGES[file] })),
+  })
+  assert.equal(shape(messageTree(mime)), `multipart/alternative(text/plain,multipart/related(text/html${',image/png'.repeat(7)}))`)
+  assert.equal(mime.includes('text/calendar'), false)
+  assert.equal(mime.includes('invite.ics'), false)
+  assert.equal(mime.includes('application/ics'), false)
+  assert.equal(inline.some(({ file }) => file === 'booked.png'), false)
+  assert.equal(subjectOf(mime), "Re: You're booked, Jane. Tuesday, October 20 at 3:00 PM")
+  assert.equal(header(mime, 'In-Reply-To'), id)
 })

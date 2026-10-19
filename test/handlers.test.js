@@ -379,3 +379,156 @@ test('POST /api/lead: a personal email address is a 400 and nothing is stored', 
   assert.equal(res.body.fields.email, 'Use your work email address.')
   assert.equal((await mock({})).body.leads.length, before)
 })
+
+// ── One email: Google quiet, the invite in the confirmation ──
+const callsFor = async (leadId) => (await mock({})).body.calendarCalls.filter((c) => c.eventId === leadId.replace(/-/g, ''))
+
+test('POST /api/book with mail configured: the event is created with sendUpdates none and Google is not asked to send anything', async () => {
+  const leadId = await newLead()
+  assert.equal((await handle('POST', '/api/book', { leadId, start: await firstSlot() })).status, 200)
+  const calls = await callsFor(leadId)
+  // The one patch after the insert only records the confirmation on the event
+  assert.deepEqual(calls.map((c) => [c.op, c.sendUpdates]), [['insert', 'none'], ['patch', 'none']])
+  assert.deepEqual(calls[0].attendees, [{ email: 'ada@techcorp.com', displayName: 'Ada Lovelace' }])
+  assert.equal(calls[1].attendees, undefined)
+})
+
+test('POST /api/book: the confirmation carries the invite for the created event', async () => {
+  const leadId = await newLead()
+  const start = await firstSlot()
+  assert.equal((await handle('POST', '/api/book', { leadId, start })).status, 200)
+  const { invite, to } = (await emails()).at(-1)
+  assert.equal(to, 'ada@techcorp.com')
+  const lines = invite.replace(/\r\n /g, '').split('\r\n')
+  assert.ok(lines.includes('METHOD:REQUEST'))
+  assert.ok(lines.includes(`UID:${leadId.replace(/-/g, '')}@google.com`))
+  assert.ok(lines.includes(`DTSTART:${start.replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`))
+  assert.ok(lines.includes('SUMMARY:Intro call: TechCorp LLC and Tethr'))
+  assert.ok(lines.some((l) => /^ATTENDEE;CN="Ada Lovelace";.*PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:ada@techcorp\.com$/.test(l)))
+  assert.ok(lines.some((l) => /^ATTENDEE;.*PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:calendar@example\.com$/.test(l)))
+})
+
+test('POST /api/book: a confirmation that fails has Google send its invite: two patches, none then all; still booked', async (t) => {
+  const error = t.mock.method(console, 'error', () => {})
+  const leadId = await newLead()
+  await mock({ mail: 'down' })
+  let res
+  try {
+    res = await handle('POST', '/api/book', { leadId, start: await firstSlot() })
+  } finally {
+    await mock({ mail: 'up' })
+  }
+  assert.equal(res.status, 200)
+  assert.equal((await mock({})).body.leads.find((l) => l.id === leadId).booked, true)
+  const calls = await callsFor(leadId)
+  assert.deepEqual(calls.map((c) => [c.op, c.sendUpdates]), [['insert', 'none'], ['patch', 'none'], ['patch', 'all']])
+  assert.deepEqual(calls[1].attendees, [])
+  assert.deepEqual(calls[2].attendees, calls[0].attendees)
+  assert.match(error.mock.calls[0].arguments[0], /confirmation email not sent/)
+})
+
+test('POST /api/book: if Google cannot be made to send its invite either, that is logged and the booking stands', async (t) => {
+  const error = t.mock.method(console, 'error', () => {})
+  const leadId = await newLead()
+  await mock({ mail: 'down', patch: 'down' })
+  let res
+  try {
+    res = await handle('POST', '/api/book', { leadId, start: await firstSlot() })
+  } finally {
+    await mock({ mail: 'up', patch: 'up' })
+  }
+  assert.equal(res.status, 200)
+  assert.ok(res.body.meetLink)
+  const logged = error.mock.calls.map((c) => c.arguments[0])
+  assert.ok(logged.some((m) => /created but the client got no email/.test(m)), logged.join('\n'))
+})
+
+test('POST /api/book with no mail configured: Google sends its invite at insert, no patches, no email', async () => {
+  const leadId = await newLead()
+  const before = (await emails()).length
+  await mock({ mail: 'off' })
+  let res
+  try {
+    res = await handle('POST', '/api/book', { leadId, start: await firstSlot() })
+  } finally {
+    await mock({ mail: 'on' })
+  }
+  assert.equal(res.status, 200)
+  assert.deepEqual((await callsFor(leadId)).map((c) => [c.op, c.sendUpdates]), [['insert', 'all']])
+  assert.equal((await emails()).length, before)
+})
+
+// ── What the reminder needs, kept on the event ──
+
+test('POST /api/book: the insert carries the reminder\'s private properties, with the zone and clock of the request', async () => {
+  const leadId = await newLead()
+  const start = await firstSlot()
+  assert.equal((await handle('POST', '/api/book', { leadId, start, zone: 'America/New_York', hour12: false })).status, 200)
+  const [insert] = await callsFor(leadId)
+  assert.equal(insert.op, 'insert')
+  assert.deepEqual(insert.private, { tethrBooking: '1', zone: 'America/New_York', clock: '24h', bookedStart: start })
+
+  // Without them, the confirmation's own defaults: the host zone, a 12-hour clock
+  const other = await newLead()
+  const next = await firstSlot()
+  assert.equal((await handle('POST', '/api/book', { leadId: other, start: next })).status, 200)
+  assert.deepEqual((await callsFor(other))[0].private, { tethrBooking: '1', zone: 'Asia/Karachi', clock: '12h', bookedStart: next })
+})
+
+test('POST /api/book: the confirmation sets its own Message-ID', async () => {
+  const leadId = await newLead()
+  assert.equal((await handle('POST', '/api/book', { leadId, start: await firstSlot() })).status, 200)
+  const { messageId } = (await emails()).at(-1)
+  // No BOOKING_CALENDAR_ID here, so no From address to take a domain from
+  assert.match(messageId, new RegExp(`^<confirm\\.${leadId.replace(/-/g, '')}\\.[0-9a-z]+@tethrhq\\.com>$`))
+})
+
+test('POST /api/book: once the confirmation is sent, its id, thread and subject are patched onto the event, guests not told', async () => {
+  const leadId = await newLead()
+  const start = await firstSlot()
+  assert.equal((await handle('POST', '/api/book', { leadId, start })).status, 200)
+  const email = (await emails()).at(-1)
+  const [insert, patch] = await callsFor(leadId)
+  assert.equal(patch.op, 'patch')
+  assert.equal(patch.sendUpdates, 'none')
+  assert.deepEqual(patch.private, {
+    ...insert.private,
+    confirmMessageId: email.messageId,
+    confirmThreadId: `mock-thread-${(await emails()).length}`,
+    confirmSubject: email.subject,
+  })
+  const event = (await mock({})).body.events.find((e) => e.eventId === leadId.replace(/-/g, ''))
+  assert.deepEqual(event.private, patch.private)
+})
+
+test('POST /api/book: if recording the confirmation fails, that is logged and the booking is still a 200', async (t) => {
+  const error = t.mock.method(console, 'error', () => {})
+  const leadId = await newLead()
+  await mock({ properties: 'down' })
+  let res
+  try {
+    res = await handle('POST', '/api/book', { leadId, start: await firstSlot() })
+  } finally {
+    await mock({ properties: 'up' })
+  }
+  assert.equal(res.status, 200)
+  assert.ok(res.body.meetLink)
+  assert.equal((await mock({})).body.leads.find((l) => l.id === leadId).booked, true)
+  // Nothing else happens: Google is not asked to send its invite
+  assert.deepEqual((await callsFor(leadId)).map((c) => c.op), ['insert'])
+  const logged = error.mock.calls.map((c) => c.arguments[0])
+  assert.ok(logged.some((m) => /confirmation was not recorded/.test(m)), logged.join('\n'))
+})
+
+test('POST /api/book: no confirmation sent, nothing recorded about it', async (t) => {
+  t.mock.method(console, 'error', () => {})
+  const leadId = await newLead()
+  await mock({ mail: 'down' })
+  try {
+    assert.equal((await handle('POST', '/api/book', { leadId, start: await firstSlot() })).status, 200)
+  } finally {
+    await mock({ mail: 'up' })
+  }
+  const event = (await mock({})).body.events.find((e) => e.eventId === leadId.replace(/-/g, ''))
+  assert.equal(event.private.confirmMessageId, undefined)
+})

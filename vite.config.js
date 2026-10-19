@@ -25,16 +25,18 @@ const positionsCleanUrls = () => (req, res, next) => {
   next()
 }
 
-/* The booking API (/api/lead, /api/availability, /api/book) for dev and
-   preview. Same handlers as api/*.js on Vercel and server.js in Docker. */
+/* The booking API (/api/lead, /api/availability, /api/book, /api/reminders)
+   for dev and preview. Same handlers as api/*.js on Vercel and server.js in
+   Docker. */
 const bookingApi = () => (req, res, next) => {
-  const path = req.url.split('?')[0]
+  const [path, search = ''] = req.url.split('?')
   if (!BOOKING_PATHS.includes(path)) return next()
+  const query = Object.fromEntries(new URLSearchParams(search))
 
   const chunks = []
   req.on('data', (c) => chunks.push(c))
   req.on('end', async () => {
-    const { status, body } = await handleBooking(req.method, path, Buffer.concat(chunks).toString('utf8') || null)
+    const { status, body } = await handleBooking(req.method, path, Buffer.concat(chunks).toString('utf8') || null, { headers: req.headers, query })
     res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
     res.end(JSON.stringify(body))
   })
@@ -46,7 +48,7 @@ export default defineConfig(({ mode, command }) => {
   // The booking handlers read process.env, as they do in production; give
   // them what's in .env without overriding the real environment
   for (const [key, value] of Object.entries(env)) {
-    if (/^(NOTION_|GOOGLE_|BOOKING_|TURNSTILE_|VITE_NOTION_TOKEN$)/.test(key) && process.env[key] === undefined) process.env[key] = value
+    if (/^(NOTION_|GOOGLE_|BOOKING_|TURNSTILE_|VITE_NOTION_TOKEN$|CRON_SECRET$)/.test(key) && process.env[key] === undefined) process.env[key] = value
   }
 
   return {
