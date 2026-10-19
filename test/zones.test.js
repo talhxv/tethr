@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   zoneParts, offsetMinutes, standardOffsetMinutes, offsetLabel, friendlyZone, sameClock,
-  groupByZoneDay, groupByPartOfDay, partOfDay, railFor, listZones, RAIL_ZONES,
+  groupByZoneDay, zoneDayKey, wakingSlots, WAKING_HOURS, monthGrid, addMonths, railFor, listZones, RAIL_ZONES,
 } from '../lib/booking/zones.js'
 
 const at = (iso) => Date.parse(iso)
@@ -77,31 +77,115 @@ test('in Los Angeles the same window starts the evening before', () => {
   assert.equal(zoneParts('America/Los_Angeles', days[1].slots.at(-1)).hour, 10)
 })
 
-test('in New York the window runs midnight to 2 pm, and the early hours are folded', () => {
+const clock = (tz, slots) => slots.map(ms => { const p = zoneParts(tz, ms); return `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}` })
+
+test('in New York the window runs midnight to 2 pm, and only 07:00 on is offered', () => {
   const [day, ...rest] = groupByZoneDay(KARACHI_DAY, 'America/New_York')
   assert.equal(rest.length, 0)
   assert.equal(day.key, '2026-10-14')
-  const parts = groupByPartOfDay(day.slots, 'America/New_York')
-  assert.deepEqual(parts.map(p => [p.id, p.label, p.folded, p.slots.length]),
-    [['early', 'Early morning', true, 14], ['morning', 'Morning', false, 10], ['afternoon', 'Afternoon', false, 4]])
-  assert.equal(zoneParts('America/New_York', parts[1].slots[0]).hour, 7)
+  const kept = wakingSlots(KARACHI_DAY, 'America/New_York')
+  assert.equal(kept.length, 14)
+  assert.equal(clock('America/New_York', kept)[0], '07:00')
+  assert.equal(clock('America/New_York', kept).at(-1), '13:30')
+  assert.ok(!clock('America/New_York', kept).some(t => t < '07:00'))
 })
 
-test('parts of the day: Karachi sees mostly daytime, Los Angeles mostly early and late', () => {
-  assert.deepEqual(
-    groupByPartOfDay(KARACHI_DAY, 'Asia/Karachi').map(p => [p.id, p.slots.length]),
-    [['morning', 6], ['afternoon', 10], ['evening', 10], ['late', 2]])
-  assert.deepEqual(
-    groupByPartOfDay(KARACHI_DAY, 'Asia/Dubai').map(p => [p.id, p.slots.length]),
-    [['morning', 8], ['afternoon', 10], ['evening', 10]])
-  const la = groupByZoneDay(KARACHI_DAY, 'America/Los_Angeles')
-  assert.deepEqual(groupByPartOfDay(la[0].slots, 'America/Los_Angeles').map(p => [p.id, p.slots.length]), [['evening', 2], ['late', 4]])
-  assert.deepEqual(groupByPartOfDay(la[1].slots, 'America/Los_Angeles').map(p => [p.id, p.slots.length]), [['early', 14], ['morning', 8]])
+test('in Los Angeles the evening before and the morning are kept, the night is not', () => {
+  const kept = wakingSlots(KARACHI_DAY, 'America/Los_Angeles')
+  assert.deepEqual(groupByZoneDay(kept, 'America/Los_Angeles').map(d => [d.key, clock('America/Los_Angeles', d.slots)]), [
+    ['2026-10-13', ['21:00', '21:30']],
+    ['2026-10-14', ['07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30']],
+  ])
 })
 
-test('part-of-day boundaries', () => {
-  assert.deepEqual([6, 7, 11, 12, 16, 17, 21, 22, 23, 0].map(partOfDay),
-    ['early', 'morning', 'morning', 'afternoon', 'afternoon', 'evening', 'evening', 'late', 'late', 'early'])
+test('in Karachi the host day loses only its last hour', () => {
+  const kept = clock('Asia/Karachi', wakingSlots(KARACHI_DAY, 'Asia/Karachi'))
+  assert.equal(kept.length, 26)
+  assert.equal(kept[0], '09:00')
+  assert.equal(kept.at(-1), '21:30')
+  assert.ok(!kept.includes('22:00') && !kept.includes('22:30'))
+  assert.deepEqual(WAKING_HOURS, { from: 7, to: 22 })
+})
+
+test('when no slot falls in waking hours, all of them are kept', () => {
+  // 02:00 to 04:30 in New York
+  const night = Array.from({ length: 6 }, (_, i) => at('2026-10-14T06:00:00Z') + i * HALF_HOUR)
+  assert.deepEqual(wakingSlots(night, 'America/New_York'), night)
+  assert.deepEqual(wakingSlots([], 'America/New_York'), [])
+})
+
+test('a day key is the calendar day in the zone', () => {
+  assert.equal(zoneDayKey('America/Los_Angeles', at('2026-10-14T04:00:00Z')), '2026-10-13')
+  assert.equal(zoneDayKey('Asia/Karachi', at('2026-10-14T20:00:00Z')), '2026-10-15')
+})
+
+const keysOf = (grid) => grid.flat().map(c => c.key)
+
+test('a month is always six weeks of seven days', () => {
+  for (const month of ['2026-02', '2026-03', '2026-08', '2026-10', '2026-11', '2027-01']) {
+    for (const firstDay of [0, 1, 6]) {
+      const grid = monthGrid(month, [], '2026-10-15', firstDay)
+      assert.equal(grid.length, 6, month)
+      assert.ok(grid.every(w => w.length === 7), month)
+      assert.equal(grid[0][0].key <= `${month}-01`, true, month)
+      // Consecutive civil days, no gaps or repeats across the month and the DST changes
+      const keys = keysOf(grid)
+      for (let i = 1; i < keys.length; i++) assert.equal(Date.parse(keys[i]) - Date.parse(keys[i - 1]), 86_400_000, keys[i])
+    }
+  }
+})
+
+test('the grid starts on the week holding the 1st, for Sunday and Monday starts', () => {
+  // 1 October 2026 is a Thursday
+  const sunday = monthGrid('2026-10', [], '2026-10-15', 0)
+  assert.deepEqual(sunday[0].map(c => c.day), [27, 28, 29, 30, 1, 2, 3])
+  assert.deepEqual(sunday[5].map(c => c.day), [1, 2, 3, 4, 5, 6, 7])
+  const monday = monthGrid('2026-10', [], '2026-10-15', 1)
+  assert.deepEqual(monday[0].map(c => c.day), [28, 29, 30, 1, 2, 3, 4])
+  assert.deepEqual(monday[5].map(c => c.day), [2, 3, 4, 5, 6, 7, 8])
+  assert.equal(monday[0][0].key, '2026-09-28')
+})
+
+test('a month that starts on the first day of the week opens with it', () => {
+  // 1 November 2026 is a Sunday; 1 February 2027 a Monday
+  const nov = monthGrid('2026-11', [], '2026-10-15', 0)
+  assert.equal(nov[0][0].key, '2026-11-01')
+  assert.equal(nov[0][0].inMonth, true)
+  const feb = monthGrid('2027-02', [], '2026-10-15', 1)
+  assert.equal(feb[0][0].key, '2027-02-01')
+})
+
+test('February 2026 starts on a Sunday and has 28 days', () => {
+  const grid = monthGrid('2026-02', [], '2026-02-10', 0)
+  assert.equal(grid[0][0].key, '2026-02-01')
+  assert.equal(grid.flat().filter(c => c.inMonth).length, 28)
+  // Four full weeks of February, then two of March
+  assert.deepEqual(grid[4].map(c => c.key), ['2026-03-01', '2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06', '2026-03-07'])
+  assert.ok(grid.slice(4).flat().every(c => !c.inMonth))
+  assert.equal(grid.flat().filter(c => c.isToday).map(c => c.key).join(), '2026-02-10')
+})
+
+test('the days either side are marked out of the month', () => {
+  const grid = monthGrid('2026-10', [], '2026-10-15', 0)
+  assert.deepEqual(grid[0].map(c => c.inMonth), [false, false, false, false, true, true, true])
+  assert.deepEqual(grid[5].map(c => c.inMonth), [false, false, false, false, false, false, false])
+  assert.equal(grid.flat().filter(c => c.inMonth).length, 31)
+})
+
+test('an open day in the trailing row is open, whichever month it is in', () => {
+  // Today Friday 30 October; the first open day is Monday 2 November
+  const open = ['2026-11-02', '2026-11-03', '2026-11-04']
+  const grid = monthGrid('2026-10', open, '2026-10-30', 0)
+  const nov2 = grid.flat().find(c => c.key === '2026-11-02')
+  assert.deepEqual(nov2, { key: '2026-11-02', day: 2, inMonth: false, isToday: false, open: true })
+  assert.deepEqual(grid.flat().filter(c => c.open).map(c => c.key), open)
+  assert.equal(grid.flat().find(c => c.isToday).key, '2026-10-30')
+})
+
+test('months step across the year', () => {
+  assert.equal(addMonths('2026-10', 1), '2026-11')
+  assert.equal(addMonths('2026-12', 1), '2027-01')
+  assert.equal(addMonths('2026-01', -1), '2025-12')
 })
 
 test('a day that crosses a clock change keeps every slot, on the right day', () => {

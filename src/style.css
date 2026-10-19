@@ -5043,58 +5043,192 @@ body.page-leaving #app {
   }
 }
 
-/* Days and times are the headcount segments again, as many as will fit */
-.book-days,
+/* ── Pick a time: a small calendar, then one list of the day's times ── */
+.book-pick__body { container-type: inline-size; }
+
+.book-cal { margin-bottom: 22px; }
+
+/* The month line and the day header share one style, so in the split
+   they read as one line across the two columns */
+.book-cal__head {
+  margin: 0 0 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+  color: #001131;
+}
+
+/* The month and its arrows. The bar is as tall as the day header across
+   the split, so both lines sit level; the arrows' 32px hit area overhangs it. */
+.book-cal__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 19.5px;
+  margin: 0 0 12px;
+
+  & .book-cal__head { margin: 0; }
+}
+
+.book-cal__nav {
+  display: flex;
+  gap: 2px;
+  margin-right: -9px;
+}
+
+.book-cal__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: -6.25px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.18s ease, opacity 0.18s ease;
+
+  & img { display: block; width: 14px; height: 14px; }
+
+  &:hover:not(:disabled) { background: #F0F2FF; }
+  &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(43, 68, 255, 0.22); }
+  &:disabled { opacity: 0.3; cursor: default; }
+}
+
+.book-cal__arrow--prev img { transform: scaleX(-1); }
+
+.book-cal__dow,
+.book-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  /* Keeps the circles apart when the columns are narrower than 40px */
+  column-gap: 4px;
+}
+
+.book-cal__dow {
+  margin-bottom: 6px;
+
+  & span {
+    /* The tracking trails the last letter; pad the front to match */
+    padding-left: 0.14em;
+    text-align: center;
+    font-family: 'Consolas', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(0, 17, 49, 0.5);
+  }
+}
+
+.book-cal__grid { row-gap: 6px; }
+
+.book-cal__cell {
+  position: relative;
+  display: flex;
+  justify-content: center;
+
+  & > span {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: min(40px, 100%);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: rgba(0, 17, 49, 0.28);
+  }
+
+  /* Today, offered or not: a dot under the number */
+  &.is-today > span::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 5px;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
+    border-radius: 50%;
+    background: #0755E9;
+    opacity: 0.55;
+  }
+}
+
+/* An open day. Selected is a ring, not a fill: Confirm stays the one
+   filled control in the view. The tints are opaque (the .07 blue over
+   white) so the corner chain art never shows through. */
+.book-cal__day {
+  cursor: pointer;
+
+  & input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  & > span {
+    background: #F0F2FF;
+    font-weight: 700;
+    color: #001131;
+    transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+  }
+
+  &:hover > span { background: #E1E5FF; }
+
+  & input:checked + span {
+    background: #E6E9FF;
+    color: #2B44FF;
+    box-shadow: inset 0 0 0 1.5px #2B44FF;
+  }
+
+  & input:focus-visible + span { box-shadow: 0 0 0 3px rgba(43, 68, 255, 0.22); }
+  & input:checked:focus-visible + span { box-shadow: inset 0 0 0 1.5px #2B44FF, 0 0 0 3px rgba(43, 68, 255, 0.22); }
+}
+
+/* The chosen day's times: the headcount segments' markup, tinted like the
+   calendar's open days */
 .book-slots {
   display: grid;
   gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
 }
 
-.book-days  { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
-.book-slots { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
+.book-slots .book-seg__opt {
+  & span {
+    height: 40px;
+    border: 0;
+    background: #F0F2FF;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #001131;
+  }
 
-.book-day span {
-  flex-direction: column;
-  gap: 1px;
-  height: 54px;
+  &:hover span { background: #E1E5FF; }
+
+  & input:checked + span {
+    background: #E6E9FF;
+    color: #2B44FF;
+    box-shadow: inset 0 0 0 1.5px #2B44FF;
+  }
+
+  & input:focus-visible + span { box-shadow: 0 0 0 3px rgba(43, 68, 255, 0.22); }
+  & input:checked:focus-visible + span { box-shadow: inset 0 0 0 1.5px #2B44FF, 0 0 0 3px rgba(43, 68, 255, 0.22); }
 }
 
-.book-day__dow {
-  font-family: 'Consolas', monospace;
-  font-size: 10.5px;
-  font-style: normal;
-  font-weight: 400;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0.6;
-}
-
-.book-day__date {
-  font-size: 13.5px;
-  font-weight: 700;
-}
-
-.book-slots .book-seg__opt span {
-  height: 40px;
-  font-size: 13.5px;
-  font-variant-numeric: tabular-nums;
-}
-
-/* A day's times by part of the day; the night hours fold away */
-.book-part + .book-part { margin-top: 12px; }
-
-.book-part__label {
-  margin: 0 0 6px;
-  font-family: 'Consolas', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(0, 17, 49, 0.5);
-}
-
-.book-slots-scroll .book-part__more {
-  display: block;
-  margin: 12px 0 2px;
+@media (pointer: coarse) {
+  .book-slots .book-seg__opt span { height: 44px; }
 }
 
 /* ── Time zone chooser — stands in for the days and times while open ── */
@@ -5143,6 +5277,7 @@ body.page-leaving #app {
   overflow-x: auto;
   padding: 6px 2px 8px;
   scrollbar-width: thin;
+  scrollbar-color: rgba(0, 17, 49, 0.2) transparent;
 }
 
 .book-zrail__opt {
@@ -5202,6 +5337,7 @@ body.page-leaving #app {
   overflow-y: auto;
   border-top: 1.5px dashed rgba(0, 17, 49, 0.16);
   scrollbar-width: thin;
+  scrollbar-color: rgba(0, 17, 49, 0.2) transparent;
 }
 
 .book-zlist__opt {
@@ -5294,6 +5430,7 @@ body.page-leaving #app {
     margin: -3px;
     padding: 3px;
     scrollbar-width: thin;
+    scrollbar-color: rgba(0, 17, 49, 0.2) transparent;
   }
 
   .book-zone-panel:not([hidden]) {
@@ -5303,19 +5440,83 @@ body.page-leaving #app {
     margin: -3px;
     padding: 3px;
     scrollbar-width: thin;
+    scrollbar-color: rgba(0, 17, 49, 0.2) transparent;
   }
 
   .book-pick > *,
   .book-pick__body > .book-submit-wrap,
   .book-pick__times > .book-fieldset { flex-shrink: 0; }
+}
 
-  /* Tightened so a full day of times (three parts, five rows) fits the held
-     height without scrolling; touch layouts keep the taller chips */
-  .book-pick .book-day span { height: 50px; }
-  .book-pick .book-slots .book-seg__opt span { height: 36px; }
-  .book-pick .book-part + .book-part { margin-top: 8px; }
-  .book-pick .book-part__label { margin-bottom: 4px; }
-  .book-slots-scroll .book-part__more { margin-top: 8px; }
+/* Room for both: the calendar on the left, the day's times on the right,
+   two to a row so each row is one hour. The calendar never scrolls; in
+   the pinned card the times column is the one part that does. */
+@container (min-width: 480px) {
+  .book-pick__times:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    /* The calendar, then the summary under it; the times span both */
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 32px;
+    align-items: start;
+  }
+
+  .book-cal {
+    grid-column: 1;
+    grid-row: 1;
+    margin-bottom: 0;
+  }
+
+  .book-pick__times > .book-receipt--live {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .book-pick__times > .book-slots-field {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    margin-bottom: 0;
+  }
+
+  .book-pick__times .book-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* In the pinned card the times fade out at the scroller's bottom edge, so
+   a list that runs on shows it does. The padding is as tall as the fade,
+   so the last row always scrolls clear of it; a list that fits only fades
+   empty padding.
+
+   The calendar takes whatever height the summary leaves: the summary sits
+   at its natural height under it, and the six weeks share the rest, the
+   circles centred in their rows. Below 36px a row the weeks would crowd,
+   so they never go shorter than that. */
+@media (min-width: 901px) {
+  @container (min-width: 480px) {
+    .book-pick__times:not([hidden]) { grid-template-rows: minmax(0, 1fr) auto; }
+
+    .book-cal:not([hidden]) {
+      display: flex;
+      flex-direction: column;
+      align-self: stretch;
+      min-height: 0;
+    }
+
+    .book-pick__times .book-cal__grid {
+      flex: 1;
+      grid-template-rows: repeat(6, minmax(36px, 1fr));
+      row-gap: 0;
+    }
+
+    .book-pick__times .book-cal__cell { align-items: center; }
+
+    .book-pick__times .book-slots-scroll {
+      padding-bottom: 24px;
+      -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+      mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+    }
+  }
 }
 
 /* The one other action in the view: a quiet mono link under the button */
@@ -5500,6 +5701,17 @@ body.page-leaving #app {
   font-size: 13px;
   font-weight: 500;
   color: rgba(0, 17, 49, 0.55);
+
+  /* Nothing chosen yet: a prompt, not a value */
+  &.is-pending { color: rgba(0, 17, 49, 0.4); }
+}
+
+/* The same receipt under the picker's calendar, built as the client
+   chooses. Only the split has room for it. */
+.book-receipt--live {
+  display: none;
+  max-width: none;
+  margin: 28px 0 0;
 }
 
 .book-done__next {
@@ -5574,7 +5786,8 @@ body.page-leaving #app {
   .book-pick,
   .book-done { animation: none; }
 
-  .book-day span,
+  .book-cal__day > span,
+  .book-cal__arrow,
   .book-quiet { transition: none; }
 
   .book-input,
