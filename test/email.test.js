@@ -231,3 +231,118 @@ test('the text version says the same things', () => {
   ]) assert.ok(text.split('\n').includes(line), line)
   assert.ok(!text.includes('<'))
 })
+
+// ── The reminder ──
+const { bookingReminderEmail, callDay } = await import('../lib/booking/email.js')
+const { friendlyZone } = await import('../lib/booking/zones.js')
+
+// Jane's call at 3:00 PM in Karachi on Tuesday 20 October, reminded at 1:00 PM
+const REMINDER = {
+  name: 'Jane Doe',
+  start: '2026-10-20T10:00:00.000Z',
+  end: '2026-10-20T10:30:00.000Z',
+  zone: 'Asia/Karachi',
+  hour12: true,
+  meetLink: 'https://meet.google.com/abc-defg-hij',
+  now: '2026-10-20T08:00:00.000Z',
+}
+const reminder = (over = {}) => bookingReminderEmail({ ...REMINDER, ...over })
+const KARACHI = friendlyZone('Asia/Karachi', Date.parse(REMINDER.start)).label
+
+test('reminder: today, in the client\'s zone and clock', () => {
+  const { subject, preheader, html, text } = reminder()
+  assert.equal(subject, 'Today at 3:00 PM: your call with Tethr')
+  assert.equal(preheader, 'Today at 3:00 PM. Your Google Meet link is inside.')
+  assert.ok(html.includes('>See you at 3:00 PM, Jane.</h1>'))
+  assert.ok(html.includes("A quick reminder about your 30-minute intro call with Tethr. We'll talk through the roles you're hiring for and how we work."))
+  assert.ok(html.includes('Today, Tuesday, October 20 <span style="white-space:nowrap">at 3:00 PM</span>'))
+  assert.ok(html.includes(`>${KARACHI}</div>`))
+  assert.ok(html.includes(`>${preheader}</div>`))
+  assert.ok(html.includes('<title>Today at 3:00 PM: your call with Tethr</title>'))
+  assert.ok(text.startsWith('See you at 3:00 PM, Jane.\nA quick reminder about your 30-minute intro call'))
+  assert.ok(text.includes(`When: Today, Tuesday, October 20 at 3:00 PM (${KARACHI})`))
+  assert.equal(reminder({ hour12: false }).subject, 'Today at 15:00: your call with Tethr')
+  assert.match(reminder({ hour12: false }).text, /^See you at 15:00, Jane\./)
+})
+
+test('reminder: tomorrow, counted in the client\'s zone and not the server\'s', () => {
+  // 10:00 PM on the 19th in Karachi: the call is tomorrow there
+  const late = reminder({ now: '2026-10-19T17:00:00.000Z' })
+  assert.equal(late.subject, 'Tomorrow at 3:00 PM: your call with Tethr')
+  assert.ok(late.html.includes('Tomorrow, Tuesday, October 20 <span style="white-space:nowrap">at 3:00 PM</span>'))
+  assert.equal(late.preheader, 'Tomorrow at 3:00 PM. Your Google Meet link is inside.')
+
+  // The same two instants in Los Angeles: 3:00 AM on the 20th, sent at 1:00 AM the same day
+  assert.equal(reminder({ zone: 'America/Los_Angeles' }).subject, 'Today at 3:00 AM: your call with Tethr')
+  // ...and sent at 10:00 AM on the 19th, the day before
+  assert.equal(reminder({ zone: 'America/Los_Angeles', now: '2026-10-19T17:00:00.000Z' }).subject, 'Tomorrow at 3:00 AM: your call with Tethr')
+
+  // Further out: the date, the way the confirmation writes it, and no "Today, " in front
+  const later = reminder({ now: '2026-10-17T08:00:00.000Z' })
+  assert.equal(later.subject, 'Tuesday, October 20 at 3:00 PM: your call with Tethr')
+  assert.ok(later.html.includes('>Tuesday, October 20 <span style="white-space:nowrap">at 3:00 PM</span>'))
+  assert.deepEqual(callDay(Date.parse(REMINDER.start), Date.parse('2026-10-17T08:00:00Z'), 'Asia/Karachi'), { day: 'Tuesday, October 20', relative: false })
+})
+
+test('reminder: tomorrow across a month and a year end', () => {
+  const call = Date.parse('2027-01-01T10:00:00Z')
+  assert.equal(callDay(call, Date.parse('2026-12-31T10:00:00Z'), 'Asia/Karachi').day, 'Tomorrow')
+  assert.equal(callDay(call, Date.parse('2026-12-30T10:00:00Z'), 'Asia/Karachi').day, 'Friday, January 1')
+})
+
+test('reminder: the Where row and the join button', () => {
+  const { html, text } = reminder()
+  assert.ok(html.includes('>Google Meet</div>'))
+  assert.ok(html.includes('>meet.google.com/abc-defg-hij</a>'))
+  assert.equal(count(html, 'href="https://meet.google.com/abc-defg-hij"'), 2)
+  assert.ok(html.includes('Join Google Meet&nbsp;&nbsp;&rarr;</a>'))
+  assert.ok(html.includes("Need to move it? Reply to this email and we'll find a new time."))
+  assert.ok(text.includes('Where: Google Meet, https://meet.google.com/abc-defg-hij'))
+  assert.ok(text.includes('Join Google Meet: https://meet.google.com/abc-defg-hij'))
+  assert.ok(text.includes("Need to move it? Reply to this email and we'll find a new time."))
+})
+
+test('reminder: without a Meet link, no button and the invite named instead', () => {
+  for (const meetLink of ['', 'http://meet.google.com/abc-defg-hij', 'javascript:alert(1)']) {
+    const { preheader, html, text } = reminder({ meetLink })
+    assert.equal(preheader, 'Today at 3:00 PM. The video link is in your calendar invite.', meetLink)
+    assert.equal(html.includes('Join Google Meet'), false, meetLink)
+    assert.equal(html.includes('meet.google.com'), false, meetLink)
+    assert.ok(html.includes('>Video call</div>'), meetLink)
+    assert.ok(html.includes('Details are in your calendar invite'), meetLink)
+    assert.ok(text.includes('Where: Video call. Details are in your calendar invite.'), meetLink)
+    assert.equal(text.includes('Join Google Meet'), false, meetLink)
+  }
+})
+
+test('reminder: the confirmation\'s shell, without the booked mark or the steps', () => {
+  const { html } = reminder()
+  assert.ok(html.includes('FOR TALENT. BY TALENT.'))
+  assert.ok(html.includes('class="card-cell"'))
+  assert.ok(html.includes('class="footer"'))
+  assert.ok(html.includes('something real.'))
+  assert.equal(html.includes('booked.png'), false)
+  assert.equal(html.includes('CALL BOOKED'), false)
+  assert.equal(html.includes("WHAT WE'LL COVER"), false)
+  assert.equal(html.includes('Length'), false)
+})
+
+test('reminder: embeds only the images it shows', () => {
+  const { html, inline } = reminder({ inlineImages: true })
+  assert.deepEqual(inline.map(({ file }) => file), ['logo.png', 'logo-white.png', 'social-linkedin.png', 'social-facebook.png', 'social-instagram.png', 'social-x.png', 'wordmark-art.png'])
+  for (const { cid, file } of inline) {
+    assert.ok(html.includes(`src="cid:${cid}"`), cid)
+    assert.ok(EMAIL_IMAGES[file], file)
+  }
+  assert.equal(/<img\b[^>]*src="https?:/.test(html), false)
+  assert.deepEqual(reminder().inline, [])
+})
+
+test('reminder: a name from outside is escaped, and no name still reads', () => {
+  const { html, text } = reminder({ name: '<b>Zoë</b> Smith' })
+  assert.ok(html.includes('See you at 3:00 PM, &lt;b&gt;Zoë&lt;/b&gt;.</h1>'))
+  assert.equal(html.includes('<b>Zoë'), false)
+  assert.ok(text.startsWith('See you at 3:00 PM, <b>Zoë</b>.'))
+  assert.ok(reminder({ name: '' }).html.includes('>See you at 3:00 PM.</h1>'))
+  assert.ok(reminder({ name: '  Jane   Doe ' }).html.includes('>See you at 3:00 PM, Jane.</h1>'))
+})

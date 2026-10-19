@@ -6,7 +6,7 @@ import arrowRight from '../assets/arrowright.svg'
 // The same rules POST /api/lead applies
 import { VALIDATORS, CHALLENGES, HEADCOUNTS, TIMELINES, HONEYPOT_FIELD } from '../../lib/booking/lead.js'
 // Zone naming and slot grouping, tested in test/zones.test.js
-import { friendlyZone, zoneAbbreviation, offsetMinutes, standardOffsetMinutes, groupByZoneDay, groupByPartOfDay, railFor, listZones } from '../../lib/booking/zones.js'
+import { friendlyZone, zoneAbbreviation, offsetMinutes, standardOffsetMinutes, groupByZoneDay, wakingSlots, zoneDayKey, monthGrid, addMonths, railFor, listZones } from '../../lib/booking/zones.js'
 import { landDots, COLS, ROWS, lonToCol, latToRow } from '../lib/dot-world.js'
 import {
   TURNSTILE_SITE_KEY, TURNSTILE_TEST_SITE_KEY, CAPTCHA_FIELD,
@@ -89,14 +89,15 @@ export async function submitLead(data) {
   throw Object.assign(new Error('Lead not saved'), { fields: res.status === 400 ? body.fields : undefined })
 }
 
-// -> { slots: [ms], hostZone }: every open slot as an instant, plus the zone
-// Tethr's calendar runs in; throws when the calendar can't be read
+// -> { slots: [ms], hostZone, slotMinutes }: every open slot as an instant,
+// the zone Tethr's calendar runs in and how long a call is; throws when the
+// calendar can't be read
 async function loadSlots() {
   const res = await api('/api/availability')
   if (!res.ok) throw new Error('Calendar unavailable')
-  const { days = [], timezone } = await res.json()
+  const { days = [], timezone, slotMinutes } = await res.json()
   const slots = days.flatMap(d => d.slots).map(iso => Date.parse(iso)).filter(Number.isFinite).sort((a, b) => a - b)
-  return { slots, hostZone: timezone }
+  return { slots, hostZone: timezone, slotMinutes: Number(slotMinutes) || 0 }
 }
 
 // The zone the browser reports; the visitor can change it in the picker
@@ -114,13 +115,34 @@ function fmtIn(zone) {
     const fmt = (opts) => new Intl.DateTimeFormat('en-US', { ...opts, timeZone: zone })
     zoneFormats.set(zone, {
       time: fmt({ hour: 'numeric', minute: '2-digit', hour12: HOUR12 }),
-      dow:  fmt({ weekday: 'short' }),
-      day:  fmt({ month: 'short', day: 'numeric' }),
       full: fmt({ weekday: 'long', month: 'long', day: 'numeric' }),
     })
   }
   return zoneFormats.get(zone)
 }
+
+// The column the visitor's calendars start weeks on, 0 = Sunday. Intl
+// numbers the days 1 to 7 from Monday, so Sunday's 7 becomes 0.
+const WEEK_START = (() => {
+  try {
+    const locale = new Intl.Locale(navigator.language)
+    const info = locale.getWeekInfo?.() ?? locale.weekInfo
+    return info?.firstDay ? info.firstDay % 7 : 0
+  } catch {
+    return 0
+  }
+})()
+
+// Calendar days as civil dates: 'YYYY-MM-DD' read at UTC midnight, so no
+// zone can move them
+const civilMs = (key) => { const [y, m, d] = key.split('-').map(Number); return Date.UTC(y, m - 1, d) }
+const civilFmt = {
+  dow:   new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short' }),
+  month: new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long' }),
+}
+
+// '2026-10' -> "October 2026"
+const monthTitle = (month) => `${civilFmt.month.format(civilMs(`${month}-01`))} ${month.slice(0, 4)}`
 
 /* The zone chooser's picture: the world as dots, the visitor's band and
    Tethr's band lit, a tether arc between them. It only confirms the choice
@@ -249,13 +271,25 @@ export const html = `
 
       <div class="book-pick__body" id="bookPickBody" hidden>
         <div class="book-pick__times" id="bookPickTimes">
-          <fieldset class="book-field book-fieldset">
-            <legend class="book-label">Day</legend>
-            <div class="book-days" id="bookDays"></div>
+          <fieldset class="book-field book-fieldset book-cal">
+            <legend class="book-sr">Day</legend>
+            <div class="book-cal__bar">
+              <p class="book-cal__head" id="bookMonth"></p>
+              <div class="book-cal__nav">
+                <button type="button" class="book-cal__arrow book-cal__arrow--prev" id="bookPrevMonth" aria-label="Previous month"><img src="${arrowRight}" alt="" aria-hidden="true" /></button>
+                <button type="button" class="book-cal__arrow" id="bookNextMonth" aria-label="Next month"><img src="${arrowRight}" alt="" aria-hidden="true" /></button>
+              </div>
+            </div>
+            <div class="book-cal__dow" id="bookDow" aria-hidden="true"></div>
+            <div class="book-cal__grid" id="bookDays"></div>
           </fieldset>
 
+          <!-- The booking as it stands, the done state's receipt built live;
+               only shown where there is room beside the times -->
+          <dl class="book-receipt book-receipt--live" id="bookSummary"></dl>
+
           <div class="book-field book-slots-field" role="radiogroup" aria-labelledby="bookSlotsLabel">
-            <p class="book-label" id="bookSlotsLabel">Time</p>
+            <p class="book-cal__head" id="bookSlotsLabel">Time</p>
             <div class="book-slots-scroll" id="bookSlots"></div>
           </div>
         </div>
@@ -607,55 +641,119 @@ export function init() {
   let hostZone = 'Asia/Karachi'
   let slots = []             // open slots, ms instants
   let days = []              // slots grouped by `zone`'s calendar days
-  let nightOpen = false
+  let slotMinutes = 0        // how long a call is, from /api/availability
+  let dayKey = ''            // the chosen day; the calendar only holds one month's radios
+  let viewMonth = ''         // 'YYYY-MM' on show in the calendar
 
   const chosen = (name) => pick.querySelector(`[name="${name}"]:checked`)?.value
   const chosenSlot = () => Date.parse(chosen('slot') ?? '')
 
-  // One day's times in clock order. The early-morning and late-evening hours
-  // (before 07:00 and from 22:00 in the chosen zone) wait behind a link,
-  // unless they are all the day has or one of them is the chosen time
+  // One day's times in clock order, as one list
   function renderSlots(keep = chosenSlot()) {
-    const day = days.find(d => d.key === chosen('day'))
+    const day = days.find(d => d.key === dayKey)
     const f = fmtIn(zone)
-    document.getElementById('bookSlotsLabel').textContent = `Time on ${f.full.format(day.slots[0])}`
-    const parts = groupByPartOfDay(day.slots, zone)
-    const daytime = parts.filter(p => !p.folded)
-    const folded = parts.filter(p => p.folded)
-    const showFolded = !daytime.length || nightOpen || folded.some(p => p.slots.includes(keep))
-    const chip = (t) => `
+    document.getElementById('bookSlotsLabel').textContent = f.full.format(day.slots[0])
+    slotList.innerHTML = `<div class="book-slots">${day.slots.map(t => `
         <label class="book-seg__opt">
           <input type="radio" name="slot" value="${new Date(t).toISOString()}"${t === keep ? ' checked' : ''} required />
           <span>${esc(f.time.format(t))}</span>
-        </label>`
-    const group = (p) => `
-      <div class="book-part${p.folded ? ' book-part--folded' : ''}" role="group" aria-label="${p.label}">
-        <p class="book-part__label" aria-hidden="true">${p.label}</p>
-        <div class="book-slots">${p.slots.map(chip).join('')}</div>
-      </div>`
-    const count = folded.reduce((n, p) => n + p.slots.length, 0)
-    slotList.innerHTML = parts.filter(p => !p.folded || showFolded).map(group).join('') + (folded.length && daytime.length ? `
-      <button type="button" class="book-quiet book-part__more" id="bookNightToggle" aria-expanded="${showFolded}">${showFolded ? 'Hide early and late times' : `Show ${count} early and late ${count === 1 ? 'time' : 'times'}`}</button>` : '')
+        </label>`).join('')}</div>`
+    renderSummary()
+  }
+
+  // The receipt the done state will show, filled in as the client chooses
+  function renderSummary() {
+    const day = days.find(d => d.key === dayKey)
+    if (!day) return
+    const f = fmtIn(zone)
+    const at = chosenSlot()
+    const when = Number.isFinite(at)
+      ? f.time.formatRange(at, at + slotMinutes * 60_000)
+      : null
+    const rows = [
+      ['When', f.full.format(day.slots[0]), when ?? 'Pick a time', !when],
+      ...(slotMinutes > 0 ? [['Length', `${slotMinutes} minutes`]] : []),
+      ['Where', 'Google Meet', lead?.email ? `Invite goes to ${lead.email}` : ''],
+    ]
+    document.getElementById('bookSummary').innerHTML = rows.map(([k, v, note, pending]) => `
+      <div class="book-receipt__row">
+        <dt>${esc(k)}</dt>
+        <dd>${esc(v)}${note ? `<span class="book-receipt__note${pending ? ' is-pending' : ''}">${esc(note)}</span>` : ''}</dd>
+      </div>`).join('')
   }
 
   // Regroups the slots by the chosen zone's days and redraws, holding on to
-  // the chosen time (the same instant) and otherwise the chosen day
+  // the chosen time (the same instant) and otherwise the chosen day. Only
+  // times from 07:00 to 22:00 on the visitor's clock are offered, except a
+  // time the visitor already chose: a zone change never takes it away.
   function renderTimes() {
     const keepSlot = chosenSlot()
-    const keepDay = chosen('day')
-    days = groupByZoneDay(slots, zone)
-    const f = fmtIn(zone)
-    const current = days.find(d => d.slots.includes(keepSlot)) ?? days.find(d => d.key === keepDay) ?? days[0]
-    dayList.innerHTML = days.map(d => `
-      <label class="book-seg__opt book-day">
-        <input type="radio" name="day" value="${d.key}" aria-label="${esc(f.full.format(d.slots[0]))}"${d === current ? ' checked' : ''} />
-        <span><i class="book-day__dow">${esc(f.dow.format(d.slots[0]))}</i><b class="book-day__date">${esc(f.day.format(d.slots[0]))}</b></span>
-      </label>`).join('')
+    const offered = wakingSlots(slots, zone)
+    if (slots.includes(keepSlot) && !offered.includes(keepSlot)) offered.push(keepSlot)
+    days = groupByZoneDay(offered, zone)
+    const current = days.find(d => d.slots.includes(keepSlot)) ?? days.find(d => d.key === dayKey) ?? days[0]
+    dayKey = current.key
+    viewMonth = monthHolding(dayKey)
+    renderCalendar()
     renderSlots(keepSlot)
     // One span, so the line wraps as text; the offset never splits at its sign
     const z = friendlyZone(zone)
     pickStatus.innerHTML = `<span>Times in ${esc(z.label.slice(0, -z.offset.length))}<span class="book-nowrap">${esc(z.offset)}</span></span>`
   }
+
+  const gridFor = (month) => monthGrid(month, days.map(d => d.key), zoneDayKey(zone, Date.now()), WEEK_START)
+
+  // The month to show for a day: the earlier one when the day also sits in
+  // the previous month's last rows (2 November in October's grid)
+  function monthHolding(key) {
+    const own = key.slice(0, 7)
+    const prev = addMonths(own, -1)
+    return gridFor(prev).flat().some(c => c.key === key) ? prev : own
+  }
+
+  // One month as a wall calendar, six weeks. Open days can be picked
+  // whichever month they belong to; every other day is a plain number.
+  function renderCalendar() {
+    const f = fmtIn(zone)
+    const byKey = new Map(days.map(d => [d.key, d]))
+    const grid = gridFor(viewMonth)
+    const cells = grid.flat()
+    document.getElementById('bookMonth').textContent = monthTitle(viewMonth)
+    document.getElementById('bookDow').innerHTML = grid[0].map(c => `<span>${esc(civilFmt.dow.format(civilMs(c.key)))}</span>`).join('')
+    dayList.innerHTML = cells.map(c => {
+      const cls = `${c.isToday ? ' is-today' : ''}${c.inMonth ? '' : ' is-outside'}`
+      const d = byKey.get(c.key)
+      if (!d) return `<span class="book-cal__cell is-off${cls}" aria-hidden="true"><span>${c.day}</span></span>`
+      return `<label class="book-cal__cell book-cal__day${cls}">
+        <input type="radio" name="day" value="${d.key}" aria-label="${esc(f.full.format(d.slots[0]))}"${d.key === dayKey ? ' checked' : ''} />
+        <span>${c.day}</span>
+      </label>`
+    }).join('')
+    // An arrow only leads somewhere with an open day in that direction
+    prevMonth.disabled = !days.some(d => d.key < cells[0].key)
+    nextMonth.disabled = !days.some(d => d.key > cells.at(-1).key)
+  }
+
+  // Paging picks the new page's first open day in its own month (or, failing
+  // that, its first open day at all), so a day is always chosen and in view
+  function page(delta) {
+    viewMonth = addMonths(viewMonth, delta)
+    const cells = gridFor(viewMonth).flat().filter(c => c.open)
+    const first = cells.find(c => c.inMonth) ?? cells[0]
+    if (first) dayKey = first.key
+    pickError.textContent = ''
+    renderCalendar()
+    renderSlots()
+    // A button that has just been disabled drops focus; land on the chosen day
+    if (document.activeElement?.disabled || document.activeElement === document.body) {
+      dayList.querySelector('input:checked')?.focus()
+    }
+  }
+
+  const prevMonth = document.getElementById('bookPrevMonth')
+  const nextMonth = document.getElementById('bookNextMonth')
+  prevMonth.addEventListener('click', () => page(-1))
+  nextMonth.addEventListener('click', () => page(1))
 
   // Loads (or reloads) the open times
   async function refreshTimes() {
@@ -664,6 +762,7 @@ export function init() {
     try {
       const loaded = await loadSlots()
       slots = loaded.slots
+      slotMinutes = loaded.slotMinutes
       if (loaded.hostZone) hostZone = loaded.hostZone
     } catch {
       return emailInstead('We have your details, but our calendar isn\'t loading right now.')
@@ -678,7 +777,8 @@ export function init() {
 
   pick.addEventListener('change', (e) => {
     pickError.textContent = ''
-    if (e.target.name === 'day') { nightOpen = false; renderSlots() }
+    if (e.target.name === 'day') { dayKey = e.target.value; renderSlots() }
+    if (e.target.name === 'slot') renderSummary()
     if (e.target.name === 'zone') setZone(e.target.value)
   })
 
@@ -686,15 +786,6 @@ export function init() {
   // rail node into view when the keyboard reaches it; do it for the label
   pick.addEventListener('focusin', (e) => {
     if (e.target.type === 'radio') e.target.closest('label').scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  })
-
-  slotList.addEventListener('click', (e) => {
-    if (e.target.id !== 'bookNightToggle') return
-    nightOpen = e.target.getAttribute('aria-expanded') !== 'true'
-    renderSlots()
-    // Opening lands on the first of the revealed times; closing stays on the link
-    const first = nightOpen && slotList.querySelector('.book-part--folded input')
-    ;(first || document.getElementById('bookNightToggle'))?.focus()
   })
 
   // ── Time zone ──
@@ -715,7 +806,6 @@ export function init() {
 
   function setZone(next) {
     zone = next
-    nightOpen = false
     renderTimes()
     zoneMap.innerHTML = worldMap(zone, hostZone)
   }

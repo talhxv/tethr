@@ -20,6 +20,8 @@ services:
       - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
       # Sender of the booking confirmation email. Empty = "Tethr <BOOKING_CALENDAR_ID>".
       - BOOKING_EMAIL_FROM=${BOOKING_EMAIL_FROM:-}
+      # Bearer secret for GET /api/reminders (cron-job.org). Empty = reminders off (503).
+      - CRON_SECRET=${CRON_SECRET:-}
       - BOOKING_TIMEZONE=${BOOKING_TIMEZONE:-Asia/Karachi}
       - BOOKING_DAYS=${BOOKING_DAYS:-1,2,3,4,5}
       - BOOKING_START=${BOOKING_START:-09:00}
